@@ -161,8 +161,7 @@ setup_plot_point <- function(plot_data, xmax, ymax, log_trans=TRUE) {
         scale_alpha(range = c(0.5, 1.0)) +
         scale_size(range = c(2, 3)) +
         guides(alpha = FALSE, size = FALSE) +
-        labs(x = "Average times used per month", y = "Cost per use (€)") +
-        ease_aes('linear')
+        labs(x = "Average times used per month", y = "Cost per use (€)")
     
     if (log_trans) { p <- p + scale_y_continuous(limits=c(NA,ymax), trans="log10") }
     else { p <- p + scale_y_continuous(limits=c(NA,ymax)) }
@@ -177,8 +176,7 @@ setup_plot_image <- function(plot_data, xmax, ymax, log_trans=TRUE) {
         aes(x = use_per_month, y = cost_per_use)) +
         geom_image(aes(image = photo), size = plot_data$plot_size) +
         scale_x_continuous(limits=c(NA,xmax)) +
-        labs(x = "Average times used per month", y = "Cost per use (€)") +
-        ease_aes('linear')
+        labs(x = "Average times used per month", y = "Cost per use (€)")
     
     if (log_trans) { p <- p + scale_y_continuous(trans="log10", limits=c(NA,ymax)) }
     else { p <- p + scale_y_continuous(limits=c(NA,ymax)) }

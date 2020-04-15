@@ -137,6 +137,9 @@ ggsave(filename = "Plots/Threddit-area_plot-Active_inventory-value-300x250mm-300
 
 ### Plot total active inventory value
 
+# List item values from master data
+itemvalues <- masterdata %>% select(Item, Price, Category) %>% rename(item = Item, price = Price, category = Category)
+
 # Calculate toal active inventory (this cannot be included in inventory as it is portfolio-level data)
 inventory_value_total <- plotuse %>%
     filter(active == TRUE) %>%
@@ -257,47 +260,53 @@ anim_save("Threddit-animation-Category-Avgerage_yearly_cost-vs-category_daily_us
 ### Image plot: setup_plot_image(plot_data, xmax, ymax, log_trans=TRUE)
 
 
-### Plot point - All ###
-plot_data <- plotuse %>% filter(days_active >= 30)
-p <- setup_plot_point(plot_data, xmax = 10, ymax = 20, log_trans = TRUE)
-animation <- p + transition_time(date) + labs(title = "Date: {frame_time}")
-animate(animation, height = 600, width = 700, nframes = 120, fps = 10)
+### Plot last date only (current status)
+p <- plotuse %>% filter(category == 'Shorts' & date == max(plotuse$date)) %>%
+    setup_plot_image(xmax = 4, ymax = 20, log_trans = TRUE)
+p
+ggsave(filename = "Plots/Threddit-image_plot-Category-Avgerage_yearly_cost-vs-category_daily_use-image-Knits-300x300mm-300dpi.png", p,
+       width = 300, height = 300, dpi = 300, units = "mm", device='png')
 
 
-### Plot point - Single category ###
-plot_data <- plotuse %>% filter(category == 'Shirts' & days_active >= 30)
-p <- setup_plot_point(plot_data, xmax = 3, ymax = 15, log_trans = FALSE)
 
-animation <- p + transition_time(date) + labs(title = "Date: {frame_time}")
-animate(animation, height = 600, width = 700, nframes = 120, fps = 10)
-animate(animation, height = 600, width = 700, nframes = 60, fps = 10)
-
-
-### Plot image - Single category ###
-plot_data <- plotuse %>% filter(category == 'Knits' & days_active >= 30)
-p <- setup_plot_image(plot_data, xmax = 5, ymax = 100, log_trans = TRUE)
-animation <- p + transition_time(date) + labs(title = "Date: {frame_time}")
-animate(animation, height = 1000, width = 1100, nframes = 120, fps = 24)
+### Animate all - point plot
+animation <- plotuse %>% filter(days_active >= 30) %>%
+    setup_plot_point(xmax = 10, ymax = 20, log_trans = TRUE) +
+    transition_time(date) + labs(title = "Date: {frame_time}") + ease_aes('linear')
+animate(animation, height = 1000, width = 1100, nframes = 404, fps = 24, end_pause = 72)
+anim_save("Plots/Threddit-animation-Category-Avgerage_yearly_cost-vs-category_daily_use-point-all-1000x1100-24fps-404-frames.gif")
 
 
-### Plot mutiple categories
+### Animate single category - point plot
+animation <- plotuse %>% filter(category == 'Socks' & days_active >= 30) %>%
+    setup_plot_point(xmax = 3, ymax = 3, log_trans = TRUE) +
+    transition_time(date) + labs(title = "Date: {frame_time}") + ease_aes('linear')
+animate(animation, height = 1000, width = 1100, nframes = 404, fps = 24, end_pause = 72)
+anim_save("Plots/Threddit-animation-Category-Avgerage_yearly_cost-vs-category_daily_use-point-Socks-1000x1100-24fps-404-frames.gif")
+
+
+### Animate single category - image plot 
+animation <- plotuse %>% filter(category == 'Knits' & days_active >= 30) %>%
+    setup_plot_image(xmax = 0.5, ymax = 30, log_trans = TRUE) +
+    transition_time(date) + labs(title = "Date: {frame_time}") + ease_aes('linear')
+animate(animation, height = 1000, width = 1000, nframes = 404, fps = 24, end_pause = 72)
+anim_save("Plots/Threddit-animation-Category-Avgerage_yearly_cost-vs-category_daily_use-image-Knits-1000x1100-24fps-404-frames.gif")
+
+
+### Animate mutiple categories - point plot
 unique(plotuse$category)
 categories_to_plot <- c('Underwear shirts', 'Underwear boxers', 'Socks')
-plot_data <- plotuse %>% filter(category %in% categories_to_plot & days_active >= 30)
-p <- setup_plot_point(plot_data, xmax = 5, ymax = 15, log_trans = TRUE)
+animation <- plotuse %>% filter(category %in% categories_to_plot & days_active >= 30) %>%
+    setup_plot_point(xmax = 5, ymax = 15, log_trans = TRUE) +
+    transition_time(date) + labs(title = "Date: {frame_time}") + ease_aes('linear')
+animate(animation, height = 1000, width = 1100, nframes = 404, fps = 24, end_pause = 72)
+anim_save("Plots/Threddit-animation-Category-Avgerage_yearly_cost-vs-category_daily_use-image-Multiple-1000x1100-24fps-404-frames.gif")
 
 
-### Plot last date only
-plot_data <- plotuse %>% filter(category == 'Shorts' & days_active >= 30 & date == max(plotuse$date))
-plot_data <- plotuse %>% filter(days_active >= 30 & date == max(plotuse$date))
-p <- setup_plot_image(plot_data, xmax = 4, ymax = 20, log_trans = TRUE)
-p
 
 #######################################################################
 ### Plot single category with vertical and horizontal average lines ###
 #######################################################################
-
-unique(itemuse$category)
 
 ### Set data and line plot color by category
 
@@ -335,7 +344,7 @@ p <- setup_plot_point(plot_data, xmax = 5, ymax = 100, log_trans = TRUE) +
 p
 
 # Animate with frame = date
-animation <- p + transition_time(date) + labs(title = "Date: {frame_time}")
+animation <- p + transition_time(date) + labs(title = "Date: {frame_time}") + ease_aes('linear')
 
 # 600 resolution, 202 frames, 10 fps
 animate(animation, height = 600, width = 700, nframes = 202, fps = 10)

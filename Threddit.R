@@ -65,13 +65,14 @@ totaluse <- calculate_total_use_data(cumulativeuse)
 plotuse <- calculate_plot_data(totaluse)
 
 
-### Save master plotting data to file to avoid 5 min reprocessing
+### Save master plotting data to file to avoid repetitive reprocessing
 
 # Save tidy data data.frame to file for easier retrieval
 save(plotuse,file="Data/Threddit-plotuse-2020-04-14.Rda")
 
 # Load data from file
 load("Data/Threddit-plotuse-2020-04-14.Rda")
+
 
 
 ###########################################################
@@ -286,11 +287,11 @@ anim_save("Plots/Threddit-animation-Category-Avgerage_yearly_cost-vs-category_da
 
 
 ### Animate single category - image plot 
-animation <- plotuse %>% filter(category == 'Knits' & days_active >= 30) %>%
-    setup_plot_image(xmax = 0.5, ymax = 30, log_trans = TRUE) +
+animation <- plotuse %>% filter(category == 'Shorts' & days_active >= 30) %>%
+    setup_plot_image(xmax = 4, ymax = 20, log_trans = TRUE) +
     transition_time(date) + labs(title = "Date: {frame_time}") + ease_aes('linear')
 animate(animation, height = 1000, width = 1000, nframes = 404, fps = 24, end_pause = 72)
-anim_save("Plots/Threddit-animation-Category-Avgerage_yearly_cost-vs-category_daily_use-image-Knits-1000x1100-24fps-404-frames.gif")
+anim_save("Plots/Threddit-animation-Category-Avgerage_yearly_cost-vs-category_daily_use-image-Shorts-1000x1000-24fps-404-frames.gif")
 
 
 ### Animate mutiple categories - point plot

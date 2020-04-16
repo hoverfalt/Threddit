@@ -22,15 +22,13 @@ calculate_plot_data <- function(totaluse){
     calculate_plot_size <- function(active) { ifelse(active == TRUE, 0.05, 0.07) }
     plotuse <- plotuse %>% mutate(plot_size = calculate_plot_size(active))
     
-    # Add item photo variable and dummy photo as default
-    plotuse <- plotuse %>% mutate(photo = "Photos/Dummy-photo.png")
+    # Extract item photos and convert item to factor matching main data frame
+    item_photos <- masterdata %>% distinct(Item, .keep_all = TRUE) %>%
+        select(item = Item, photo = Photo) %>%
+        mutate(item = factor(item), photo = paste("Photos/", photo,".png", sep=""))
     
-    # Load photo URIs from masterdata (consider refactoring)
-    for (i in unique(plotuse$item)) {
-        plotuse <- plotuse %>% mutate(photo = case_when(
-            item == i ~ paste("Photos/", masterdata$Photo[masterdata$Item == i],".png", sep=""),
-            item != i ~ photo))
-    }
+    # Add item photo data to main data frame
+    plotuse <- plotuse %>% left_join(item_photos, by = "item")
     
     return(plotuse)
 }

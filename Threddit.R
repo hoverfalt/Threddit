@@ -378,6 +378,132 @@ anim_save("Threddit-animation-Cost_per_use-vs-Days_active-log-lin-point-Socks-60
 view_follow(fixed_y = TRUE)
 
 
+
+
+###############################################
+### OVERLAY FITBIT STEP DATA  WITH ITEM USE ###
+###############################################
+
+### Fetch step data ###
+
+# Load required packages
+library(fitbitr)
+
+# Source required files
+source("Fitbit-API-Key.R")
+
+# Set Fitbit key and secret
+FITBIT_KEY    <- get_fitbit_key()
+FITBIT_SECRET <- get_fitbit_secret()
+FITBIT_CALLBACK <- "http://localhost:1410/" 
+
+# Authenticate and get token
+token <- fitbitr::oauth_token()
+
+# Set date of latest data
+date <- "2020-04-25"
+
+# Get daily step data for entire item data period and remove duplicates
+steps_2020 <- get_activity_time_series(token, "steps", date=date, period="1y")
+steps_2019 <- get_activity_time_series(token, "steps", date="2019-12-31", period="1y")
+steps_2018 <- get_activity_time_series(token, "steps", date="2018-12-31", period="1y")
+steps <- rbind(steps_2020, rbind(steps_2018, steps_2019))
+steps <- steps[!duplicated(steps$dateTime),]
+
+# Remove temporary variables
+rm(steps_2020)
+rm(steps_2019)
+rm(steps_2018)
+
+# Convert variables to correct type and arrange by date
+steps <- steps %>%
+  mutate(date = as.Date(dateTime, "%Y-%m-%d")) %>%
+  mutate(steps = as.numeric(value)) %>%
+  select(-dateTime, -value) %>%
+  arrange(date)
+# Alt: mutate(date = as.POSIXct(strptime(steps$dateTime, "%Y-%m-%d"))) %>%
+
+# Save steps data.frame to file for easier retrieval
+save(steps,file="Data/Threddit-steps-2020-04-26.Rda")
+
+# Load data from file
+load("Data/Threddit-steps-2020-04-26.Rda")
+
+# Plot steps
+ggplot2::ggplot(steps, aes(x=date, y=steps)) + geom_col()
+
+
+
+### Add step data to items ###
+
+rm(shoe_use)
+
+# Create shoe use data set
+shoe_use <- plotuse %>% filter(category == "Shoes") %>%
+  select(item, date, used, cumuse, days_active, active, photo)
+
+# Find days with multiple items used, minimum 1
+multiple_use <- shoe_use %>% group_by(date) %>% summarise(count = sum(used))
+multiple_use$count[multiple_use$count == 0] <- 1
+
+# Allocate daily steps to item(s) used on corresponding dates
+shoe_use <- merge(shoe_use, steps)
+shoe_use <- merge(shoe_use, multiple_use)
+shoe_use <- shoe_use %>% mutate(steps = steps * used / count) %>% select(-count)
+
+# Remove temporary variable
+rm(multiple_use)
+
+# Calculate cumulative steps
+shoe_use <- shoe_use %>%
+  group_by(item) %>%
+  mutate(cumsteps = cumsum(steps)) %>%
+  ungroup()
+
+# Initiate variable cumsteps_init 
+shoe_use <- shoe_use %>%
+  mutate(cumsteps_init = as.double(0))
+
+# Find shoes used prior to data collection started 2018-01-01
+steps_init <- shoe_use %>%
+  ungroup() %>%
+  filter(date == "2018-01-01" & cumuse > 0) %>%
+  select(item, cumuse, steps)
+
+# Calculate initial cumulative use for applicable items
+for (item in steps_init$item){
+  shoe_use$cumsteps_init[shoe_use$item == item] <-
+    round(mean(shoe_use$steps[shoe_use$item == item & shoe_use$steps > 0]) * steps_init$cumuse[steps_init$item == item], digits=0)
+} 
+
+# Remove temporary variable
+rm(steps_init)
+
+# Correct cumulative steps by initial cumulative steps
+shoe_use <- shoe_use %>%
+  mutate(cumsteps = cumsteps + cumsteps_init) %>%
+  select(-cumsteps_init)
+
+str(shoe_use)
+
+
+### Plot item step data ###
+
+# Print total steps by item
+shoe_use %>% group_by(item) %>%
+  filter(cumsteps == max(cumsteps) & date == max(date)) %>%
+  arrange(desc(cumsteps))
+
+# Plot total steps by item
+shoe_use %>% group_by(item) %>%
+  filter(cumsteps == max(cumsteps) & date == max(date)) %>%
+  arrange(desc(cumsteps)) %>%
+  ggplot(aes(x=item, y=cumsteps)) + geom_col() + coord_flip()
+
+
+
+
+
 ###################################################
 #################### Resources ####################
 ###################################################

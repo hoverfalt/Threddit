@@ -22,6 +22,8 @@ library(gganimate)
 library(gifski)
 library(ggimage)
 library(roll)
+library(Cairo)
+
 
 # Source required files
 source("01-Read_and_preprocess_data.R")
@@ -68,10 +70,10 @@ plotuse <- calculate_plot_data(totaluse)
 ### Save master plotting data to file to avoid repetitive reprocessing
 
 # Save tidy data data.frame to file for easier retrieval
-save(plotuse,file="Data/Threddit-plotuse-2020-04-14.Rda")
+save(plotuse,file="Data/Threddit-plotuse-2020-05-02.Rda")
 
 # Load data from file
-load("Data/Threddit-plotuse-2020-04-14.Rda")
+load("Data/Threddit-plotuse-2020-05-02.Rda")
 
 
 
@@ -262,28 +264,62 @@ anim_save("Threddit-animation-Category-Avgerage_yearly_cost-vs-category_daily_us
 
 
 ### Plot last date only (current status)
-p <- plotuse %>% filter(category == 'Shorts' & date == max(plotuse$date)) %>%
-    setup_plot_image(xmax = 4, ymax = 20, log_trans = TRUE)
+p <- plotuse %>% filter(category == 'Shoes' & date == max(plotuse$date)) %>%
+    setup_plot_image(xmax = 10, ymax = 16, log_trans = TRUE)
 p
-ggsave(filename = "Plots/Threddit-image_plot-Category-Avgerage_yearly_cost-vs-category_daily_use-image-Knits-300x300mm-300dpi.png", p,
-       width = 300, height = 300, dpi = 300, units = "mm", device='png')
+
+
+### TESTING ###
+# Testing marking divested items with geom_point circles
+# Issue: circles don't follow the image z/depth order
+
+p <- plotuse %>% filter(category == 'Shoes' & date == max(plotuse$date)) %>%
+  ggplot(
+  aes(x = use_per_month, y = cost_per_use)) +
+  geom_point(size = 38, pch = 1, colour="blue", stroke = 1.5) +
+  geom_image(aes(image = photo), size = 0.1) +
+  scale_x_continuous(limits=c(NA,10)) +
+  labs(x = "Average times used per month", y = "Cost per use (€)") +
+  scale_y_continuous(trans="log10", limits=c(NA,16))
+p
+
+ggsave(filename = "Plots/Threddit-image_plot-Category-Avgerage_yearly_cost-vs-category_daily_use-image-Shoes-Rings-300x300mm-300dpi.png",
+       p, width = 300, height = 300, dpi = 300, units = "mm", device=png())
+
+
+length(unique(plotuse$date))
+
+library(lubridate)
+wday(plotuse$date) %in% c(1)
+
+
+### Animate single category - image plot 
+animation <- plotuse %>% filter(category == 'Shoes' & days_active >= 30) %>%
+  setup_plot_image(xmax = 10, ymax = 16, log_trans = TRUE) +
+  transition_time(date) + labs(title = "Date: {frame_time}") + ease_aes('linear')
+animate(animation, height = 1000, width = 1000, nframes = 100, fps = 24, end_pause = 72)
+anim_save("Plots/Threddit-animation-Category-Avgerage_yearly_cost-vs-category_daily_use-image-Shoes-1000x1000-24fps-404-frames.gif")
+
+
+plotuse %>% filter(category == 'Shoes' & days_active >= 30 & wday(date) == 1) %>% nrow()
+
 
 
 
 ### Animate all - point plot
 animation <- plotuse %>% filter(days_active >= 30) %>%
-    setup_plot_point(xmax = 10, ymax = 20, log_trans = TRUE) +
+    setup_plot_image(xmax = 10, ymax = 16, log_trans = TRUE) +
     transition_time(date) + labs(title = "Date: {frame_time}") + ease_aes('linear')
 animate(animation, height = 1000, width = 1100, nframes = 404, fps = 24, end_pause = 72)
 anim_save("Plots/Threddit-animation-Category-Avgerage_yearly_cost-vs-category_daily_use-point-all-1000x1100-24fps-404-frames.gif")
 
 
 ### Animate single category - point plot
-animation <- plotuse %>% filter(category == 'Socks' & days_active >= 30) %>%
-    setup_plot_point(xmax = 3, ymax = 3, log_trans = TRUE) +
+animation <- plotuse %>% filter(category == 'Shoes' & days_active >= 30) %>%
+    setup_plot_image(xmax = 10, ymax = 16, log_trans = TRUE) +
     transition_time(date) + labs(title = "Date: {frame_time}") + ease_aes('linear')
-animate(animation, height = 1000, width = 1100, nframes = 404, fps = 24, end_pause = 72)
-anim_save("Plots/Threddit-animation-Category-Avgerage_yearly_cost-vs-category_daily_use-point-Socks-1000x1100-24fps-404-frames.gif")
+animate(animation, height = 1000, width = 1080, nframes = 404, fps = 24, end_pause = 72)
+anim_save("Plots/Threddit-animation-Category-Avgerage_yearly_cost-vs-category_daily_use-point-Shoes-1000x1100-24fps-404-frames.gif")
 
 
 ### Animate single category - image plot 

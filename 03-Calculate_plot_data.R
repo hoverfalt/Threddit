@@ -172,7 +172,7 @@ setup_plot_image <- function(plot_data, xmax, ymax, log_trans=TRUE) {
     p <- ggplot(
         plot_data, 
         aes(x = use_per_month, y = cost_per_use)) +
-        geom_image(aes(image = photo), size = plot_data$plot_size) +
+        geom_image(aes(image = photo), size = 0.1) +
         scale_x_continuous(limits=c(NA,xmax)) +
         labs(x = "Average times used per month", y = "Cost per use (€)")
     

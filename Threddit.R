@@ -21,8 +21,9 @@ library(plotly)
 library(gganimate)
 library(gifski)
 library(ggimage)
+library(lubridate)
 library(roll)
-library(Cairo)
+#library(Cairo)
 
 
 # Source required files
@@ -70,10 +71,10 @@ plotuse <- calculate_plot_data(totaluse)
 ### Save master plotting data to file to avoid repetitive reprocessing
 
 # Save tidy data data.frame to file for easier retrieval
-save(plotuse,file="Data/Threddit-plotuse-2020-05-02.Rda")
+save(plotuse,file="Data/Threddit-plotuse-2020-05-22.Rda")
 
 # Load data from file
-load("Data/Threddit-plotuse-2020-05-02.Rda")
+load("Data/Threddit-plotuse-2020-05-22.Rda")
 
 
 
@@ -254,6 +255,8 @@ anim_save("Threddit-animation-Category-Avgerage_yearly_cost-vs-category_daily_us
 
 
 
+
+
 ########################################################
 #################### CATEGORY PLOTS ####################
 ########################################################
@@ -273,23 +276,71 @@ p
 # Testing marking divested items with geom_point circles
 # Issue: circles don't follow the image z/depth order
 
+str(plotuse)
+
+
+## SHOES ##
+# Cost per use x Use per month 
 p <- plotuse %>% filter(category == 'Shoes' & date == max(plotuse$date)) %>%
   ggplot(
   aes(x = use_per_month, y = cost_per_use)) +
-  geom_point(size = 38, pch = 1, colour="blue", stroke = 1.5) +
   geom_image(aes(image = photo), size = 0.1) +
   scale_x_continuous(limits=c(NA,10)) +
   labs(x = "Average times used per month", y = "Cost per use (€)") +
   scale_y_continuous(trans="log10", limits=c(NA,16))
 p
+#  geom_point(size = 38, pch = 1, colour="blue", stroke = 1.5) +
 
-ggsave(filename = "Plots/Threddit-image_plot-Category-Avgerage_yearly_cost-vs-category_daily_use-image-Shoes-Rings-300x300mm-300dpi.png",
+ggsave(filename = "Plots/Threddit-image_plot-Category-Avgerage_yearly_cost-vs-category_daily_use-image-Shoes-b-300x300mm-300dpi.png",
        p, width = 300, height = 300, dpi = 300, units = "mm", device=png())
 
 
-length(unique(plotuse$date))
+# Cost per use x Cumulative use 
+p <- plotuse %>% filter(category == 'Shoes' & date == max(plotuse$date)) %>%
+  ggplot(
+    aes(x = cumuse, y = cost_per_use)) +
+  geom_image(aes(image = photo), size = 0.1) +
+  scale_x_continuous(limits=c(0,320)) +
+  labs(x = "Cumulative times used", y = "Cost per use (€)") +
+  scale_y_continuous(trans="log10", limits=c(NA,16))
+p
 
-library(lubridate)
+ggsave(filename = "Plots/Threddit-image_plot-Category-Cost_per_use-vs-cumuse-image-Shoes-300x300mm-300dpi.png",
+       p, width = 300, height = 300, dpi = 300, units = "mm", device=png())
+
+
+## SHIRTS ##
+
+# Last date only
+plot_data <- plotuse %>% filter(category == 'Shirts' & days_active >= 30 & date == max(plotuse$date))
+category_color <- category_colors["Shirts"]
+
+# Calculate averages for divested items. slice(1) reduces the amount of the same averages to one per category
+avg_merge_divested <- plot_data %>% filter(active == FALSE) %>%
+  mutate(avg_use_per_month_divested = mean(use_per_month), avg_cost_per_use_divested = mean(cost_per_use)) %>% slice(1)
+plot_data <- merge(plot_data, avg_merge_divested, all = TRUE)
+
+
+# Cost per use x Use per month 
+p <- plot_data %>% filter(category == 'Shirts' & date == max(plotuse$date)) %>%
+  ggplot(
+  aes(x = use_per_month, y = cost_per_use)) +
+  geom_vline(aes(xintercept = avg_use_per_month_divested), size = 0.8, colour = "darkgray", linetype = "dotted") +
+  geom_hline(aes(yintercept = avg_cost_per_use_divested), size = 0.8, colour = "darkgray", linetype = "dotted") +
+  geom_image(aes(image = photo), size = 0.08) +
+  scale_x_continuous(limits=c(NA,3)) +
+  labs(x = "Average times used per month", y = "Cost per use (€)") +
+  scale_y_continuous(trans="log10", limits=c(NA,30))
+p
+
+ggsave(filename = "Plots/Threddit-Category-Avgerage_yearly_cost-vs-category_daily_use-Shoes-image-10x10in-300dpi.png",
+       p, width = 10, height = 10, dpi = 300, units = "in", device=png())
+
+
+
+
+
+length(unique(plotuse$date))
 wday(plotuse$date) %in% c(1)
 
 
@@ -297,9 +348,8 @@ wday(plotuse$date) %in% c(1)
 animation <- plotuse %>% filter(category == 'Shoes' & days_active >= 30) %>%
   setup_plot_image(xmax = 10, ymax = 16, log_trans = TRUE) +
   transition_time(date) + labs(title = "Date: {frame_time}") + ease_aes('linear')
-animate(animation, height = 1000, width = 1000, nframes = 100, fps = 24, end_pause = 72)
-anim_save("Plots/Threddit-animation-Category-Avgerage_yearly_cost-vs-category_daily_use-image-Shoes-1000x1000-24fps-404-frames.gif")
-
+animate(animation, height = 1000, width = 1000, nframes = 1507, fps = 50, end_pause = 72)
+anim_save("Plots/Threddit-animation-Category-Avgerage_yearly_cost-vs-category_daily_use-image-Shoes-1000x1000-50fps-1507-frames.gif")
 
 plotuse %>% filter(category == 'Shoes' & days_active >= 30 & wday(date) == 1) %>% nrow()
 

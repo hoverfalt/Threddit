@@ -71,10 +71,10 @@ plotuse <- calculate_plot_data(totaluse)
 ### Save master plotting data to file to avoid repetitive reprocessing
 
 # Save tidy data data.frame to file for easier retrieval
-save(plotuse,file="Data/Threddit-plotuse-2020-05-22.Rda")
+save(plotuse,file="Data/Threddit-plotuse-2020-05-31.Rda")
 
 # Load data from file
-load("Data/Threddit-plotuse-2020-05-22.Rda")
+load("Data/Threddit-plotuse-2020-05-31.Rda")
 
 
 
@@ -333,7 +333,7 @@ p <- plot_data %>% filter(category == 'Shirts' & date == max(plotuse$date)) %>%
   scale_y_continuous(trans="log10", limits=c(NA,30))
 p
 
-ggsave(filename = "Plots/Threddit-Category-Avgerage_yearly_cost-vs-category_daily_use-Shoes-image-10x10in-300dpi.png",
+ggsave(filename = "Plots/Threddit-Category-Avgerage_yearly_cost-vs-category_daily_use-Shirts-image-10x10in-300dpi.png",
        p, width = 10, height = 10, dpi = 300, units = "in", device=png())
 
 
@@ -344,12 +344,59 @@ length(unique(plotuse$date))
 wday(plotuse$date) %in% c(1)
 
 
+## Rewrite animation setup to follow the above.
+## Amination photo size 95x95px (still plot 228x228px)
+
+# All dates
+plot_data <- plotuse %>% filter(category == 'Shirts' & days_active >= 30)
+category_color <- category_colors["Shirts"]
+
+# Group plot data by animation frame (date)
+plot_data <- plot_data %>% group_by(date)
+
+# Calculate variable averages by group i.e. frame (day). Include only one item per frame, rest become NA
+avg_merge_divested <- plot_data %>% filter(active == FALSE) %>%
+  mutate(avg_use_per_month_divested = mean(use_per_month), avg_cost_per_use_divested = mean(cost_per_use)) %>% slice(1)
+#avg_merge_active <- plot_data %>% filter(active == TRUE) %>%
+#  mutate(avg_use_per_month_active = mean(use_per_month), avg_cost_per_use_active = mean(cost_per_use)) %>% slice(1)
+#avg_merge <- rbind(avg_merge_divested, avg_merge_active)
+#plot_data <- merge(plot_data, avg_merge, all = TRUE)
+plot_data <- merge(plot_data, avg_merge_divested, all = TRUE)
+
+# Clear temp variables from memory
+#avg_merge_active <- NULL
+avg_merge_divested <- NULL
+#avg_merge <- NULL
+
+
+# Animation setup: 1000x1000px, photo size 0.1 -> 95px (0.08 -> 77px)
+## DO NEXT: replace photo ".png" with "-small.png" in photo string
+
 ### Animate single category - image plot 
-animation <- plotuse %>% filter(category == 'Shoes' & days_active >= 30) %>%
-  setup_plot_image(xmax = 10, ymax = 16, log_trans = TRUE) +
+animation <- plot_data %>%
+  ggplot(aes(x = use_per_month, y = cost_per_use)) +
+  geom_vline(aes(xintercept = avg_use_per_month_divested), size = 0.8, colour = "darkgray", linetype = "dotted") +
+  geom_hline(aes(yintercept = avg_cost_per_use_divested), size = 0.8, colour = "darkgray", linetype = "dotted") +
+  geom_image(aes(image = photo_small), size = 0.1) +
+  scale_x_continuous(limits=c(NA,3)) +
+  scale_y_continuous(trans="log10", limits=c(NA,30)) +
+  labs(x = "Average times used per month", y = "Cost per use (€)") +
+  theme(plot.margin = margin(t = 5, r = 21, b = 5, l = 5, unit = "pt")) +  # Bare: t=18, r=0, b=26, l=28 (v=44, h=28 (-16)) -> 940x940pt
+  theme(axis.text=element_text(size=12), axis.title=element_text(size=14)) + # 
   transition_time(date) + labs(title = "Date: {frame_time}") + ease_aes('linear')
-animate(animation, height = 1000, width = 1000, nframes = 1507, fps = 50, end_pause = 72)
-anim_save("Plots/Threddit-animation-Category-Avgerage_yearly_cost-vs-category_daily_use-image-Shoes-1000x1000-50fps-1507-frames.gif")
+animate(animation, height = 1000, width = 1000, nframes = 879, fps = 24, end_pause = 72)
+anim_save("Plots/Animation-Category-Shirts-1000x1000-24fps-879frames.gif")
+#879 frames
+
+
+
+### Animate single category - image plot 
+animation <- plotuse %>% filter(category == 'Shirts' & days_active >= 30) %>%
+  setup_plot_image(xmax = 3, ymax = 16, log_trans = TRUE) +
+  transition_time(date) + labs(title = "Date: {frame_time}") + ease_aes('linear')
+animate(animation, height = 1000, width = 1000, nframes = 879, fps = 24, end_pause = 72)
+anim_save("Plots/Threddit-animation-Category-Avgerage_yearly_cost-vs-category_daily_use-image-Shoes-1000x1000-24fps-879-frames.gif")
+
 
 plotuse %>% filter(category == 'Shoes' & days_active >= 30 & wday(date) == 1) %>% nrow()
 

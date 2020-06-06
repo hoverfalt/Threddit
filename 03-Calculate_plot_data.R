@@ -29,7 +29,7 @@ calculate_plot_data <- function(totaluse){
     
     # Add item photo data to main data frame
     plotuse <- plotuse %>% left_join(item_photos, by = "item")
-    
+        
     return(plotuse)
 }
 
@@ -172,7 +172,9 @@ setup_plot_image <- function(plot_data, xmax, ymax, log_trans=TRUE) {
     p <- ggplot(
         plot_data, 
         aes(x = use_per_month, y = cost_per_use)) +
-        geom_image(aes(image = photo), size = 0.1) +
+        geom_vline(aes(xintercept = avg_use_per_month_divested), size = 0.8, colour = "darkgray", linetype = "dotted") +
+        geom_hline(aes(yintercept = avg_cost_per_use_divested), size = 0.8, colour = "darkgray", linetype = "dotted") +
+        geom_image(aes(image = photo), size = 0.08) +
         scale_x_continuous(limits=c(NA,xmax)) +
         labs(x = "Average times used per month", y = "Cost per use (€)")
     
@@ -181,4 +183,65 @@ setup_plot_image <- function(plot_data, xmax, ymax, log_trans=TRUE) {
     
     return(p)
 }
+
+
+# Function to setup (multi) category point plot y = cost per use, x = monthly use
+setup_category_plot_point <- function(plot_data, categories, xmax, ymax, log_trans=TRUE, avg_lines=TRUE) {
+    
+    # Filter data by categories and last date used only
+    plot_data <- plot_data %>% filter(category %in% categories & date == max(plot_data$date))
+
+    # Set up plot
+    p <- ggplot(
+        plot_data, 
+        aes(x = use_per_month, y = cost_per_use, colour = category)) +
+        geom_point(show.legend = TRUE, aes(alpha = plot_size, size = plot_size)) +
+        scale_x_continuous(limits=c(NA,xmax)) +
+        scale_color_manual(name = "Category", values = category_colors) +
+        scale_alpha(range = c(0.5, 1.0)) +
+        scale_size(range = c(2, 3)) +
+        guides(alpha = FALSE, size = FALSE) +
+        labs(x = "Average times used per month", y = "Cost per use (€)")
+
+    if (log_trans) { p <- p + scale_y_continuous(limits=c(NA,ymax), trans="log10") }
+    else { p <- p + scale_y_continuous(limits=c(NA,ymax)) }
+
+    if(avg_lines) {
+        for (cat in categories) {
+            avgx <- plot_data %>% filter(category == cat & !is.na(avg_use_per_month_divested)) %>% select(avg_use_per_month_divested) %>% slice(1) %>% as.numeric()
+            avgy <- plot_data %>% filter(category == cat & !is.na(avg_cost_per_use_divested)) %>% select(avg_cost_per_use_divested) %>% slice(1) %>% as.numeric()
+            p <- p +
+                geom_vline(xintercept = avgx, size = 0.8, colour = category_colors[cat], linetype = "dotted") +
+                geom_hline(yintercept = avgy, size = 0.8, colour = category_colors[cat], linetype = "dotted")
+        }
+    }
+    
+    return(p)
+}
+
+
+# Function to setup (multi) category image plot y = cost per use, x = monthly use
+setup_category_plot_image <- function(plot_data, categories, xmax, ymax, log_trans=TRUE) {
+
+    # Filter data by category and last date used only
+    plot_data <- plot_data %>% filter(category %in% categories & date == max(plot_data$date))
+
+    # Set up plot
+    p <- ggplot(
+        plot_data, 
+        aes(x = use_per_month, y = cost_per_use)) +
+        geom_vline(aes(xintercept = avg_use_per_month_divested), size = 0.8, colour = "darkgray", linetype = "dotted") +
+        geom_hline(aes(yintercept = avg_cost_per_use_divested), size = 0.8, colour = "darkgray", linetype = "dotted") +
+        geom_image(aes(image = photo), size = 0.08) +
+        scale_x_continuous(limits=c(NA,xmax)) +
+        labs(x = "Average times used per month", y = "Cost per use (€)")
+    
+    if (log_trans) { p <- p + scale_y_continuous(trans="log10", limits=c(NA,ymax)) }
+    else { p <- p + scale_y_continuous(limits=c(NA,ymax)) }
+    
+    return(p)
+}
+
+
+
 

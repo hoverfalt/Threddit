@@ -23,8 +23,6 @@ library(gifski)
 library(ggimage)
 library(lubridate)
 library(roll)
-#library(Cairo)
-
 
 # Source required files
 source("01-Read_and_preprocess_data.R")
@@ -262,7 +260,8 @@ anim_save("Threddit-animation-Category-Avgerage_yearly_cost-vs-category_daily_us
 ########################################################
 
 ### The following functions are used to set up standard category plots
-### Image plot: setup_category_plot_image(plot_data, cat, xmax, ymax, log_trans=TRUE)
+### Image plot: setup_category_plot_image(plot_data, cat, xmax, ymax, log_trans=TRUE, animated=FALSE)
+### Point plot: setup_category_plot_point(plot_data, cat, xmax, ymax, log_trans=TRUE, avg_lines=TRUE)
 
 ## SET UP CATEGORY PLOTS MASTER DATA
 
@@ -275,7 +274,7 @@ avg_merge_divested <- plot_data %>% filter(active == FALSE &  days_active >= 30)
   mutate(avg_use_per_month_divested = mean(use_per_month), avg_cost_per_use_divested = mean(cost_per_use)) %>%
   select(-use_per_month, -cost_per_use)
 plot_data <- merge(plot_data, avg_merge_divested, all = TRUE)
-avg_merge_divested <- NULL
+rm(avg_merge_divested)
 plot_data <- plot_data %>% ungroup()
 
 
@@ -293,6 +292,17 @@ ggsave(filename = "Plots/Category-Multiple-image.png", p, width = 10, height = 1
 dev.off()
 
 
+# Animated image plot (879 frames until 2020-05-28)
+
+animation <- plot_data %>% setup_category_plot_image("Shoes", xmax = 10, ymax = 16, log_trans=TRUE, animate=TRUE) +
+  transition_time(date) + labs(title = "Date: {frame_time}") + ease_aes('linear')
+animate(animation, height = 1000, width = 1000, nframes = 879, fps = 24, end_pause = 72)
+anim_save("Plots/Category-Shoes-image-animation.gif")
+
+
+
+
+
 ## STANDARD CATEGORY POINT PLOTS ##
 
 names(category_colors)
@@ -306,7 +316,7 @@ ggsave(filename = "Plots/Temp-test.png", p, width = 10, height = 10, dpi = 300, 
 dev.off()
 
 
-## ANIMATE ##
+
 
 # Earlier working solution 
 categories_to_plot <- c('Socks')
@@ -318,8 +328,9 @@ animate(animation, height = 1000, width = 1000, nframes = 404, fps = 24, end_pau
 
 
 
-
+###############
 ### TESTING ###
+###############
 
 # Cost per use x Cumulative use 
 p <- plot_data %>% filter(category == 'Shoes' & date == max(plot_data$date)) %>%
@@ -333,9 +344,6 @@ p
 
 # Save test plot
 ggsave(filename = "Plots/Temp-test.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
-
-
-
 
 
 
@@ -381,19 +389,7 @@ anim_save("Plots/Animation-Category-Shirts-1000x1000-24fps-879frames.gif")
 length(unique(plotuse$date))
 wday(plotuse$date) %in% c(1)
 
-
-
-### Animate single category - image plot 
-animation <- plotuse %>% filter(category == 'Shirts' & days_active >= 30) %>%
-  setup_plot_image(xmax = 3, ymax = 16, log_trans = TRUE) +
-  transition_time(date) + labs(title = "Date: {frame_time}") + ease_aes('linear')
-animate(animation, height = 1000, width = 1000, nframes = 879, fps = 24, end_pause = 72)
-anim_save("Plots/Threddit-animation-Category-Avgerage_yearly_cost-vs-category_daily_use-image-Shoes-1000x1000-24fps-879-frames.gif")
-
-
 plotuse %>% filter(category == 'Shoes' & days_active >= 30 & wday(date) == 1) %>% nrow()
-
-
 
 
 ### Animate all - point plot
@@ -403,22 +399,12 @@ animation <- plotuse %>% filter(days_active >= 30) %>%
 animate(animation, height = 1000, width = 1100, nframes = 404, fps = 24, end_pause = 72)
 anim_save("Plots/Threddit-animation-Category-Avgerage_yearly_cost-vs-category_daily_use-point-all-1000x1100-24fps-404-frames.gif")
 
-
 ### Animate single category - point plot
 animation <- plotuse %>% filter(category == 'Shoes' & days_active >= 30) %>%
     setup_plot_image(xmax = 10, ymax = 16, log_trans = TRUE) +
     transition_time(date) + labs(title = "Date: {frame_time}") + ease_aes('linear')
 animate(animation, height = 1000, width = 1080, nframes = 404, fps = 24, end_pause = 72)
 anim_save("Plots/Threddit-animation-Category-Avgerage_yearly_cost-vs-category_daily_use-point-Shoes-1000x1100-24fps-404-frames.gif")
-
-
-### Animate single category - image plot 
-animation <- plotuse %>% filter(category == 'Shorts' & days_active >= 30) %>%
-    setup_plot_image(xmax = 4, ymax = 20, log_trans = TRUE) +
-    transition_time(date) + labs(title = "Date: {frame_time}") + ease_aes('linear')
-animate(animation, height = 1000, width = 1000, nframes = 404, fps = 24, end_pause = 72)
-anim_save("Plots/Threddit-animation-Category-Avgerage_yearly_cost-vs-category_daily_use-image-Shorts-1000x1000-24fps-404-frames.gif")
-
 
 ### Animate mutiple categories - point plot
 unique(plotuse$category)
@@ -470,35 +456,16 @@ p <- setup_plot_point(plot_data, xmax = 5, ymax = 100, log_trans = TRUE) +
     geom_hline(aes(yintercept = avg_cost_per_use_active), colour = category_color, linetype = "dotted", alpha = 0.4)
 p
 
-# Animate with frame = date
-animation <- p + transition_time(date) + labs(title = "Date: {frame_time}") + ease_aes('linear')
-
-# 600 resolution, 202 frames, 10 fps
-animate(animation, height = 600, width = 700, nframes = 202, fps = 10)
-# 600 resolution, 404 frames, 24 fps
-animate(animation, height = 600, width = 700, nframes = 404, fps = 24, end_pause = 72)
-# 1000 resolution, 404 frames, 24 fps
-animate(animation, height = 1000, width = 1100, nframes = 404, fps = 24, end_pause = 72)
 
 
-###################################################################
-#################### Animating and saving plots ####################
-###################################################################
+##################################################
+#################### Notebook ####################
+##################################################
 
-# Without trails
-animation <- p + transition_time(date) + labs(title = "Date: {frame_time}")
-animate(animation, height = 600, width = 600, nframes = 120, fps = 10)
-
-# With trails
+# Add trails to animaton 
 animation <- p + transition_time(date) + labs(title = "Date: {frame_time}") +
     shadow_mark(alpha = 0.1, size = 0.5)
 animate(animation, height = 800, width = 1000, nframes = 120, fps = 10)
-
-# Calculate total number of frames with current data date range
-as.integer((max(plotuse$date)-min(plotuse$date))) 
-
-# Save animation to file
-anim_save("Threddit-animation-Cost_per_use-vs-Days_active-log-lin-point-Socks-600x700-24fps-404-frames-x.gif")
 
 # View follow
 view_follow(fixed_y = TRUE)

@@ -69,10 +69,10 @@ plotuse <- calculate_plot_data(totaluse)
 ### Save master plotting data to file to avoid repetitive reprocessing
 
 # Save tidy data data.frame to file for easier retrieval
-save(plotuse,file="Data/Threddit-plotuse-2020-05-31.Rda")
+save(plotuse,file="Data/Threddit-plotuse-2020-08-06.Rda")
 
 # Load data from file
-load("Data/Threddit-plotuse-2020-05-31.Rda")
+load("Data/Threddit-plotuse-2020-08-06.Rda")
 
 
 
@@ -280,14 +280,46 @@ plot_data <- plot_data %>% ungroup()
 
 ## STANDARD CATEGORY IMAGE PLOTS ##
 
-p <- plot_data %>% setup_category_plot_image("Shoes", xmax = 10, ymax = 16, log_trans=TRUE)
-ggsave(filename = "Plots/Category-Shoes-image.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
+# JACKETS AND HOODIES
+p <- plot_data %>% setup_category_plot_image("Jackets and hoodies", xmax = 14, ymax = 32, log_trans=TRUE)
+ggsave(filename = "Plots/Category-Jackets-image.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
 
+# BLAZERS AND VESTS
+
+# KNITS
+
+# SHIRTS
 p <- plot_data %>% setup_category_plot_image(cat = "Shirts", xmax = 3, ymax = 30, log_trans=TRUE)
 ggsave(filename = "Plots/Category-Shirts-image.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
 
+# T-SHIRTS AND TANKS
+
+# PANTS
+
+# SHORTS
+p <- plot_data %>% setup_category_plot_image(cat = "Shorts", xmax = 5, ymax = 16, log_trans=TRUE)
+ggsave(filename = "Plots/Category-Shorts-image.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
+
+# BELTS
+
+# SOCKS
+
+# SHOES
+p <- plot_data %>% setup_category_plot_image("Shoes", xmax = 8, ymax = 16, log_trans=TRUE)
+ggsave(filename = "Plots/Category-Shoes-image.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
+
+# UNDERWEAR SHIRTS
+
+# UNDERWEAR BOXERS
+
+
+# MULTI CATEGORY
 p <- plot_data %>% setup_category_plot_image(c("Shoes", "Shirts"), xmax = 10, ymax = 16, log_trans=TRUE)
 ggsave(filename = "Plots/Category-Multiple-image.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
+
+
+unique(plot_data$category)
+
 
 dev.off()
 

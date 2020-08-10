@@ -285,6 +285,8 @@ p <- plot_data %>% setup_category_plot_image("Jackets and hoodies", xmax = 14, y
 ggsave(filename = "Plots/Category-Jackets-image.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
 
 # BLAZERS AND VESTS
+p <- plot_data %>% setup_category_plot_image("Blazers and vests", xmax = 2, ymax = 64, log_trans=TRUE)
+ggsave(filename = "Plots/Category-Blazers-image.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
 
 # KNITS
 

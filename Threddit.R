@@ -40,7 +40,8 @@ date_column_number <- 12
 # Set category order (DEPENDENCY)
 category_order = c("Jackets and hoodies", "Blazers and vests", "Knits",
                    "Shirts", "T-shirts and tanks", "Pants", "Shorts", "Belts",
-                   "Socks", "Shoes", "Underwear shirts", "Underwear boxers")
+                   "Socks", "Shoes", "Underwear shirts", "Underwear boxers",
+                   "Sportswear")
 
 
 ################################################################
@@ -69,10 +70,10 @@ plotuse <- calculate_plot_data(totaluse)
 ### Save master plotting data to file to avoid repetitive reprocessing
 
 # Save tidy data data.frame to file for easier retrieval
-save(plotuse,file="Data/Threddit-plotuse-2020-08-06.Rda")
+save(plotuse,file="Data/Threddit-plotuse-2020-09-11.Rda")
 
 # Load data from file
-load("Data/Threddit-plotuse-2020-08-06.Rda")
+load("Data/Threddit-plotuse-2020-09-11.Rda")
 
 
 
@@ -87,7 +88,7 @@ theme_set(theme_gray())
 
 # Set plot palette 12 categories
 category_colors <- c('#960001', '#FC3334', '#FF9A02', '#FFDB05', '#4CDA00', '#00B0F0',
-                      '#0070C0', '#002060', '#A860E9', '#7030A0', '#A5A5A5', '#7B7B7B')
+                      '#0070C0', '#002060', '#A860E9', '#7030A0', '#A5A5A5', '#7B7B7B', '#444444')
 
 # Set color names by category name for consistend category colors in plots
 names(category_colors) <- levels(plotuse$category)
@@ -181,9 +182,10 @@ ggsave(filename = "Plots/Threddit-line_plot-Monthly_inventory-turnaround-300x250
 
 ### Daily cost with rolling average ###
 
-# Calculate daily cost and rolling daily cost in 90-day window 
+# Calculate daily cost and rolling daily cost in 90-day window (excluding sportswear)
 daily_cost <- plotuse %>%
     filter(used == TRUE) %>%
+    filter(category != "Sportswear") %>%
     select(item, date, cost_per_use) %>%
     group_by(item) %>% mutate(daily_cost = min(cost_per_use)) %>%
     group_by(date) %>% summarise(daily_cost = sum(daily_cost)) %>%
@@ -285,13 +287,13 @@ p <- plot_data %>% setup_category_plot_image("Jackets and hoodies", xmax = 14, y
 ggsave(filename = "Plots/Category-Jackets-image.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
 
 # BLAZERS AND VESTS
-p <- plot_data %>% setup_category_plot_image("Blazers and vests", xmax = 2, ymax = 64, log_trans=TRUE)
+p <- plot_data %>% setup_category_plot_image("Blazers and vests", xmax = 1.5, ymax = 64, log_trans=TRUE)
 ggsave(filename = "Plots/Category-Blazers-image.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
 
 # KNITS
 
 # SHIRTS
-p <- plot_data %>% setup_category_plot_image(cat = "Shirts", xmax = 3, ymax = 30, log_trans=TRUE)
+p <- plot_data %>% setup_category_plot_image(cat = "Shirts", xmax = 2.6, ymax = 20, log_trans=TRUE)
 ggsave(filename = "Plots/Category-Shirts-image.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
 
 # T-SHIRTS AND TANKS
@@ -314,6 +316,14 @@ ggsave(filename = "Plots/Category-Shoes-image.png", p, width = 10, height = 10, 
 
 # UNDERWEAR BOXERS
 
+# SPORTSWEAR
+p <- plot_data %>% setup_category_plot_image("Sportswear", xmax = 3.5, ymax = 64, log_trans=TRUE)
+ggsave(filename = "Plots/Category-Sportswear-image.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
+
+
+plot_data %>% select(category, item, date, used) %>% filter(category == "Sportswear") %>%
+  select(item) %>% unique()
+
 
 # MULTI CATEGORY
 p <- plot_data %>% setup_category_plot_image(c("Shoes", "Shirts"), xmax = 10, ymax = 16, log_trans=TRUE)
@@ -321,8 +331,6 @@ ggsave(filename = "Plots/Category-Multiple-image.png", p, width = 10, height = 1
 
 
 unique(plot_data$category)
-
-
 dev.off()
 
 

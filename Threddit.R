@@ -291,14 +291,20 @@ p <- plot_data %>% setup_category_plot_image("Blazers and vests", xmax = 1.5, ym
 ggsave(filename = "Plots/Category-Blazers-image.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
 
 # KNITS
+p <- plot_data %>% setup_category_plot_image(cat = "Knits", xmax = 0.35, ymax = 20, log_trans=TRUE)
+ggsave(filename = "Plots/Category-Knits-image.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
 
 # SHIRTS
 p <- plot_data %>% setup_category_plot_image(cat = "Shirts", xmax = 2.6, ymax = 20, log_trans=TRUE)
 ggsave(filename = "Plots/Category-Shirts-image.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
 
 # T-SHIRTS AND TANKS
+p <- plot_data %>% setup_category_plot_image(cat = "T-shirts and tanks", xmax = 3, ymax = 16, log_trans=TRUE)
+ggsave(filename = "Plots/Category-T-shirts-image.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
 
 # PANTS
+p <- plot_data %>% setup_category_plot_image(cat = "Pants", xmax = 8, ymax = 12, log_trans=TRUE)
+ggsave(filename = "Plots/Category-Pants-image.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
 
 # SHORTS
 p <- plot_data %>% setup_category_plot_image(cat = "Shorts", xmax = 5, ymax = 16, log_trans=TRUE)
@@ -349,12 +355,12 @@ anim_save("Plots/Category-Shoes-image-animation.gif")
 
 names(category_colors)
 
-p <- plot_data %>% setup_category_plot_point(categories = c("Shirts", "Shoes"), xmax = 4, ymax = 5, log_trans=FALSE)
+p <- plot_data %>% setup_category_plot_point(categories = c("Shirts", "Pants", "Shoes"), xmax = 4, ymax = 5, log_trans=FALSE)
 p <- plot_data %>% setup_category_plot_point(categories = c("Underwear shirts", "Underwear boxers"), xmax = 3.5, ymax = 2, log_trans=FALSE)
-p <- plot_data %>% setup_category_plot_point(categories = names(category_colors), xmax = 4, ymax = 5, log_trans=FALSE, avg_lines=FALSE)
+p <- plot_data %>% setup_category_plot_point(categories = names(category_colors), xmax = 8, ymax = 64, log_trans=TRUE, avg_lines=FALSE)
 p
 
-ggsave(filename = "Plots/Temp-test.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
+ggsave(filename = "Plots/Category-All-point.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
 dev.off()
 
 

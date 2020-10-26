@@ -20,6 +20,18 @@ read_data <- function (data_file = "Threddit.xlsx"){
     
     # Remove rows with <NA> in first column
     masterdata <- masterdata[complete.cases(masterdata[ , 1]),]
+
+    # Convert purchase and divestement dates from character to date
+    masterdata <- masterdata %>%
+        mutate(`Date purchased` = as.Date(as.numeric(`Date purchased`), origin = "1899-12-30")) %>%
+        mutate(`Date divested` = as.Date(as.numeric(`Date divested`), origin = "1899-12-30"))
+
+    # Convert item initial times used from character to numeric
+    masterdata <- masterdata %>% mutate(`Times used init` = as.numeric(`Times used init`))
+        
+    # Convert item price from character to double
+    masterdata <- masterdata %>% mutate(Price = as.numeric(Price))
+    
     
     # Extract and convert column names from integers to date strings (set global variable)
     daterange <<-
@@ -64,8 +76,8 @@ transform_data <- function (masterdata){
     for (loop_item in unique(itemuse$item)) {
         
         # Set first active use date location, default date_column_number
-        date_purchased <- max(as.Date(masterdata$`Date purchased`[masterdata$Item == loop_item]), as.Date(daterange[[1]]), na.rm = TRUE)
-        date_divested <- min(as.Date(masterdata$`Date divested`[masterdata$Item == loop_item]), as.Date(daterange[[length(daterange)]]), na.rm = TRUE)
+        date_purchased <- max(masterdata$`Date purchased`[masterdata$Item == loop_item], daterange[[1]], na.rm = TRUE)
+        date_divested <- min(masterdata$`Date divested`[masterdata$Item == loop_item], daterange[[length(daterange)]], na.rm = TRUE)
         
         itemuse <- itemuse %>% filter(!((item == loop_item) & (date < date_purchased)))
         itemuse <- itemuse %>% filter(!((item == loop_item) & (date > date_divested)))

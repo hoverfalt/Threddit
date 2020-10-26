@@ -70,10 +70,10 @@ plotuse <- calculate_plot_data(totaluse)
 ### Save master plotting data to file to avoid repetitive reprocessing
 
 # Save tidy data data.frame to file for easier retrieval
-save(plotuse,file="Data/Threddit-plotuse-2020-09-11.Rda")
+save(plotuse,file="Data/Threddit-plotuse-2020-10-25.Rda")
 
 # Load data from file
-load("Data/Threddit-plotuse-2020-09-11.Rda")
+load("Data/Threddit-plotuse-2020-10-25.Rda")
 
 
 
@@ -319,6 +319,8 @@ p <- plot_data %>% setup_category_plot_image("Shoes", xmax = 8, ymax = 16, log_t
 ggsave(filename = "Plots/Category-Shoes-image.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
 
 # UNDERWEAR SHIRTS
+p <- plot_data %>% setup_category_plot_image("Underwear shirts", xmax = 3, ymax = 8, log_trans=TRUE)
+ggsave(filename = "Plots/Category-Underwear_shirts-image.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
 
 # UNDERWEAR BOXERS
 
@@ -346,6 +348,11 @@ animation <- plot_data %>% setup_category_plot_image("Shoes", xmax = 10, ymax = 
   transition_time(date) + labs(title = "Date: {frame_time}") + ease_aes('linear')
 animate(animation, height = 1000, width = 1000, nframes = 879, fps = 24, end_pause = 72)
 anim_save("Plots/Category-Shoes-image-animation.gif")
+
+animation <- plot_data %>% setup_category_plot_image("Pants", xmax = 8, ymax = 12, log_trans=TRUE, animate=TRUE) +
+  transition_time(date) + labs(title = "Date: {frame_time}") + ease_aes('linear')
+animate(animation, height = 1000, width = 1000, nframes = 879, fps = 24, end_pause = 72)
+anim_save("Plots/Category-Pants-image-animation.gif")
 
 
 

@@ -49,7 +49,8 @@ calculate_portfolio_plot_data <- function(plotuse){
     # Count number of active items grouped by category and date
     inventory <- plotuse %>% filter(active == TRUE) %>%
         group_by(category, date) %>%
-        summarise(itemcount = n_distinct(item))
+        summarise(itemcount = n_distinct(item)) %>%
+        as.data.frame()
     
     # List item values from master data
     itemvalues <- masterdata %>% select(Item, Price, Category) %>% rename(item = Item, price = Price, category = Category)

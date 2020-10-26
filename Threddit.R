@@ -223,13 +223,14 @@ p <- ggplot(
     labs(x = "Category daily use", y = "Average daily cost (all items)") +
     ease_aes('linear')
 
+
 # Animate plot
+#length(daterange)
 animation <- p + transition_time(date) + labs(title = "Date: {frame_time}")
-animate(animation, height = 600, width = 700, nframes = 404, fps = 24, end_pause = 72)
-#animate(animation, height = 800, width = 900, nframes = 202, fps = 10, end_pause = 72)
+animate(animation, height = 1000, width = 1200, nframes = 515, fps = 24, end_pause = 72)
 
 # Save animation to file
-anim_save("Threddit-animation-Category-Avgerage_daily_cost-vs-category_daily_use-point-600x700-24fps-404-frames-x.gif")
+anim_save("Plots/Portfolio-Daily_cost_and_use-point-1000x1200-24fps-515-frames.gif")
 
 
 # Plot Y: Average yearly cost of use (all items, active and divested), X: Category use (to date)
@@ -247,11 +248,10 @@ p <- ggplot(
 
 # Animate plot
 animation <- p + transition_time(date) + labs(title = "Date: {frame_time}")
-animate(animation, height = 600, width = 700, nframes = 404, fps = 24, end_pause = 72)
-#animate(animation, height = 800, width = 900, nframes = 202, fps = 10, end_pause = 72)
+animate(animation, height = 1000, width = 1200, nframes = 515, fps = 24, end_pause = 72)
 
 # Save animation to file
-anim_save("Threddit-animation-Category-Avgerage_yearly_cost-vs-category_daily_use-point-600x700-24fps-404-frames-x.gif")
+anim_save("Plots/Portfolio-Yearly_cost-and_daily_use-point-1000x1200-24fps-515-frames.gif")
 
 
 
@@ -270,7 +270,7 @@ anim_save("Threddit-animation-Category-Avgerage_yearly_cost-vs-category_daily_us
 # Create category plots master data and group by date to calculate averages
 plot_data <- plotuse %>% group_by(category, date)
 
-# Calculate average use per month and average cost per use for divested items
+# Calculate average use per month and average cost per use for divested items (REVISE!)
 avg_merge_divested <- plot_data %>% filter(active == FALSE &  days_active >= 30) %>%
   select(category, item, date, use_per_month, cost_per_use) %>%
   mutate(avg_use_per_month_divested = mean(use_per_month), avg_cost_per_use_divested = mean(cost_per_use)) %>%
@@ -295,7 +295,7 @@ p <- plot_data %>% setup_category_plot_image(cat = "Knits", xmax = 0.35, ymax = 
 ggsave(filename = "Plots/Category-Knits-image.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
 
 # SHIRTS
-p <- plot_data %>% setup_category_plot_image(cat = "Shirts", xmax = 2.6, ymax = 20, log_trans=TRUE)
+p <- plot_data %>% setup_category_plot_image(cat = "Shirts", xmax = 3.0, ymax = 20, log_trans=TRUE)
 ggsave(filename = "Plots/Category-Shirts-image.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
 
 # T-SHIRTS AND TANKS
@@ -311,8 +311,12 @@ p <- plot_data %>% setup_category_plot_image(cat = "Shorts", xmax = 5, ymax = 16
 ggsave(filename = "Plots/Category-Shorts-image.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
 
 # BELTS
+p <- plot_data %>% setup_category_plot_image(cat = "Belts", xmax = 9, ymax = 64, log_trans=TRUE)
+ggsave(filename = "Plots/Category-Belts-image.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
 
 # SOCKS
+p <- plot_data %>% setup_category_plot_image(cat = "Socks", xmax = 2.5, ymax = 16, log_trans=TRUE)
+ggsave(filename = "Plots/Category-Socks-image.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
 
 # SHOES
 p <- plot_data %>% setup_category_plot_image("Shoes", xmax = 8, ymax = 16, log_trans=TRUE)
@@ -324,6 +328,7 @@ ggsave(filename = "Plots/Category-Underwear_shirts-image.png", p, width = 10, he
 
 # UNDERWEAR BOXERS
 
+
 # SPORTSWEAR
 p <- plot_data %>% setup_category_plot_image("Sportswear", xmax = 3.5, ymax = 64, log_trans=TRUE)
 ggsave(filename = "Plots/Category-Sportswear-image.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
@@ -331,6 +336,19 @@ ggsave(filename = "Plots/Category-Sportswear-image.png", p, width = 10, height =
 
 plot_data %>% select(category, item, date, used) %>% filter(category == "Sportswear") %>%
   select(item) %>% unique()
+
+
+# PLAYGROUND
+unique(plot_data$item[plot_data$category == "Socks"])
+plot_data %>% filter(category %in% "Socks" & date == max(plot_data$date)) %>%
+  select(item, photo, date, cumuse, cost_per_use, use_per_month) %>%
+  arrange(photo)
+str(plot_data)
+
+cumulativeuse %>% filter(category %in% "Belts" & date == max(cumulativeuse$date)) %>%
+  select(item, date, cumuse, days_active, cost_per_use, use_per_month) %>%
+  mutate(months_active = days_active/30)
+str(cumulativeuse)
 
 
 # MULTI CATEGORY

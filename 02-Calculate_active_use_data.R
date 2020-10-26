@@ -63,7 +63,7 @@ calculate_active_use_data <- function(itemuse){
     # Retrieve initial days active by item
     temp_days_active_init <- masterdata %>% dplyr::select(Item,'Date purchased') %>%
         dplyr::rename(item = Item, date_purchased = 'Date purchased') %>%
-        dplyr::mutate(days_active_init = calculate_days_active_init(as.Date("2018-01-01", origin = "1899-12-30"), as.Date(date_purchased, origin = "1899-12-30")))
+        dplyr::mutate(days_active_init = calculate_days_active_init(as.Date("2018-01-01", origin = "1899-12-30"), date_purchased))
     
     # Merge into cumulativeuse
     cumulativeuse <- merge(cumulativeuse, temp_days_active_init, by="item")

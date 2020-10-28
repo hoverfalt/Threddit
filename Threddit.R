@@ -19,10 +19,12 @@ library(ggplot2)
 library(htmlwidgets)
 library(plotly)
 library(gganimate)
+library(transformr)
 library(gifski)
 library(ggimage)
 library(lubridate)
 library(roll)
+
 
 # Source required files
 source("01-Read_and_preprocess_data.R")
@@ -198,8 +200,94 @@ p <- ggplot(daily_cost, aes(x = date, y = average_daily_cost)) +
 p
 
 # Save plot to file (300x250mm at 300dpi)
-ggsave(filename = "Threddit-line_plot-Daily_cost-300x250mm-300dpi.png", p,
-       width = 300, height = 250, dpi = 300, units = "mm", device='png')
+ggsave(filename = "Plots/Portfolio-Daily_cost-graph.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
+
+
+
+
+# PLAYGROUND: ANIMATE GRAPH
+
+daily_cost <- plotuse %>%
+  filter(used == TRUE) %>%
+  filter(category != "Sportswear") %>%
+  select(item, date, cost_per_use) %>%
+  group_by(date) %>% summarise(daily_cost = sum(cost_per_use)) %>%
+  arrange(date) %>% mutate(average_daily_cost = roll_sum(daily_cost, 90)/90)
+
+daily_cost[100:120,]
+
+
+p <- ggplot(daily_cost, aes(x = date, y = average_daily_cost)) +
+  geom_line() +
+  scale_y_continuous(limits=c(0,NA)) +
+  labs(x = "Date", y = "90-day rolling average of daily cost")
+p
+
+# Animation: reveal
+animation <- ggplot(daily_cost, aes(x = date, y = average_daily_cost)) +
+  geom_line() +
+  geom_point() +
+  scale_y_continuous(limits=c(0,NA)) +
+  labs(title = "Date: {frame_along}") + ease_aes('linear') +
+  transition_reveal(date)
+
+# Animation: time
+animation <- ggplot(daily_cost, aes(x = date, y = average_daily_cost)) +
+  geom_point() +
+  scale_y_continuous(limits=c(0,NA)) +
+  labs(title = "Date: {frame_time}") + ease_aes('linear') +
+  transition_time(date)
+
+# https://towardsdatascience.com/animating-your-data-visualizations-like-a-boss-using-r-f94ae20843e3
+# https://github.com/isaacfab/tinker/blob/master/animate_with_r/good_bad_examples.R
+
+str(plotuse)
+
+
+install.packages("animation")
+library(animation)
+
+
+# set some of the options by specifiying the commands
+ani.options(interval = 0.1, nmax = 100)
+
+## The good animation as a simple GIF
+saveGIF({
+  #create a loop the does the subsetting
+#  for(i in daterange[90:length(daterange)]){
+  for(i in daterange[90:length(daterange)]){
+      daily_cost_subset <- daily_cost %>% filter(date > daterange[90] & date <= i)
+
+    #write the plot with a subset
+    p <- ggplot(daily_cost_subset, aes(x = date, y = average_daily_cost)) +
+      geom_line() +
+      scale_y_continuous(limits=c(0,NA)) +
+      labs(x = "Date", y = "90-day rolling average of daily cost")
+    print(p)
+  }#close the for loop
+  
+}, convert = 'magick', movie.name = 'compiled_animation.gif') #close the animation builder
+
+dev.off()
+
+
+animation <- ggplot(daily_cost, aes(x = date, y = average_daily_cost)) +
+  geom_line() +
+  geom_point() +
+  scale_y_continuous(limits=c(0,NA)) +
+  labs(title = "Date: {frame_along}") + ease_aes('linear') +
+  transition_reveal(date)
+  
+animate(animation, height = 500, width = 500, nframes = 100, fps = 10, end_pause = 72)
+
+
+
+animation <- plot_data %>% setup_category_plot_image("Underwear boxers", xmax = 3.5, ymax = 10, log_trans=TRUE, animate=TRUE) +
+  transition_time(date) + labs(title = "Date: {frame_time}") + ease_aes('linear')
+animate(animation, height = 1000, width = 1000, nframes = length(daterange), fps = 24, end_pause = 72)
+anim_save("Plots/Category-Underwear_boxers-image-animation.gif")
+
+
 
 
 ####################################################################
@@ -327,7 +415,8 @@ p <- plot_data %>% setup_category_plot_image("Underwear shirts", xmax = 3, ymax 
 ggsave(filename = "Plots/Category-Underwear_shirts-image.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
 
 # UNDERWEAR BOXERS
-
+p <- plot_data %>% setup_category_plot_image("Underwear boxers", xmax = 3.5, ymax = 10, log_trans=TRUE)
+ggsave(filename = "Plots/Category-Underwear_boxers-image.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
 
 # SPORTSWEAR
 p <- plot_data %>% setup_category_plot_image("Sportswear", xmax = 3.5, ymax = 64, log_trans=TRUE)
@@ -362,15 +451,22 @@ dev.off()
 
 # Animated image plot (879 frames until 2020-05-28)
 
+length(daterange)
+
 animation <- plot_data %>% setup_category_plot_image("Shoes", xmax = 10, ymax = 16, log_trans=TRUE, animate=TRUE) +
   transition_time(date) + labs(title = "Date: {frame_time}") + ease_aes('linear')
-animate(animation, height = 1000, width = 1000, nframes = 879, fps = 24, end_pause = 72)
+animate(animation, height = 1000, width = 1000, nframes = length(daterange), fps = 24, end_pause = 72)
 anim_save("Plots/Category-Shoes-image-animation.gif")
 
 animation <- plot_data %>% setup_category_plot_image("Pants", xmax = 8, ymax = 12, log_trans=TRUE, animate=TRUE) +
   transition_time(date) + labs(title = "Date: {frame_time}") + ease_aes('linear')
-animate(animation, height = 1000, width = 1000, nframes = 879, fps = 24, end_pause = 72)
+animate(animation, height = 1000, width = 1000, nframes = length(daterange), fps = 24, end_pause = 72)
 anim_save("Plots/Category-Pants-image-animation.gif")
+
+animation <- plot_data %>% setup_category_plot_image("Underwear boxers", xmax = 3.5, ymax = 10, log_trans=TRUE, animate=TRUE) +
+  transition_time(date) + labs(title = "Date: {frame_time}") + ease_aes('linear')
+animate(animation, height = 1000, width = 1000, nframes = length(daterange), fps = 24, end_pause = 72)
+anim_save("Plots/Category-Underwear_boxers-image-animation.gif")
 
 
 

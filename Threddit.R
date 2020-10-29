@@ -20,11 +20,11 @@ library(htmlwidgets)
 library(plotly)
 library(gganimate)
 library(transformr)
+library(animation)
 library(gifski)
 library(ggimage)
 library(lubridate)
 library(roll)
-
 
 # Source required files
 source("01-Read_and_preprocess_data.R")
@@ -182,110 +182,97 @@ ggsave(filename = "Plots/Threddit-line_plot-Monthly_inventory-turnaround-300x250
        width = 300, height = 250, dpi = 300, units = "mm", device='png')
 
 
+
 ### Daily cost with rolling average ###
 
 # Calculate daily cost and rolling daily cost in 90-day window (excluding sportswear)
 daily_cost <- plotuse %>%
-    filter(used == TRUE) %>%
-    filter(category != "Sportswear") %>%
-    select(item, date, cost_per_use) %>%
-    group_by(item) %>% mutate(daily_cost = min(cost_per_use)) %>%
-    group_by(date) %>% summarise(daily_cost = sum(daily_cost)) %>%
-    arrange(date) %>% mutate(average_daily_cost = roll_sum(daily_cost, 90)/90)
+    filter(category != "Sportswear") %>% # Exclude sportswear
+    select(item, date, cost_per_use, used, active) %>%
+    group_by(item) %>% mutate(daily_cost = min(cost_per_use), still_active = as.logical(prod(active))) %>% # Capture if item is still in use
+    filter(used == TRUE) %>% # Exclude dates of items that were not used that date
+    group_by(date) %>% summarise(daily_cost = sum(daily_cost), still_active = as.logical(sum(still_active, na.rm = TRUE))) %>%
+    arrange(date) %>% mutate(average_daily_cost = roll_sum(daily_cost, 90)/90) %>%
+    mutate(average_daily_cost = lead(average_daily_cost, 45)) # Shift rolling avg to midpoint of sample
 
-p <- ggplot(daily_cost, aes(x = date, y = average_daily_cost)) +
-    geom_line() +
-    scale_y_continuous(limits=c(0,NA)) +
-    labs(x = "Date", y = "90-day rolling average of daily cost")
+# Plot daily cost and rolling average
+p <- ggplot(daily_cost, aes(x = date, y = daily_cost, color = still_active)) +
+  geom_point() +
+  scale_color_manual(breaks = c(TRUE, FALSE), values=c("mediumseagreen", "indianred1")) +
+  geom_line(aes(x = date, y = average_daily_cost), color='steelblue', size=1) +
+  scale_y_continuous(limits=c(0,40)) + # Set y limit to NA for automatic scale
+  labs(x = "Date", y = "Daily cost and 90-day rolling average (shifted to midpoint of sample)", color = "Still active")
 p
 
 # Save plot to file (300x250mm at 300dpi)
 ggsave(filename = "Plots/Portfolio-Daily_cost-graph.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
 
-
-
-
-# PLAYGROUND: ANIMATE GRAPH
-
-daily_cost <- plotuse %>%
-  filter(used == TRUE) %>%
-  filter(category != "Sportswear") %>%
-  select(item, date, cost_per_use) %>%
-  group_by(date) %>% summarise(daily_cost = sum(cost_per_use)) %>%
-  arrange(date) %>% mutate(average_daily_cost = roll_sum(daily_cost, 90)/90)
-
-daily_cost[100:120,]
-
-
-p <- ggplot(daily_cost, aes(x = date, y = average_daily_cost)) +
-  geom_line() +
-  scale_y_continuous(limits=c(0,NA)) +
-  labs(x = "Date", y = "90-day rolling average of daily cost")
-p
-
-# Animation: reveal
-animation <- ggplot(daily_cost, aes(x = date, y = average_daily_cost)) +
-  geom_line() +
-  geom_point() +
-  scale_y_continuous(limits=c(0,NA)) +
-  labs(title = "Date: {frame_along}") + ease_aes('linear') +
-  transition_reveal(date)
-
-# Animation: time
-animation <- ggplot(daily_cost, aes(x = date, y = average_daily_cost)) +
-  geom_point() +
-  scale_y_continuous(limits=c(0,NA)) +
-  labs(title = "Date: {frame_time}") + ease_aes('linear') +
-  transition_time(date)
-
-# https://towardsdatascience.com/animating-your-data-visualizations-like-a-boss-using-r-f94ae20843e3
-# https://github.com/isaacfab/tinker/blob/master/animate_with_r/good_bad_examples.R
-
-str(plotuse)
-
-
-install.packages("animation")
-library(animation)
-
-
-# set some of the options by specifiying the commands
-ani.options(interval = 0.1, nmax = 100)
-
-## The good animation as a simple GIF
-saveGIF({
-  #create a loop the does the subsetting
-#  for(i in daterange[90:length(daterange)]){
-  for(i in daterange[90:length(daterange)]){
-      daily_cost_subset <- daily_cost %>% filter(date > daterange[90] & date <= i)
-
-    #write the plot with a subset
-    p <- ggplot(daily_cost_subset, aes(x = date, y = average_daily_cost)) +
-      geom_line() +
-      scale_y_continuous(limits=c(0,NA)) +
-      labs(x = "Date", y = "90-day rolling average of daily cost")
-    print(p)
-  }#close the for loop
-  
-}, convert = 'magick', movie.name = 'compiled_animation.gif') #close the animation builder
-
 dev.off()
 
 
-animation <- ggplot(daily_cost, aes(x = date, y = average_daily_cost)) +
-  geom_line() +
-  geom_point() +
-  scale_y_continuous(limits=c(0,NA)) +
-  labs(title = "Date: {frame_along}") + ease_aes('linear') +
-  transition_reveal(date)
+
+
+################################
+### Animated portfolio plots ###
+################################
+
+## Prepare data for daily cost plotting
+
+# Initiatlise empty daily_cost_temp data frame (CHANGE TO A BETTER WAY)
+daily_cost_anim <- plotuse %>%
+  filter(category != "Sportswear") %>% # Exclude sportswear
+  select(item, date, cost_per_use, used, active) %>%
+  group_by(item) %>% mutate(daily_cost = min(cost_per_use), still_active = as.logical(prod(active))) %>% # Capture if item is still in use
+  filter(used == TRUE) %>% # Exclude dates of items that were not used that date
+  group_by(date) %>% summarise(daily_cost = sum(daily_cost), still_active = as.logical(sum(still_active, na.rm = TRUE))) %>%
+  arrange(date) %>% mutate(average_daily_cost = roll_sum(daily_cost, 90)/90) %>%
+  mutate(average_daily_cost = lead(average_daily_cost, 45)) %>% # Shift rolling avg to midpoint of sample
+  mutate(day = date) # Add variable for separating day to plot from dates to plot
+daily_cost_anim <- as.data.frame(daily_cost[0,])
+
+# Generate cumulative data by day, including all dates prior to said day
+for (i in daterange) {
+  daily_cost_temp <- plotuse %>%
+    filter(date <= i) %>% # Include data up until loop day only
+    filter(category != "Sportswear") %>% # Exclude sportswear
+    select(item, date, cost_per_use, used, active) %>%
+    group_by(item) %>% mutate(daily_cost = min(cost_per_use), still_active = as.logical(prod(active))) %>% # Capture if item is still in use
+    filter(used == TRUE) %>% # Exclude dates of items that were not used that date
+    group_by(date) %>% summarise(daily_cost = sum(daily_cost), still_active = as.logical(sum(still_active, na.rm = TRUE))) %>%
+    arrange(date) %>% mutate(average_daily_cost = roll_sum(daily_cost, 90)/90) %>%
+    mutate(average_daily_cost = lead(average_daily_cost, 45)) %>% # Shift rolling avg to midpoint of sample
+    mutate(day = i) # Add variable for separating day to plot from dates to plot
   
-animate(animation, height = 500, width = 500, nframes = 100, fps = 10, end_pause = 72)
+    daily_cost_anim <- rbind(daily_cost_anim, daily_cost_temp)
+}
+daily_cost_anim <- as.data.frame(daily_cost_anim)
+
+# Save daily_cost data.frame to file for easier retrieval
+save(daily_cost_anim,file="Data/Threddit-daily_cost_anim-2020-10-25.Rda")
+# Load data from file
+load("Data/Threddit-daily_cost_anim-2020-10-25.Rda")
 
 
+## Build animated daily cost plot
 
-animation <- plot_data %>% setup_category_plot_image("Underwear boxers", xmax = 3.5, ymax = 10, log_trans=TRUE, animate=TRUE) +
-  transition_time(date) + labs(title = "Date: {frame_time}") + ease_aes('linear')
-animate(animation, height = 1000, width = 1000, nframes = length(daterange), fps = 24, end_pause = 72)
-anim_save("Plots/Category-Underwear_boxers-image-animation.gif")
+# Set animation options
+ani.options(interval = 0.1, nmax = 50, ani.width = 1000, ani.height = 1000, loop = 0)
+
+# Build animated gif
+saveGIF({
+  for(i in daterange[(length(daterange)-500):length(daterange)]){ # Set range
+      daily_cost_subset <- daily_cost_anim %>% filter(day == i)
+
+      p <- ggplot(daily_cost_subset, aes(x = date, y = daily_cost, color = still_active)) +
+        geom_point(size=1.5) +
+        scale_color_manual(breaks = c(TRUE, FALSE), values=c("mediumseagreen", "indianred1")) +
+        geom_line(aes(x = date, y = average_daily_cost), color='steelblue', size=1.5) +
+        scale_y_continuous(limits=c(0,40)) + # Set fixed Y (daily cost) limit at 50 to avoid plot scale from jumping around
+        labs(x = "Date", y = "Daily cost and 90-day rolling average (shifted to midpoint of sample)", color = "Still active")
+      print(p)
+  }
+  
+}, convert = 'magick', movie.name = 'compiled_animation.gif') #close the animation builder
 
 
 
@@ -368,7 +355,8 @@ rm(avg_merge_divested)
 plot_data <- plot_data %>% ungroup()
 
 
-## STANDARD CATEGORY IMAGE PLOTS ##
+
+### STANDARD CATEGORY IMAGE PLOTS ###
 
 # JACKETS AND HOODIES
 p <- plot_data %>% setup_category_plot_image("Jackets and hoodies", xmax = 14, ymax = 32, log_trans=TRUE)
@@ -423,33 +411,15 @@ p <- plot_data %>% setup_category_plot_image("Sportswear", xmax = 3.5, ymax = 64
 ggsave(filename = "Plots/Category-Sportswear-image.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
 
 
-plot_data %>% select(category, item, date, used) %>% filter(category == "Sportswear") %>%
-  select(item) %>% unique()
-
-
-# PLAYGROUND
-unique(plot_data$item[plot_data$category == "Socks"])
-plot_data %>% filter(category %in% "Socks" & date == max(plot_data$date)) %>%
-  select(item, photo, date, cumuse, cost_per_use, use_per_month) %>%
-  arrange(photo)
-str(plot_data)
-
-cumulativeuse %>% filter(category %in% "Belts" & date == max(cumulativeuse$date)) %>%
-  select(item, date, cumuse, days_active, cost_per_use, use_per_month) %>%
-  mutate(months_active = days_active/30)
-str(cumulativeuse)
-
-
 # MULTI CATEGORY
-p <- plot_data %>% setup_category_plot_image(c("Shoes", "Shirts"), xmax = 10, ymax = 16, log_trans=TRUE)
+p <- plot_data %>% setup_category_plot_image(c("Underwear shirts", "Underwear boxers"), xmax = 3.5, ymax = 10, log_trans=TRUE)
 ggsave(filename = "Plots/Category-Multiple-image.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
 
-
-unique(plot_data$category)
 dev.off()
 
 
-# Animated image plot (879 frames until 2020-05-28)
+
+## Animated image plot
 
 length(daterange)
 
@@ -472,7 +442,7 @@ anim_save("Plots/Category-Underwear_boxers-image-animation.gif")
 
 
 
-## STANDARD CATEGORY POINT PLOTS ##
+### STANDARD CATEGORY POINT PLOTS ###
 
 names(category_colors)
 
@@ -485,14 +455,6 @@ ggsave(filename = "Plots/Category-All-point.png", p, width = 10, height = 10, dp
 dev.off()
 
 
-
-
-# Earlier working solution 
-categories_to_plot <- c('Socks')
-animation <- plotuse %>% filter(category %in% categories_to_plot & days_active >= 30) %>%
-  setup_plot_point(xmax = 5, ymax = 15, log_trans = TRUE) +
-  transition_time(date) + labs(title = "Date: {frame_time}") + ease_aes('linear')
-animate(animation, height = 1000, width = 1000, nframes = 404, fps = 24, end_pause = 72)
 
 
 
@@ -638,6 +600,12 @@ animate(animation, height = 800, width = 1000, nframes = 120, fps = 10)
 
 # View follow
 view_follow(fixed_y = TRUE)
+
+
+# animation package sources:
+# https://towardsdatascience.com/animating-your-data-visualizations-like-a-boss-using-r-f94ae20843e3
+# https://github.com/isaacfab/tinker/blob/master/animate_with_r/good_bad_examples.R
+
 
 
 

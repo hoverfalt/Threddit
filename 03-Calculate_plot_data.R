@@ -143,6 +143,90 @@ calculate_complete_portfolio_plot_data <- function(plotuse){
 }
 
 
+
+### This function calculates daily cost and rolling average for portfolio or selected categories (Sportswear excluded by default but can be overridden)
+### Input: plotuse (total use data enhanced for plot use), rolling avg. window, vector of categories to include, vector of categories to exclude
+### Return: daily_cost (total cost by day of items used said day)
+
+calculate_daily_cost <- function(plotuse, rolling_average_window = 30, categories_include = category_order, categories_exclude = "Sportswear"){
+    
+    # Calculate daily cost and n days rolling average (excluding sportswear)
+    daily_cost <- plotuse %>%
+        filter(!category %in% categories_exclude) %>%
+        filter(category %in% categories_include) %>%
+        select(item, date, cost_per_use, used, active) %>%
+        group_by(item) %>% mutate(daily_cost = min(cost_per_use), still_active = as.logical(prod(active))) %>% # Capture if item is still in use
+        filter(used == TRUE) %>% # Exclude dates of items that were not used that date
+        group_by(date) %>% summarise(daily_cost = sum(daily_cost), still_active = as.logical(sum(still_active, na.rm = TRUE))) %>%
+        arrange(date) %>% mutate(average_daily_cost = roll_mean(daily_cost, rolling_average_window)) %>%
+        mutate(average_daily_cost = lead(average_daily_cost, round(rolling_average_window/2), digits = 0)) # Shift rolling avg to midpoint of sample
+    
+    return(daily_cost)
+}
+
+# Function to setup daily cost plot
+setup_daily_cost_plot <- function(daily_cost, ymax = 40) {
+    
+    # Set up plot
+    p <- ggplot(daily_cost, aes(x = date, y = daily_cost, color = still_active)) +
+        geom_point() +
+        scale_color_manual(breaks = c(TRUE, FALSE), values=c("mediumseagreen", "indianred1")) +
+        geom_line(aes(x = date, y = average_daily_cost), color='steelblue', size=1) +
+        scale_y_continuous(limits=c(0,ymax)) + # Set y limit to NA for automatic scale
+        labs(x = "Date", y = "Daily cost and 30-day rolling average (shifted to midpoint of sample)", color = "Still active")
+    
+    return(p)
+}
+
+
+# Same as calculate_daily_cost but for animation (heavy computing)
+calculate_daily_cost_anim <- function(plotuse, rolling_average_window = 30, categories_include = category_order, categories_exclude = "Sportswear"){
+    
+    # Initiatlise empty daily_cost_temp data frame (CHANGE TO A BETTER WAY)
+    daily_cost_anim <- plotuse %>%
+        select(item, date, cost_per_use, used, active) %>%
+        group_by(item) %>% mutate(daily_cost = min(cost_per_use), still_active = as.logical(prod(active))) %>% # Capture if item is still in use
+        filter(used == TRUE) %>% # Exclude dates of items that were not used that date
+        group_by(date) %>% summarise(daily_cost = sum(daily_cost), still_active = as.logical(sum(still_active, na.rm = TRUE))) %>%
+        arrange(date) %>% mutate(average_daily_cost = roll_mean(daily_cost, rolling_average_window, min_obs = 1)) %>%
+        mutate(average_daily_cost = lead(average_daily_cost, rolling_average_window/2)) %>% # Shift rolling avg to midpoint of sample
+        mutate(day = date) # Add variable for separating day to plot from dates to plot
+    daily_cost_anim <- as.data.frame(daily_cost_anim[0,])
+    
+    # Generate cumulative data by day, including all dates prior to said day (THIS TAKES A WHILE)
+    for (i in daterange) {
+        
+        # Calculate complete plot dataup until current day
+        daily_cost_temp <- plotuse %>%
+            filter(date <= i) %>% # Include data up until loop day only
+            filter(!category %in% categories_exclude) %>%
+            filter(category %in% categories_include) %>%
+            select(item, date, cost_per_use, used, active) %>%
+            group_by(item) %>% mutate(daily_cost = min(cost_per_use), still_active = as.logical(prod(active))) %>% # Capture if item is still in use
+            filter(used == TRUE) %>% # Exclude dates of items that were not used that date
+            group_by(date) %>% summarise(daily_cost = sum(daily_cost), still_active = as.logical(sum(still_active, na.rm = TRUE))) %>%
+            arrange(date) %>% mutate(average_daily_cost = roll_mean(daily_cost, rolling_average_window, min_obs = 1)) %>%
+            mutate(average_daily_cost = lead(average_daily_cost, round(rolling_average_window/2), digits = 0)) %>% # Shift rolling avg to midpoint of sample
+            mutate(day = i) # Add variable for separating day to plot from dates to plot
+        
+        # Append data for current day to total data
+        daily_cost_anim <- rbind(daily_cost_anim, daily_cost_temp)
+    }
+    
+    # Cast daily_cost_anim to data frame
+    daily_cost_anim <- as.data.frame(daily_cost_anim)
+    
+    return(daily_cost_anim)
+}
+
+
+
+
+
+
+
+
+
 ########################################################
 #################### CATEGORY PLOTS ####################
 ########################################################

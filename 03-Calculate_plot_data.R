@@ -2,9 +2,9 @@
 
 ### Functions to prepare data for various standard plots
 
-####################################################
-########### SELECT AND ENHANCE PLOT DATA ###########
-####################################################
+#################################################################################################
+################################# SELECT AND ENHANCE PLOT DATA ##################################
+#################################################################################################
 
 ### This section includes the core computations to prepare the data for standard plots
 ### Input: totaluse (total use data)
@@ -34,9 +34,12 @@ calculate_plot_data <- function(totaluse){
 }
 
 
-#########################################################
-#################### PORTFOLIO PLOTS ####################
-#########################################################
+
+
+#################################################################################################
+######################################## PORTFOLIO PLOTS ########################################
+#################################################################################################
+
 
 ### This function includes the core computations to prepare the data for standard portfolio plots
 ### Input: plotuse (total use data enhanced for plot use)
@@ -223,23 +226,26 @@ calculate_daily_cost_anim <- function(plotuse, rolling_average_window = 30, cate
 
 
 
-
-
-
-
-########################################################
-#################### CATEGORY PLOTS ####################
-########################################################
+################################################################################################
+######################################## CATEGORY PLOTS ########################################
+################################################################################################
 
 ### These functions set up standard category plots with points and images
 
 
 # Function to setup (multi) category point plot y = cost per use, x = monthly use
-setup_category_plot_point <- function(plot_data, categories, xmax, ymax, log_trans=TRUE, avg_lines=TRUE) {
+setup_category_plot_point <- function(plot_data, categories, xmax, ymax, log_trans=TRUE, avg_lines=TRUE, animate=FALSE) {
     
-    # Filter data by categories and last date used only
-    plot_data <- plot_data %>% filter(category %in% categories & date == max(plot_data$date))
+    # Filter categories
+    plot_data <- plot_data %>% filter(category %in% categories)
 
+    # Filter date
+    if (animate) {
+        plot_data <- plot_data %>% group_by(date) # Group by frame (date)
+    } else {
+        plot_data <- plot_data %>% filter(date == max(plot_data$date)) # Include only latest date
+    }
+    
     # Set up plot
     p <- ggplot(
         plot_data, 
@@ -256,14 +262,11 @@ setup_category_plot_point <- function(plot_data, categories, xmax, ymax, log_tra
     else { p <- p + scale_y_continuous(limits=c(NA,ymax)) }
     
     # Add vertical and horizonal line for variable averages in corresponding category color
-    # ISSUE: This solution only works for last date non-animated plots 
     if(avg_lines) {
         for (cat in categories) {
-            avgx <- plot_data %>% filter(category == cat & !is.na(avg_use_per_month_divested)) %>% select(avg_use_per_month_divested) %>% slice(1) %>% as.numeric()
-            avgy <- plot_data %>% filter(category == cat & !is.na(avg_cost_per_use_divested)) %>% select(avg_cost_per_use_divested) %>% slice(1) %>% as.numeric()
-            p <- p +
-                geom_vline(xintercept = avgx, size = 0.8, colour = category_colors[cat], linetype = "dotted") +
-                geom_hline(yintercept = avgy, size = 0.8, colour = category_colors[cat], linetype = "dotted")
+            p <- p + 
+                geom_vline(data = plot_data[plot_data$category == cat,], aes(xintercept = avg_use_per_month_divested), size = 0.8, colour = category_colors[cat], linetype = "dotted") +
+                geom_hline(data = plot_data[plot_data$category == cat,], aes(yintercept = avg_cost_per_use_divested), size = 0.8, colour = category_colors[cat], linetype = "dotted")
         }
     }
     
@@ -281,47 +284,6 @@ setup_category_plot_image <- function(plot_data, categories, xmax, ymax, log_tra
     if (!animate) { plot_data <- plot_data %>% filter(date == max(plot_data$date)) }
     
     # Set up plot
-    p <- ggplot(
-        plot_data, 
-        aes(x = use_per_month, y = cost_per_use)) +
-        geom_vline(aes(xintercept = avg_use_per_month_divested), size = 0.8, colour = "darkgray", linetype = "dotted") +
-        geom_hline(aes(yintercept = avg_cost_per_use_divested), size = 0.8, colour = "darkgray", linetype = "dotted") +
-        geom_image(aes(image = photo), size = 0.08) +
-        scale_x_continuous(limits=c(NA,xmax)) +
-        labs(x = "Average times used per month", y = "Cost per use (€)")
-    
-    if (log_trans) { p <- p + scale_y_continuous(trans="log10", limits=c(NA,ymax)) }
-    else { p <- p + scale_y_continuous(limits=c(NA,ymax)) }
-    
-    return(p)
-}
-
-
-## Older versions
-
-
-# Define function to setup point plot y = cost per use, x = monthly use
-setup_plot_point <- function(plot_data, xmax, ymax, log_trans=TRUE) {
-    p <- ggplot(
-        plot_data, 
-        aes(x = use_per_month, y = cost_per_use, colour = category)) +
-        geom_point(show.legend = TRUE, aes(alpha = plot_size, size = plot_size)) +
-        scale_x_continuous(limits=c(NA,xmax)) +
-        scale_color_manual(name = "Category", values = category_colors) +
-        scale_alpha(range = c(0.5, 1.0)) +
-        scale_size(range = c(2, 3)) +
-        guides(alpha = FALSE, size = FALSE) +
-        labs(x = "Average times used per month", y = "Cost per use (€)")
-    
-    if (log_trans) { p <- p + scale_y_continuous(limits=c(NA,ymax), trans="log10") }
-    else { p <- p + scale_y_continuous(limits=c(NA,ymax)) }
-    
-    return(p)
-}
-
-
-# Define function to setup image plot y = cost per use, x = monthly use
-setup_plot_image <- function(plot_data, xmax, ymax, log_trans=TRUE) {
     p <- ggplot(
         plot_data, 
         aes(x = use_per_month, y = cost_per_use)) +

@@ -478,20 +478,25 @@ anim_save("Plots/Category-Shirts_Underwear_and_Socks-point-animation.gif")
 ######################################### DEVELOPMENT ##########################################
 ################################################################################################
 
-# Cost per use x Cumulative use - Last date
-p <- plot_data %>% filter(category == 'Shoes' & date == max(plot_data$date)) %>%
-  ggplot(
-    aes(x = cumuse, y = cost_per_use)) +
-  geom_image(aes(image = photo), size = 0.08) +
-  scale_x_continuous(limits=c(0,320)) +
-  labs(x = "Cumulative times used", y = "Cost per use (€)") +
-  scale_y_continuous(trans="log10", limits=c(NA,16))
-p
+## Plot Cost per use vs Cumulative use - Last date
+
+# Shoes
+p <- plot_data %>% setup_category_cumulative_plot_image("Shoes", xmax = 320, ymax = 16, log_trans=TRUE, trails=TRUE)
+ggsave(filename = "Plots/Category-Cost_and_Cumulative_use-Shoes.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
+
+# Belts
+p <- plot_data %>% setup_category_cumulative_plot_image("Belts", xmax = 350, ymax = 100, log_trans=TRUE, trails=TRUE)
+ggsave(filename = "Plots/Category-Cost_and_Cumulative_use-Belts.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
+
+# Belts and Shoes
+p <- plot_data %>% setup_category_cumulative_plot_image(c("Belts", "Shoes"), xmax = 350, ymax = 100, log_trans=TRUE, trails=TRUE)
+ggsave(filename = "Plots/Category-Cost_and_Cumulative_use-Belts_and_Shoes.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
 
 dev.off()
 
 
-# Cost per use x Cumulative use - Animated
+
+# Cost per use x Cumulative use - Animated (DEVELOP trails support in animation)
 animation <- plot_data %>% filter(category == 'Shoes') %>%
   ggplot(aes(x = cumuse, y = cost_per_use)) +
   geom_image(aes(image = photo), size = 0.08) +
@@ -499,7 +504,6 @@ animation <- plot_data %>% filter(category == 'Shoes') %>%
   labs(x = "Cumulative times used", y = "Cost per use (€)") +
   scale_y_continuous(trans="log10", limits=c(NA,16)) +
   transition_time(date) + labs(title = "Date: {frame_time}") + ease_aes('linear')
-
 
 animate(animation, height = 1000, width = 1000, nframes = 100, fps = 24, end_pause = 72)
 #animate(animation, height = 1000, width = 1000, nframes = length(daterange), fps = 24, end_pause = 72)

@@ -301,5 +301,33 @@ setup_category_plot_image <- function(plot_data, categories, xmax, ymax, log_tra
 
 
 
+# Function to setup (multi) category image plot y = cost per use, x = cumulative use
+setup_category_cumulative_plot_image <- function(plot_data, categories, xmax, ymax, log_trans=TRUE, trails=FALSE) {
+    
+    # Filter data by category
+    plot_data <- plot_data %>% filter(category %in% categories)
+    
+    if (!trails) {
+        p <- plot_data %>% filter(date == max(plot_data$date)) %>% 
+            ggplot(aes(x = cumuse, y = cost_per_use)) +
+            geom_image(aes(image = photo), size = 0.08) +
+            scale_x_continuous(limits=c(0,xmax)) +
+            labs(x = "Cumulative times used", y = "Cost per use (€)")
+    } else {
+        p <- plot_data %>%
+            ggplot(aes(x = cumuse, y = cost_per_use)) +
+            geom_point(colour = "lightgray") + 
+            geom_image(data = plot_data[plot_data$date == max(plot_data$date),], aes(image = photo), size = 0.08) +
+            scale_x_continuous(limits=c(0,xmax)) +
+            labs(x = "Cumulative times used", y = "Cost per use (€)")
+    }
+
+    if (log_trans) { p <- p + scale_y_continuous(trans="log10", limits=c(NA,ymax)) }
+    else { p <- p + scale_y_continuous(limits=c(NA,ymax)) }
+    
+    return(p)
+}
+
+
 
 

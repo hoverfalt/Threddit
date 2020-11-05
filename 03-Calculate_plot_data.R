@@ -290,6 +290,8 @@ setup_category_plot_image <- function(plot_data, categories, xmax, ymax, log_tra
         geom_vline(aes(xintercept = avg_use_per_month_divested), size = 0.8, colour = "darkgray", linetype = "dotted") +
         geom_hline(aes(yintercept = avg_cost_per_use_divested), size = 0.8, colour = "darkgray", linetype = "dotted") +
         geom_image(aes(image = photo), size = 0.08) +
+        geom_label(aes(x = avg_use_per_month_divested, y = min(cost_per_use), label=round(avg_use_per_month_divested, digits = 1)), color = "darkgray") +
+        geom_label(aes(x = min(use_per_month), y = avg_cost_per_use_divested, label=round(avg_cost_per_use_divested, digits = 2)), color = "darkgray") +
         scale_x_continuous(limits=c(NA,xmax)) +
         labs(x = "Average times used per month", y = "Cost per use (€)")
     

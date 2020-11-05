@@ -415,10 +415,16 @@ ggsave(filename = "Plots/Category-Sportswear-image.png", p, width = 10, height =
 p <- plot_data %>% setup_category_plot_image(c("Underwear shirts", "Underwear boxers"), xmax = 3.5, ymax = 10, log_trans=TRUE)
 ggsave(filename = "Plots/Category-Multiple-image.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
 
+
 dev.off()
 
 
 ## ANIMATED IMAGE PLOTS ##
+
+animation <- plot_data %>% setup_category_plot_image("Shirts", xmax = 3, ymax = 20, log_trans=TRUE, animate=TRUE) +
+  transition_time(date) + labs(title = "Date: {frame_time}") + ease_aes('linear')
+animate(animation, height = 1000, width = 1000, nframes = length(daterange), fps = 24, end_pause = 72)
+anim_save("Plots/Category-Shirts-image-animation.gif")
 
 animation <- plot_data %>% setup_category_plot_image("Shoes", xmax = 10, ymax = 16, log_trans=TRUE, animate=TRUE) +
   transition_time(date) + labs(title = "Date: {frame_time}") + ease_aes('linear')
@@ -434,6 +440,11 @@ animation <- plot_data %>% setup_category_plot_image("Underwear boxers", xmax = 
   transition_time(date) + labs(title = "Date: {frame_time}") + ease_aes('linear')
 animate(animation, height = 1000, width = 1000, nframes = length(daterange), fps = 24, end_pause = 72)
 anim_save("Plots/Category-Underwear_boxers-image-animation.gif")
+
+animation <- plot_data %>% setup_category_plot_image("Underwear shirts", xmax = 3, ymax = 8, log_trans=TRUE, animate=TRUE) +
+  transition_time(date) + labs(title = "Date: {frame_time}") + ease_aes('linear')
+animate(animation, height = 1000, width = 1000, nframes = length(daterange), fps = 24, end_pause = 72)
+anim_save("Plots/Category-Underwear_shirts-image-animation.gif")
 
 
 

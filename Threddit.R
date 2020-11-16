@@ -73,10 +73,10 @@ plotuse <- calculate_plot_data(totaluse)
 ### Save master plotting data 'plotuse' to file to avoid repetitive reprocessing
 
 # Save tidy data data.frame to file for easier retrieval
-save(plotuse,file="Data/Threddit-plotuse-2020-10-25.Rda")
+save(plotuse,file="Data/Threddit-plotuse-2020-11-15.Rda")
 
 # Load data from file
-load("Data/Threddit-plotuse-2020-10-25.Rda")
+load("Data/Threddit-plotuse-2020-11-15.Rda")
 
 
 
@@ -391,7 +391,7 @@ p <- plot_data %>% setup_category_plot_image(cat = "Belts", xmax = 9, ymax = 64,
 ggsave(filename = "Plots/Category-Belts-image.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
 
 # Socks
-p <- plot_data %>% setup_category_plot_image(cat = "Socks", xmax = 2.5, ymax = 16, log_trans=TRUE)
+p <- plot_data %>% setup_category_plot_image(cat = "Socks", xmax = 3, ymax = 16, log_trans=TRUE)
 ggsave(filename = "Plots/Category-Socks-image.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
 
 # Shoes
@@ -489,7 +489,8 @@ anim_save("Plots/Category-Shirts_Underwear_and_Socks-point-animation.gif")
 ######################################### DEVELOPMENT ##########################################
 ################################################################################################
 
-## Plot Cost per use vs Cumulative use - Last date
+
+### Plot Cost per use vs Cumulative use - Last date ###
 
 # Shoes
 p <- plot_data %>% setup_category_cumulative_plot_image("Shoes", xmax = 320, ymax = 16, log_trans=TRUE, trails=TRUE)
@@ -506,8 +507,7 @@ ggsave(filename = "Plots/Category-Cost_and_Cumulative_use-Belts_and_Shoes.png", 
 dev.off()
 
 
-
-# Cost per use x Cumulative use - Animated (DEVELOP trails support in animation)
+### Cost per use x Cumulative use - Animated ###
 animation <- plot_data %>% filter(category == 'Shoes') %>%
   ggplot(aes(x = cumuse, y = cost_per_use)) +
   geom_image(aes(image = photo), size = 0.08) +
@@ -519,6 +519,170 @@ animation <- plot_data %>% filter(category == 'Shoes') %>%
 animate(animation, height = 1000, width = 1000, nframes = 100, fps = 24, end_pause = 72)
 #animate(animation, height = 1000, width = 1000, nframes = length(daterange), fps = 24, end_pause = 72)
 anim_save("Plots/Category-Shoes-Cumulative_use-image-animation.gif")
+
+
+
+
+### Horizontal column plot with times used, over time if animated ###
+
+
+# categories <- "Underwear boxers"
+
+# Prepare cumulative use based on last date used, order by active (divested or active) and use age
+times_used <- plot_data %>% select(item, category, date, cumuse, days_active, active, photo) %>%
+  filter(category == categories) %>% 
+  group_by(item) %>%
+  filter(date == max(date)) %>%
+  arrange(active, desc(days_active))
+
+# Add index as row count for plot
+times_used$rownumber <- seq.int(nrow(times_used))
+
+# Calculate 1 and 2 standard deviations (~86%, ~95%) limits for times used
+std1_low <- quantile(times_used$cumuse[times_used$active == FALSE], 0.32)
+std1_high <- quantile(times_used$cumuse[times_used$active == FALSE], 0.68)
+std2_low <- quantile(times_used$cumuse[times_used$active == FALSE], 0.05)
+std2_high <- quantile(times_used$cumuse[times_used$active == FALSE], 0.95)
+
+# Prepare plot
+p <- ggplot(times_used,
+  aes(x = rownumber, y = cumuse)) +
+  annotate("rect", xmin=0, xmax=max(times_used$rownumber), ymin=std1_low, ymax=std1_high, alpha=0.15, fill="green") +
+  annotate("rect", xmin=0, xmax=max(times_used$rownumber), ymin=std2_low, ymax=std2_high, alpha=0.15, fill="green") +
+  geom_col(aes(fill = active), width = max(times_used$rownumber)/500) +
+  scale_fill_manual(breaks = c(FALSE, TRUE), values=c("mediumseagreen", "indianred1")) +
+  geom_image(aes(image = photo), size = 0.08) +
+  labs(x = "Item", y = "Times used") +
+  coord_flip() +
+  theme(legend.position = "none") +
+  geom_label(aes(x = 0, y = std1_low, label=round(std1_low, digits = 0)), color = "darkgray") +
+  geom_label(aes(x = 0, y = std1_high, label=round(std1_high, digits = 0)), color = "darkgray") +
+  geom_label(aes(x = 0, y = std2_low, label=round(std2_low, digits = 0)), color = "darkgray") +
+  geom_label(aes(x = 0, y = std2_high, label=round(std2_high, digits = 0)), color = "darkgray")
+
+ggsave(filename = "Plots/Category-Times_used-Underwear_boxers.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
+
+
+dev.off()
+
+
+
+
+
+
+# ANIMATE
+
+# categories <- "Underwear boxers"
+
+# Initiate data fram (come up with better way)
+times_used <- plot_data %>%
+  filter(date == daterange[length(daterange)]) %>%
+  filter(category %in% categories) %>%
+  select(item, category, date, cumuse, days_active, active, photo) %>%
+  mutate(std1_low = quantile(cumuse, 0.32), std1_high = quantile(cumuse, 0.68)) %>%
+  mutate(std2_low = quantile(cumuse, 0.05), std2_high = quantile(cumuse, 0.95)) %>%
+  mutate(rownumber = 0) # Add variable for separating day to plot from dates to plot
+
+times_used <- as.data.frame(times_used[0,])
+
+#  i <- daterange[[length(daterange)]]
+
+  for (i in daterange[451:500]) {
+    
+    # Select complete plot data up until current day
+    times_used_temp <- plot_data %>%
+      filter(date == i) %>%
+      filter(category %in% categories) %>%
+      select(item, category, date, cumuse, days_active, active, photo)
+
+    times_used_temp_std <- times_used_temp %>%
+      filter(active == FALSE) %>%
+      summarise(std1_low = quantile(cumuse, 0.32), std1_high = quantile(cumuse, 0.68), std2_low = quantile(cumuse, 0.05), std2_high = quantile(cumuse, 0.95))
+
+    # Combine active and divested 
+    times_used_temp$std1_low <- times_used_temp_std$std1_low
+    times_used_temp$std1_high <- times_used_temp_std$std1_high
+    times_used_temp$std2_low <- times_used_temp_std$std2_low
+    times_used_temp$std2_high <- times_used_temp_std$std2_high
+    
+    # Select only loop date and add varuable day
+    times_used_temp <- times_used_temp %>% arrange(active, desc(days_active))
+
+    # Add index as row count for plot
+    times_used_temp$rownumber <- seq.int(nrow(times_used_temp))  
+    
+    # Append data for current day to total data
+    times_used <- rbind(times_used, times_used_temp)
+
+  }
+
+# Cast daily_cost_anim to data frame
+times_used <- as.data.frame(times_used)
+
+
+
+
+
+categories <- "Underwear boxers"
+
+
+# Initiate times_ised data frame and data
+times_used <- plot_data %>%
+  filter(category %in% categories) %>%
+  select(item, category, date, cumuse, days_active, active, photo) %>%
+  as.data.frame()
+
+# Calculate the standard deviations ranges for divested items
+times_used_std <- times_used %>%
+  filter(active == FALSE) %>%
+  group_by(date) %>%
+  summarise(std1_low = quantile(cumuse, 0.32), std1_high = quantile(cumuse, 0.68), std2_low = quantile(cumuse, 0.05), std2_high = quantile(cumuse, 0.95)) %>%
+  as.data.frame()
+
+# Add standard deviations data
+times_used <- merge(times_used, times_used_std, all = FALSE) 
+
+# Add rownumber variable telling the order in which to plot the items
+times_used <- times_used %>% 
+  group_by(date) %>% arrange(active, desc(days_active), item) %>% # Create correct grouping and in-group order
+  mutate(rownumber = cumsum(!is.na(item))) %>% # Create counter according to this order
+  ungroup() %>% arrange(date, active, desc(days_active)) %>% # Ungroup and reorder for plotting
+  as.data.frame()
+
+
+# times_used <- times_used %>% filter(date >= max(times_used$date)-200)
+
+
+# Set up animation
+animation <-
+  ggplot(times_used, aes(x = rownumber, y = cumuse)) +
+  geom_rect(data = times_used[times_used$rownumber == 1,],
+            aes(xmin=0, xmax=max(times_used$rownumber), ymin=std1_low, ymax=std1_high, group = date), alpha=0.15, fill="green") +
+  geom_rect(data = times_used[times_used$rownumber == 1,],
+            aes(xmin=0, xmax=max(times_used$rownumber), ymin=std2_low, ymax=std2_high, group = date), alpha=0.15, fill="green") +
+  geom_col(data = times_used, aes(x = rownumber, y = cumuse, fill = active, group = date),
+           width = max(times_used$rownumber)/300, position = position_dodge2(preserve = "total", padding = 0)) +
+  scale_fill_manual(breaks = c(FALSE, TRUE), values=c("mediumseagreen", "indianred1")) +
+  geom_image(aes(image = photo, group = date), size = 0.08) +
+  labs(x = "Item", y = "Times used") +
+  coord_flip() +
+  theme(legend.position = "none") +
+  geom_label(data = times_used, aes(x = 0, y = std1_low, label=round(std1_low, digits = 0), group = date), color = "darkgray") +
+  geom_label(data = times_used, aes(x = 0, y = std1_high, label=round(std1_high, digits = 0), group = date), color = "darkgray") +
+  geom_label(data = times_used, aes(x = 0, y = std2_low, label=round(std2_low, digits = 0), group = date), color = "darkgray") +
+  geom_label(data = times_used, aes(x = 0, y = std2_high, label=round(std2_high, digits = 0), group = date), color = "darkgray") +
+#  transition_time(date) + labs(title = "Date: {frame_time}") + ease_aes('linear')
+  transition_states(date, state_length = 1, transition_length = 0) +
+  labs(title = "Date: {closest_state}") + ease_aes('linear')
+
+
+max(times_used$date) - min(times_used$date)
+
+# Animate and save
+#animate(animation, height = 1000, width = 1000, nframes = 100, fps = 24, end_pause = 0)
+animate(animation, height = 1000, width = 1000, nframes = 500, fps = 24, end_pause = 72)
+
+anim_save("Plots/Category-Times_used-Underwear_boxers-animation.gif")
 
 
 

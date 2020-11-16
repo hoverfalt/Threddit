@@ -170,13 +170,13 @@ calculate_daily_cost <- function(plotuse, rolling_average_window = 30, categorie
 # Function to setup daily cost plot
 setup_daily_cost_plot <- function(daily_cost, ymax = 40) {
     
-    # Set up plot
-    p <- ggplot(daily_cost, aes(x = date, y = daily_cost, color = still_active)) +
+    # Set up plot (note the negation: !still_active means "All divested")
+    p <- ggplot(daily_cost, aes(x = date, y = daily_cost, color = !still_active)) +
         geom_point() +
-        scale_color_manual(breaks = c(TRUE, FALSE), values=c("mediumseagreen", "indianred1")) +
+        scale_color_manual(breaks = c(FALSE, TRUE), values=c("indianred1", "mediumseagreen")) +
         geom_line(aes(x = date, y = average_daily_cost), color='steelblue', size=1) +
         scale_y_continuous(limits=c(0,ymax)) + # Set y limit to NA for automatic scale
-        labs(x = "Date", y = "Daily cost and 30-day rolling average (shifted to midpoint of sample)", color = "Still active")
+        labs(x = "Date", y = "Daily cost and 30-day rolling average (shifted to midpoint of sample)", color = "All divested")
     
     return(p)
 }

@@ -230,8 +230,15 @@ calculate_daily_cost_anim <- function(plotuse, rolling_average_window = 30, cate
 ######################################## CATEGORY PLOTS ########################################
 ################################################################################################
 
-### These functions set up standard category plots with points and images
+### The following functions set up category plots with points and images ###
 
+# setup_category_plot_point(plot_data, categories, xmax, ymax, log_trans=TRUE, avg_lines=TRUE, animate=FALSE)
+# setup_category_plot_image(plot_data, categories, xmax, ymax, log_trans=TRUE, animate=FALSE)
+# setup_category_cumulative_plot_image(plot_data, categories, xmax, ymax, log_trans=TRUE, trails=FALSE)
+# setup_category_times_used_plot(plot_data, categories, animate = FALSE)
+
+
+### CATEGORY PLOT - COST PER USE vs MONTHLY USE ###
 
 # Function to setup (multi) category point plot y = cost per use, x = monthly use
 setup_category_plot_point <- function(plot_data, categories, xmax, ymax, log_trans=TRUE, avg_lines=TRUE, animate=FALSE) {
@@ -303,6 +310,9 @@ setup_category_plot_image <- function(plot_data, categories, xmax, ymax, log_tra
 
 
 
+
+### CATEGORY PLOT - COST PER USE vs CUMULATIVE USE ###
+
 # Function to setup (multi) category image plot y = cost per use, x = cumulative use
 setup_category_cumulative_plot_image <- function(plot_data, categories, xmax, ymax, log_trans=TRUE, trails=FALSE) {
     
@@ -329,6 +339,75 @@ setup_category_cumulative_plot_image <- function(plot_data, categories, xmax, ym
     
     return(p)
 }
+
+
+
+
+### CATEGORY PLOT - TIMES USED ###
+
+# Function to setup category image plot y = item (listing), x = Times used
+setup_category_times_used_plot <- function(plot_data, categories, animate = FALSE) {
+
+    # Initiate times_ised data frame and data
+    times_used <- plot_data %>%
+        filter(category %in% categories) %>%
+        select(item, category, date, cumuse, days_active, active, photo) %>%
+        as.data.frame()
+
+    # For non-animations, include only data for the last date
+    if (!animate) {
+        times_used <- times_used %>% filter(date == max(times_used$date))
+    }
+        
+    # Calculate the standard deviations ranges for divested items
+    times_used_std <- times_used %>%
+        filter(active == FALSE) %>%
+        group_by(date) %>%
+        summarise(std1_low = quantile(cumuse, 0.32), std1_high = quantile(cumuse, 0.68), std2_low = quantile(cumuse, 0.05), std2_high = quantile(cumuse, 0.95)) %>%
+        as.data.frame()
+    
+    # Add standard deviation data
+    times_used <- merge(times_used, times_used_std, by = "date", all.x = TRUE) 
+    
+    # Add rownumber variable telling the order in which to plot the items
+    times_used <- times_used %>% 
+        group_by(date) %>% arrange(active, desc(days_active), item) %>% # Create correct grouping and in-group order
+        mutate(rownumber = cumsum(!is.na(item))) %>% # Create counter according to order (!is.na(item) is just something to cumsum that spans the entire date vector)
+        ungroup() %>% arrange(date, active, desc(days_active)) %>% # Ungroup and reorder for plotting
+        as.data.frame() # Cast tibble to data frame
+    
+    # Set up animation
+    animation <-
+        ggplot(times_used, aes(x = rownumber, y = cumuse)) +
+        # Annotation for 1 and 2 standard deviation areas (rendered first to be behind the data layer)
+        geom_rect(data = times_used[times_used$rownumber == 1,],
+                  aes(xmin=0, xmax=max(times_used$rownumber), ymin=std1_low, ymax=std1_high, group = date), alpha=0.15, fill="green") +
+        geom_rect(data = times_used[times_used$rownumber == 1,],
+                  aes(xmin=0, xmax=max(times_used$rownumber), ymin=std2_low, ymax=std2_high, group = date), alpha=0.15, fill="green") +
+        # Bars marking the progress of each item, color coded by wether item is active of divested
+        geom_col(data = times_used, aes(x = rownumber, y = cumuse, fill = active, group = date),
+                 width = max(times_used$rownumber)/300, position = position_dodge2(preserve = "total", padding = 0)) +
+        scale_fill_manual(breaks = c(FALSE, TRUE), values=c("lightgreen", "lightgray")) +
+        geom_image(aes(image = photo, group = date), size = 0.08) +
+        labs(x = "Item", y = "Times used") +
+        coord_flip() + # Flip coordinates to be horizontal (this switches x and y)
+        theme(legend.position = "none") + # Remove legend
+        # Add numeric labels for standard deviations, 1 and 2, high and low
+        geom_label(data = times_used, aes(x = 0, y = std1_low, label=round(std1_low, digits = 0), group = date), color = "darkgray") +
+        geom_label(data = times_used, aes(x = 0, y = std1_high, label=round(std1_high, digits = 0), group = date), color = "darkgray") +
+        geom_label(data = times_used, aes(x = 0, y = std2_low, label=round(std2_low, digits = 0), group = date), color = "darkgray") +
+        geom_label(data = times_used, aes(x = 0, y = std2_high, label=round(std2_high, digits = 0), group = date), color = "darkgray")
+
+    if (animate) {
+        animation <- animation +
+            # Transition_state using date (as opposed to transition_time) avoids multiple dates rendering in the same frame
+            transition_states(date, state_length = 1, transition_length = 0) +
+            labs(title = "Date: {closest_state}") + ease_aes('linear')
+    }
+
+    return(animation)
+}
+
 
 
 

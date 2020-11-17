@@ -222,6 +222,25 @@ calculate_daily_cost_anim <- function(plotuse, rolling_average_window = 30, cate
     return(daily_cost_anim)
 }
 
+# Function to setup daily cost animation
+setup_daily_cost_animation <- function(daily_cost_anim_plot) {
+
+    # Set up animation
+    animation <-
+        ggplot(daily_cost_anim_plot, aes(x = date, y = daily_cost, color = !still_active)) +
+        geom_point(size=1.5) +
+        scale_color_manual(breaks = c(FALSE, TRUE), values=c("indianred1", "mediumseagreen")) +
+        geom_line(data = na.omit(daily_cost_anim_plot), aes(x = date, y = average_daily_cost), color='steelblue', size=1.5) +
+        scale_y_continuous(limits=c(0,40)) + # Set fixed Y (daily cost) limit at 50 to avoid plot scale from jumping around
+        labs(x = "Date", y = "Daily cost and 30-day rolling average (shifted to midpoint of sample)", color = "All divested") +
+        transition_states(day, state_length = 1, transition_length = 0) +
+        labs(title = "Date: {closest_state}") + ease_aes('linear')
+    
+    return(animation)
+}
+
+
+
 
 
 
@@ -276,6 +295,13 @@ setup_category_plot_point <- function(plot_data, categories, xmax, ymax, log_tra
                 geom_hline(data = plot_data[plot_data$category == cat,], aes(yintercept = avg_cost_per_use_divested), size = 0.8, colour = category_colors[cat], linetype = "dotted")
         }
     }
+
+    if (animate) {
+        p <- p +
+            # Transition_state using date (as opposed to transition_time) avoids multiple dates rendering in the same frame
+            transition_states(date, state_length = 1, transition_length = 0) +
+            labs(title = "Date: {closest_state}") + ease_aes('linear')
+    }
     
     return(p)
 }
@@ -304,7 +330,14 @@ setup_category_plot_image <- function(plot_data, categories, xmax, ymax, log_tra
     
     if (log_trans) { p <- p + scale_y_continuous(trans="log10", limits=c(NA,ymax)) }
     else { p <- p + scale_y_continuous(limits=c(NA,ymax)) }
-    
+
+    if (animate) {
+        p <- p +
+            # Transition_state using date (as opposed to transition_time) avoids multiple dates rendering in the same frame
+            transition_states(date, state_length = 1, transition_length = 0) +
+            labs(title = "Date: {closest_state}") + ease_aes('linear')
+    }
+        
     return(p)
 }
 

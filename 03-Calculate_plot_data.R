@@ -347,28 +347,44 @@ setup_category_plot_image <- function(plot_data, categories, xmax, ymax, log_tra
 ### CATEGORY PLOT - COST PER USE vs CUMULATIVE USE ###
 
 # Function to setup (multi) category image plot y = cost per use, x = cumulative use
-setup_category_cumulative_plot_image <- function(plot_data, categories, xmax, ymax, log_trans=TRUE, trails=FALSE) {
+setup_category_cumulative_plot_image <- function(plot_data, categories, xmax = NA, ymin = NA, ymax = NA, log_trans=TRUE, trails=FALSE, guides=TRUE) {
     
     # Filter data by category
     plot_data <- plot_data %>% filter(category %in% categories)
-    
-    if (!trails) {
-        p <- plot_data %>% filter(date == max(plot_data$date)) %>% 
-            ggplot(aes(x = cumuse, y = cost_per_use)) +
-            geom_image(aes(image = photo), size = 0.08) +
-            scale_x_continuous(limits=c(0,xmax)) +
-            labs(x = "Cumulative times used", y = "Cost per use (€)")
-    } else {
-        p <- plot_data %>%
-            ggplot(aes(x = cumuse, y = cost_per_use)) +
-            geom_point(colour = "lightgray") + 
-            geom_image(data = plot_data[plot_data$date == max(plot_data$date),], aes(image = photo), size = 0.08) +
-            scale_x_continuous(limits=c(0,xmax)) +
-            labs(x = "Cumulative times used", y = "Cost per use (€)")
+ 
+    # Build guides data
+    if(guides){
+        # Set xmax for guides to data limit if not defined (in the function call (i.e. set automatically by ggplot)
+        if (!is.na(xmax)){ guides_length <- xmax }
+        else { guides_length = max(plot_data$cumuse)}
+        
+        # Initiate guides data frame
+        guides_data <- data.frame()
+        
+        # Create guides with 400 observations for each item (purchase price)
+        for (i in guides_prices){ # guides_prices is a global variable assumed set
+            guides_temp = data.frame(item = rep(paste("Purchase price", i), guides_length))
+            guides_temp$date <- max(plot_data$date)
+            guides_temp$cumuse <- seq(1, guides_length, 1)
+            guides_temp$cost_per_use <- as.numeric(i) / guides_temp$cumuse
+            guides_data <- rbind(guides_data, guides_temp)
+        }
+        
+        # Remove guide data with cost_per_use lower than the plot data, to avoid impact on axis limits
+        guides_data <- guides_data[guides_data$cost_per_use >= min(plot_data$cost_per_use),]
     }
-
-    if (log_trans) { p <- p + scale_y_continuous(trans="log10", limits=c(NA,ymax)) }
-    else { p <- p + scale_y_continuous(limits=c(NA,ymax)) }
+    
+    
+    # Build plot
+    p <- plot_data %>% ggplot(aes(x = cumuse, y = cost_per_use))
+    if (trails) { p <- p + geom_point(colour = "lightgray") }
+    if (guides){ p <- p + geom_point(data = guides_data, aes(x = cumuse, y = cost_per_use), colour = "lightblue", size = 0.4) }
+    p <- p +
+        geom_image(data = plot_data[plot_data$date == max(plot_data$date),], aes(image = photo), size = 0.08) +
+        scale_x_continuous(limits=c(0,xmax)) +
+        labs(x = "Cumulative times used", y = "Cost per use (€)")
+    if (log_trans) { p <- p + scale_y_continuous(trans="log10", limits=c(ymin,ymax)) }
+    else { p <- p + scale_y_continuous(limits=c(ymin,ymax)) }
     
     return(p)
 }

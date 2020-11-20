@@ -493,11 +493,11 @@ anim_save("Plots/Category-Shirts_Underwear_and_Socks-point-animation.gif")
 ### CATEGORY PLOT - COST PER USE vs CUMULATIVE USE ###
 
 # Shoes
-p <- plot_data %>% setup_category_cumulative_plot_image("Shoes", xmax = 320, ymax = 16, log_trans=TRUE, trails=TRUE)
+p <- plot_data %>% setup_category_cumulative_plot_image("Shoes", xmax = 320, ymax = 16, log_trans=TRUE, trails=TRUE, guides=TRUE)
 ggsave(filename = "Plots/Category-Shoes-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
 
 # Jackets and hoodies
-p <- plot_data %>% setup_category_cumulative_plot_image("Jackets and hoodies", xmax = 300, ymax = 16, log_trans=TRUE, trails=TRUE)
+p <- plot_data %>% setup_category_cumulative_plot_image("Jackets and hoodies", xmax = 300, ymax = 16, log_trans=TRUE, trails=TRUE, guides=FALSE)
 ggsave(filename = "Plots/Category-Jackets_and_hoodies-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
 
 # Shirts
@@ -515,6 +515,15 @@ ggsave(filename = "Plots/Category-Underwear_shirts-Cost_and_Cumulative_use.png",
 # Belts and Shoes
 p <- plot_data %>% setup_category_cumulative_plot_image(c("Belts", "Shoes"), xmax = 350, ymax = 100, log_trans=TRUE, trails=TRUE)
 ggsave(filename = "Plots/Category-Belts_and_Shoes-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
+
+
+
+## Set guides 
+guides_prices <- c(5, 10, 20, 50, 100, 200, 400, 800)
+
+p <- plot_data %>% setup_category_cumulative_plot_image("Shoes", xmax = 320, ymin = 0.45, ymax = 10, log_trans=TRUE, trails=TRUE, guides=TRUE)
+
+plot_data %>% filter(category == "Shoes") %>% ungroup() %>% select(cumuse) %>% max()
 
 dev.off()
 

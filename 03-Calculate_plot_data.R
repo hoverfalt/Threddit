@@ -382,7 +382,7 @@ setup_category_cumulative_plot_image <- function(plot_data, categories, xmax = N
     p <- p +
         geom_image(data = plot_data[plot_data$date == max(plot_data$date),], aes(image = photo), size = 0.08) +
         scale_x_continuous(limits=c(0,xmax)) +
-        labs(x = "Cumulative times used", y = "Cost per use (€)")
+        labs(x = "Times used", y = "Cost per use (€)")
     if (log_trans) { p <- p + scale_y_continuous(trans="log10", limits=c(ymin,ymax)) }
     else { p <- p + scale_y_continuous(limits=c(ymin,ymax)) }
     

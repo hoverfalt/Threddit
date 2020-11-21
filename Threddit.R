@@ -56,21 +56,19 @@ category_order = c("Jackets and hoodies", "Blazers and vests", "Knits",
 # Read and clean master raw data
 masterdata <- read_data(raw_data_file)
 
-
 # Transform data
 plotuse <- transform_data(masterdata) %>% # 1) Transform raw data into tidy data
 calculate_active_use_data() %>% # 2) Calculate cumulative use data
 calculate_total_use_data() %>% # 3) Calculate total use data, including divested items 
 calculate_plot_data() # 4) Calculate plot data for the standard plots
 
-
 ### Save master plotting data 'plotuse' to file to avoid repetitive reprocessing
 
 # Save tidy data data.frame to file for easier retrieval
-save(plotuse,file="Data/Threddit-plotuse-2020-11-15.Rda")
+save(plotuse,file="Data/Threddit-plotuse-2020-11-21.Rda")
 
 # Load data from file
-load("Data/Threddit-plotuse-2020-11-15.Rda")
+load("Data/Threddit-plotuse-2020-11-21.Rda")
 
 
 
@@ -243,9 +241,9 @@ rolling_average_window <- 30
 daily_cost_anim <- calculate_daily_cost_anim(plotuse, rolling_average_window, categories_include = category_order, categories_exclude = "Sportswear")
 
 # Save daily_cost_anim data frame to file for easier retrieval
-save(daily_cost_anim,file="Data/Threddit-daily_cost_anim-2020-10-25.Rda")
+save(daily_cost_anim,file="Data/Threddit-daily_cost_anim-2020-11-21.Rda")
 # Load data from file
-load("Data/Threddit-daily_cost_anim-2020-10-25.Rda")
+load("Data/Threddit-daily_cost_anim-2020-11-21.Rda")
 
 # Subset data to exclude NAs in 30-day rolling average (this is to avoid transition_time faiure in animation)
 daily_cost_anim_plot <- daily_cost_anim %>% filter(day >= daterange[rolling_average_window] & day <= daterange[length(daterange)-rolling_average_window])
@@ -429,8 +427,8 @@ for (i in category_order){
   p <- plot_data %>% setup_category_plot_image(categories = c(i), xmax = NA, ymax = NA, log_trans=TRUE)
   ggsave(filename = paste("Plots/Category-", gsub(" ", "_", i), ".png", sep=""),
          p, width = 10, height = 10, dpi = 300, units = "in", device=png())
+  dev.off()
 }
-dev.off()
 
 
 ## STANDARD CATEGORY IMAGE PLOTS ANIMATED ##
@@ -492,16 +490,20 @@ anim_save("Plots/Category-Shirts_Underwear_and_Socks-point-animation.gif")
 
 ### CATEGORY PLOT - COST PER USE vs CUMULATIVE USE ###
 
+## Set guides as global variable to be used in plot functions
+guides_prices <- c(5, 10, 20, 50, 100, 200, 400, 800)
+
+
 # Shoes
 p <- plot_data %>% setup_category_cumulative_plot_image("Shoes", xmax = 320, ymax = 16, log_trans=TRUE, trails=TRUE, guides=TRUE)
 ggsave(filename = "Plots/Category-Shoes-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
 
 # Jackets and hoodies
-p <- plot_data %>% setup_category_cumulative_plot_image("Jackets and hoodies", xmax = 300, ymax = 16, log_trans=TRUE, trails=TRUE, guides=FALSE)
+p <- plot_data %>% setup_category_cumulative_plot_image("Jackets and hoodies", xmax = 400, ymax = 10, log_trans=TRUE, trails=TRUE, guides=TRUE)
 ggsave(filename = "Plots/Category-Jackets_and_hoodies-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
 
 # Shirts
-p <- plot_data %>% setup_category_cumulative_plot_image("Shirts", xmax = 60, ymax = 16, log_trans=TRUE, trails=TRUE)
+p <- plot_data %>% setup_category_cumulative_plot_image("Shirts", xmax = 60, ymax = 16, log_trans=TRUE, trails=TRUE, guides=TRUE)
 ggsave(filename = "Plots/Category-Shirts-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
 
 # Belts
@@ -516,14 +518,6 @@ ggsave(filename = "Plots/Category-Underwear_shirts-Cost_and_Cumulative_use.png",
 p <- plot_data %>% setup_category_cumulative_plot_image(c("Belts", "Shoes"), xmax = 350, ymax = 100, log_trans=TRUE, trails=TRUE)
 ggsave(filename = "Plots/Category-Belts_and_Shoes-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
 
-
-
-## Set guides 
-guides_prices <- c(5, 10, 20, 50, 100, 200, 400, 800)
-
-p <- plot_data %>% setup_category_cumulative_plot_image("Shoes", xmax = 320, ymin = 0.45, ymax = 10, log_trans=TRUE, trails=TRUE, guides=TRUE)
-
-plot_data %>% filter(category == "Shoes") %>% ungroup() %>% select(cumuse) %>% max()
 
 dev.off()
 
@@ -540,8 +534,10 @@ animation <- plot_data %>% filter(category == 'Shoes') %>%
   scale_y_continuous(trans="log10", limits=c(NA,16)) +
   transition_time(date) + labs(title = "Date: {frame_time}") + ease_aes('linear')
 
-animate(animation, height = 1000, width = 1000, nframes = 100, fps = 24, end_pause = 72)
-#animate(animation, height = 1000, width = 1000, nframes = length(daterange), fps = 24, end_pause = 72)
+p <- p + transition_time(date) + labs(title = "Date: {frame_time}") + ease_aes('linear')
+
+animate(p, height = 1000, width = 1000, nframes = 100, fps = 24, end_pause = 72) # Frames = states + end pause
+animate(height = 1000, width = 1000, nframes = length(unique(plot_data_reduced$date)) + 72, fps = 24, end_pause = 72) # Frames = states + end pause
 anim_save("Plots/Category-Shoes-Cumulative_use-animation.gif")
 
 
@@ -556,6 +552,7 @@ for (i in category_order){
   p <- setup_category_times_used_plot(plot_data, categories = c(i), animate = FALSE)
   ggsave(filename = paste("Plots/Category-", gsub(" ", "_", i), "-Times_used.png", sep=""),
          p, width = 10, height = 10, dpi = 300, units = "in", device=png())
+  dev.off()
 }
 
 

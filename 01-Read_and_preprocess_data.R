@@ -23,9 +23,13 @@ read_data <- function (data_file = "Threddit.xlsx"){
 
     # Convert purchase and divestement dates from character to date
     masterdata <- masterdata %>%
-        mutate(`Date purchased` = as.Date(as.numeric(`Date purchased`), origin = "1899-12-30")) %>%
-        mutate(`Date divested` = as.Date(as.numeric(`Date divested`), origin = "1899-12-30"))
-
+        mutate(`Date purchased` = as.Date(`Date purchased`)) %>%
+        mutate(`Date divested` = as.Date(`Date divested`))
+#    mutate(`Date purchased` = as.Date(as.numeric(`Date purchased`), origin = "1899-12-30")) %>%
+#        mutate(`Date divested` = as.Date(as.numeric(`Date divested`), origin = "1899-12-30")) 
+    
+    as.Date(masterdata$'Date purchased')
+    
     # Convert item initial times used from character to numeric
     masterdata <- masterdata %>% mutate(`Times used init` = as.numeric(`Times used init`))
         

@@ -12,6 +12,9 @@
 # Define function to read raw data, default "Threddit.xlsx".
 read_data <- function (data_file = "Threddit.xlsx"){
 
+    # Set the column number where the data starts (DEPENDENCY)
+    date_column_number <- 12
+    
     #  Read master data from XLSX into masterdata
     masterdata <- read_xlsx(data_file)
     
@@ -27,8 +30,6 @@ read_data <- function (data_file = "Threddit.xlsx"){
         mutate(`Date divested` = as.Date(`Date divested`))
 #    mutate(`Date purchased` = as.Date(as.numeric(`Date purchased`), origin = "1899-12-30")) %>%
 #        mutate(`Date divested` = as.Date(as.numeric(`Date divested`), origin = "1899-12-30")) 
-    
-    as.Date(masterdata$'Date purchased')
     
     # Convert item initial times used from character to numeric
     masterdata <- masterdata %>% mutate(`Times used init` = as.numeric(`Times used init`))
@@ -47,6 +48,45 @@ read_data <- function (data_file = "Threddit.xlsx"){
     # Cast daily use variables from 'x' or N/A to locigal
     masterdata[,date_column_number:ncol(masterdata)] <-
         mutate_all(masterdata[,date_column_number:ncol(masterdata)], function (a) { as.logical(ifelse(is.na(a), FALSE, TRUE))})
+    
+    return(masterdata)
+}
+
+
+# Define function to read raw data from Google Sheets, default as set by get_Google_sheet_ID
+read_data_GD <- function (data_file = get_Google_sheet_ID()){
+
+    # Read master data from Google Drive
+    masterdata <- read_sheet(data_file)
+    
+    # Set the column number where the data starts (DEPENDENCY)
+    date_column_number <- 12
+    
+    # Remove rows with <NA> in first column
+    masterdata <- masterdata[complete.cases(masterdata[ , 1]),]
+
+    # Remove Google Sheet item photo placeholder column
+    masterdata <- masterdata %>% select(-'Photo placeholder')
+
+    # Convert purchase and divestement dates from character to date
+    masterdata <- masterdata %>%
+        mutate(`Date purchased` = as.Date(`Date purchased`)) %>%
+        mutate(`Date divested` = as.Date(`Date divested`))
+    
+    # Convert item initial times used from character to numeric
+    masterdata <- masterdata %>% mutate(`Times used init` = as.numeric(`Times used init`))
+    
+    # Convert item price from character to double
+    masterdata <- masterdata %>% mutate(Price = as.numeric(Price))
+    
+    # Extract and convert column names from integers to date strings (set global variable)
+    daterange <<- lapply(colnames(masterdata[date_column_number:ncol(masterdata)]), function (a) { as.Date(a, format = "%d.%m.%Y") } )
+    
+    colnames(masterdata)[date_column_number:ncol(masterdata)] <- lapply(daterange, toString)
+    
+    # Cast daily use variables from 'x' or NA to locigal
+#    masterdata[,date_column_number:ncol(masterdata)] <-
+#        mutate_all(masterdata[,date_column_number:ncol(masterdata)], function (a) { as.logical(ifelse(is.na(a), FALSE, TRUE))})
     
     return(masterdata)
 }

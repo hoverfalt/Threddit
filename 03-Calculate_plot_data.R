@@ -168,10 +168,23 @@ calculate_daily_cost <- function(plotuse, rolling_average_window = 30, categorie
 }
 
 # Function to setup daily cost plot
-setup_daily_cost_plot <- function(daily_cost, ymax = 40) {
+setup_daily_cost_plot <- function(daily_cost, ymax = 40, seasons = FALSE) {
     
     # Set up plot (note the negation: !still_active means "All divested")
-    p <- ggplot(daily_cost, aes(x = date, y = daily_cost, color = !still_active)) +
+    p <- ggplot(daily_cost, aes(x = date, y = daily_cost, color = !still_active))
+    
+    # Add season overlay (consider refactoring to avoid hard coded data)
+    if (seasons) {
+        p <- p +
+            annotate("rect", xmin = as.Date("2018-06-22"), xmax = as.Date("2018-08-15"), ymin = 0, ymax = ymax, alpha = 0.3, fill = "lightyellow", size = 0) +
+            annotate("rect", xmin = as.Date("2019-06-22"), xmax = as.Date("2019-08-15"), ymin = 0, ymax = ymax, alpha = 0.3, fill = "lightyellow", size = 0) +
+            annotate("rect", xmin = as.Date("2020-06-22"), xmax = as.Date("2020-08-15"), ymin = 0, ymax = ymax, alpha = 0.3, fill = "lightyellow", size = 0) +
+            annotate("rect", xmin = as.Date("2020-03-18"), xmax = as.Date("2020-06-21"), ymin = 0, ymax = ymax, alpha = 0.1, fill = "lightpink", size = 0) + # Corona
+            annotate("rect", xmin = as.Date("2020-08-16"), xmax = as.Date("2020-12-21"), ymin = 0, ymax = ymax, alpha = 0.1, fill = "lightpink", size = 0) # Corona
+    }
+
+    # Add data, set scales and labels
+    p <- p +
         geom_point() +
         scale_color_manual(breaks = c(FALSE, TRUE), values=c("indianred1", "mediumseagreen")) +
         geom_line(aes(x = date, y = average_daily_cost), color='steelblue', size=1) +

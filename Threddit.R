@@ -25,6 +25,7 @@ library(gifski)
 library(ggimage)
 library(lubridate)
 library(roll)
+library(googlesheets4)
 
 # Source required files
 source("01-Read_and_preprocess_data.R")
@@ -35,9 +36,6 @@ source("03-Calculate_plot_data.R")
 
 # Set raw data file name
 raw_data_file <- "Threddit.xlsx"
-
-# Set the column number where the data starts (DEPENDENCY)
-date_column_number <- 12
 
 # Set category order (DEPENDENCY)
 category_order = c("Jackets and hoodies", "Blazers and vests", "Knits",
@@ -53,16 +51,24 @@ category_order = c("Jackets and hoodies", "Blazers and vests", "Knits",
 # This section calls the functions to read, clean and transform use data,
 # as well as calulate the data for the standard plots
 
-# Read and clean master raw data
+## Read and clean master raw data (CHOOSE EXCEL OR GOOGLE)
+
+# Excel
 masterdata <- read_data(raw_data_file)
 
-# Transform data
+# Google Sheets
+gs4_auth() # Authenticate Tidyverse packages to Google Drive
+masterdata <- read_data_GD(get_Google_sheet_ID()) # Read master data from Google Drive
+
+
+## Transform data
 plotuse <- transform_data(masterdata) %>% # 1) Transform raw data into tidy data
 calculate_active_use_data() %>% # 2) Calculate cumulative use data
 calculate_total_use_data() %>% # 3) Calculate total use data, including divested items 
 calculate_plot_data() # 4) Calculate plot data for the standard plots
 
-### Save master plotting data 'plotuse' to file to avoid repetitive reprocessing
+
+## Save master plotting data 'plotuse' to file to avoid repetitive reprocessing
 
 # Save tidy data data.frame to file for easier retrieval
 save(plotuse,file="Data/Threddit-plotuse-2020-11-21.Rda")
@@ -138,6 +144,7 @@ p <- inventory %>%
     scale_color_manual(name = "Category", values = category_colors) +
     labs(x = "Date", y = "Active inventory (number of items)")
 ggsave(filename = "Plots/Portfolio-Inventory-Item_count.png", p, width = 12, height = 10, dpi = 300, units = "in", device='png')
+dev.off()
 
 
 # Plot: active inventory value by category (line plot)
@@ -147,6 +154,7 @@ p <- inventory %>%
     scale_color_manual(name = "Category", values = category_colors) +
     labs(x = "Date", y = "Active inventory value at purchase price (€)")
 ggsave(filename = "Plots/Portfolio-Inventory-Value_by_category.png", p, width = 12, height = 10, dpi = 300, units = "in", device='png')
+dev.off()
 
 
 # Plot: active inventory value by category (stacked area plot)
@@ -156,6 +164,7 @@ p <- inventory %>%
     scale_fill_manual(name = "Category", values = category_colors) +
     labs(x = "Date", y = "Active inventory value at purchase price (€)")
 ggsave(filename = "Plots/Portfolio-Inventory-Value_stacked.png", p, width = 12, height = 10, dpi = 300, units = "in", device='png')
+dev.off()
 
 
 
@@ -179,6 +188,7 @@ p <- inventory_value_total %>%
     scale_color_manual(name = "Category", values = category_colors) +
     labs(x = "Date", y = "Active inventory value at purchase price (€)")
 ggsave(filename = "Plots/Portfolio-Inventory-Value_total.png", p, width = 10, height = 10, dpi = 300, units = "in", device='png')
+dev.off()
 
 
 
@@ -194,45 +204,41 @@ rolling_average_window <- 30
 daily_cost <- calculate_daily_cost(plotuse, rolling_average_window, categories_include = category_order, categories_exclude = "Sportswear")
 
 # Plot daily cost and rolling average
-p <- setup_daily_cost_plot(daily_cost, ymax = 40)
+p <- setup_daily_cost_plot(daily_cost, ymax = 40, seasons = TRUE)
 ggsave(filename = "Plots/Portfolio-Daily_cost.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
+dev.off()
 
 
 
 ## CATEGORY DAILY COST WITH ROLLING AVERAGE ##
 
-# Create and save image plots for all categories
-
 # Plot: Jackets and hoodies
 daily_cost <- calculate_daily_cost(plotuse, rolling_average_window, categories_include = "Jackets and hoodies")
 p <- setup_daily_cost_plot(daily_cost, ymax = 8)
 ggsave(filename = "Plots/Category-Jackets_and_hoodies-Daily_cost.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
+dev.off()
 
 # Plot: Shirts
 daily_cost <- calculate_daily_cost(plotuse, rolling_average_window, categories_include = "Shirts")
 p <- setup_daily_cost_plot(daily_cost, ymax = 20)
 ggsave(filename = "Plots/Category-Shirts-Daily_cost.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
+dev.off()
 
 # Plot: Shoes
 daily_cost <- calculate_daily_cost(plotuse, rolling_average_window, categories_include = "Shoes")
 p <- setup_daily_cost_plot(daily_cost, ymax = 20)
 ggsave(filename = "Plots/Category-Shoes-Daily_cost.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
+dev.off()
 
 # Plot: Underwear including socks
 daily_cost <- calculate_daily_cost(plotuse, rolling_average_window, categories_include = c("Underwear shirts","Underwear boxers","Socks"))
 p <- setup_daily_cost_plot(daily_cost, ymax = 10)
 ggsave(filename = "Plots/Category-Underwear_and_socks-Daily_cost.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
-
 dev.off()
 
 
 
-
-### DAILY COST WITH ROLLING AVERAGE - ANIMATED ###
-
-# Set rolling average window size to 30 days
-rolling_average_window <- 30
-
+## DAILY COST WITH ROLLING AVERAGE - ANIMATED ##
 
 
 ## Animation: Full portfolio (except Sportswear)
@@ -298,7 +304,7 @@ p <- usetodate_anim %>% filter(date == max(usetodate_anim$date)) %>% # Include o
   labs(x = "Category daily use", y = "Average daily cost of use (all items)") +
   guides(colour = guide_legend(override.aes = list(size = 2))) # Override plot point size to smaller for legend
 ggsave(filename = "Plots/Portfolio-Daily_cost_and_Category_use.png", p, width = 12, height = 10, dpi = 300, units = "in", device=png())
-
+dev.off()
 
 ## Point animation
 animation <- ggplot(usetodate, 
@@ -333,6 +339,7 @@ p <- usetodate_anim %>% filter(date == max(usetodate_anim$date)) %>% # Include o
   labs(x = "Category daily use", y = "Average yearly cost of use (all items)") +
   guides(colour = guide_legend(override.aes = list(size = 2))) # Override plot point size to smaller for legend
 ggsave(filename = "Plots/Portfolio-Yearly_cost_and_Category_use.png", p, width = 12, height = 10, dpi = 300, units = "in", device=png())
+dev.off()
 
 
 ## Image animation (HEAVY COMPUTING)
@@ -599,8 +606,14 @@ anim_save("Plots/Category-Underwear_boxers-Times_used-animation.gif")
 ################################################################################################
 
 
+# Authenticate Tidyverse packages to Google Drive
+gs4_auth()
 
+# Set columnt numnber of first data date
+date_column_number <- 8
 
+# Read master data from Google Drive
+masterdata <- read_data_GD(get_Google_sheet_ID())
 
 
 

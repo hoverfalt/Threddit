@@ -31,11 +31,9 @@ library(googlesheets4)
 source("01-Read_and_preprocess_data.R")
 source("02-Calculate_active_use_data.R")
 source("03-Calculate_plot_data.R")
+source("04-Google_Drive_access.R")
 
 ## Set up static variables
-
-# Set raw data file name
-raw_data_file <- "Threddit.xlsx"
 
 # Set category order (DEPENDENCY)
 category_order = c("Jackets and hoodies", "Blazers and vests", "Knits",
@@ -51,10 +49,11 @@ category_order = c("Jackets and hoodies", "Blazers and vests", "Knits",
 # This section calls the functions to read, clean and transform use data,
 # as well as calulate the data for the standard plots
 
-## Read and clean master raw data (CHOOSE EXCEL OR GOOGLE)
+## Read and clean master raw data
 
 # Excel
-masterdata <- read_data(raw_data_file)
+#raw_data_file <- "Threddit.xlsx"
+#masterdata <- read_data(raw_data_file)
 
 # Google Sheets
 gs4_auth() # Authenticate Tidyverse packages to Google Drive
@@ -604,16 +603,6 @@ anim_save("Plots/Category-Underwear_boxers-Times_used-animation.gif")
 ################################################################################################
 ######################################### DEVELOPMENT ##########################################
 ################################################################################################
-
-
-# Authenticate Tidyverse packages to Google Drive
-gs4_auth()
-
-# Set columnt numnber of first data date
-date_column_number <- 8
-
-# Read master data from Google Drive
-masterdata <- read_data_GD(get_Google_sheet_ID())
 
 
 

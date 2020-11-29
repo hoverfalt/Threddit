@@ -103,7 +103,7 @@ transform_data <- function (masterdata){
     # select: select only relevant columns (Category, Item, and all dates)
     # gather: key = date = column name, value = used = data, Category and Item unchanged
     itemuse <- masterdata %>% select(-Photo, -Price, -'Date purchased', -'Date divested', -'Times used init',
-                                     -'Months available', -'Times used', -'Times used per month', -'Cost per time used') %>%
+                                     -'Materials', -'Weight', -'Times used', -'Cost per time used') %>%
         gather(key = "date", value = "used", -Category, -Item, na.rm = TRUE) %>%
         rename(category = "Category", item = "Item") %>%
         mutate(date = as.Date(date)) %>%

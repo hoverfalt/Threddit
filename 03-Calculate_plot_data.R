@@ -146,6 +146,65 @@ calculate_complete_portfolio_plot_data <- function(plotuse){
 }
 
 
+# Funtion to set up inventory item count plot
+setup_inventory_item_count_plot <- function(inventory){
+    
+    # Set author label coordinates (upper right corner)
+    author_label_x <- max(inventory$date)
+    author_label_y <- max(inventory$itemcount)
+    
+    # Setup plot
+    p <- inventory %>% 
+        ggplot( aes(x = date, y = itemcount, colour = category)) +
+        annotate("text", x = author_label_x, y = author_label_y, label = author_label, color = "gray", hjust = 1) +
+        geom_line() +
+        scale_color_manual(name = "Category", values = category_colors) +
+        labs(x = "Date", y = "Active inventory (number of items)")
+    
+    return(p)
+}
+
+
+# Funtion to set up inventory value by category plot
+setup_inventory_value_by_category_plot <- function(inventory){
+    
+    # Set author label coordinates (upper right corner)
+    author_label_x <- max(inventory$date)
+    author_label_y <- max(inventory$categoryvalue)
+    
+    # Setup plot
+    p <- inventory %>% 
+        ggplot( aes(x = date, y = categoryvalue, colour = category)) +
+        annotate("text", x = author_label_x, y = author_label_y, label = author_label, color = "gray", hjust = 1) +
+        geom_line() +
+        scale_color_manual(name = "Category", values = category_colors) +
+        labs(x = "Date", y = "Active inventory value at purchase price (€)")
+    
+    return(p)
+}
+
+
+# Funtion to set up inventory value stacked by category plot
+setup_inventory_value_stacked_plot <- function(inventory){
+    
+    # Set author label coordinates (upper right corner)
+    author_label_x <- max(inventory$date)
+    author_label_y <- inventory %>% group_by(date) %>% summarise(value = sum(categoryvalue)) %>% select(value) %>% max()
+    
+    # Setup plot
+    p <- inventory %>% 
+        ggplot( aes(x = date, y = categoryvalue, fill = category)) +
+        annotate("text", x = author_label_x, y = author_label_y, label = author_label, color = "gray", hjust = 1) +
+        geom_area() +
+        scale_fill_manual(name = "Category", values = category_colors) +
+        labs(x = "Date", y = "Active inventory value at purchase price (€)")
+    
+    return(p)
+}
+
+
+
+
 
 ### This function calculates daily cost and rolling average for portfolio or selected categories (Sportswear excluded by default but can be overridden)
 ### Input: plotuse (total use data enhanced for plot use), rolling avg. window, vector of categories to include, vector of categories to exclude
@@ -169,6 +228,10 @@ calculate_daily_cost <- function(plotuse, rolling_average_window = 30, categorie
 
 # Function to setup daily cost plot
 setup_daily_cost_plot <- function(daily_cost, ymax = 40, seasons = FALSE) {
+
+    # Set author label coordinates (upper right corner)
+    author_label_x <- max(daily_cost$date)
+    author_label_y <- ymax
     
     # Set up plot (note the negation: !still_active means "All divested")
     p <- ggplot(daily_cost, aes(x = date, y = daily_cost, color = !still_active))
@@ -178,13 +241,14 @@ setup_daily_cost_plot <- function(daily_cost, ymax = 40, seasons = FALSE) {
         p <- p +
             annotate("rect", xmin = as.Date("2018-06-22"), xmax = as.Date("2018-08-15"), ymin = 0, ymax = ymax, alpha = 0.3, fill = "lightyellow", size = 0) +
             annotate("rect", xmin = as.Date("2019-06-22"), xmax = as.Date("2019-08-15"), ymin = 0, ymax = ymax, alpha = 0.3, fill = "lightyellow", size = 0) +
-            annotate("rect", xmin = as.Date("2020-06-22"), xmax = as.Date("2020-08-15"), ymin = 0, ymax = ymax, alpha = 0.3, fill = "lightyellow", size = 0) +
-            annotate("rect", xmin = as.Date("2020-03-18"), xmax = as.Date("2020-06-21"), ymin = 0, ymax = ymax, alpha = 0.1, fill = "lightpink", size = 0) + # Corona
-            annotate("rect", xmin = as.Date("2020-08-16"), xmax = as.Date("2020-12-21"), ymin = 0, ymax = ymax, alpha = 0.1, fill = "lightpink", size = 0) # Corona
+            annotate("rect", xmin = as.Date("2020-06-22"), xmax = as.Date("2020-08-15"), ymin = 0, ymax = ymax, alpha = 0.3, fill = "lightyellow", size = 0)
+#            annotate("rect", xmin = as.Date("2020-03-18"), xmax = as.Date("2020-06-21"), ymin = 0, ymax = ymax, alpha = 0.1, fill = "lightpink", size = 0) + # Corona
+#            annotate("rect", xmin = as.Date("2020-08-16"), xmax = as.Date("2020-12-21"), ymin = 0, ymax = ymax, alpha = 0.1, fill = "lightpink", size = 0) # Corona
     }
 
     # Add data, set scales and labels
     p <- p +
+        annotate("text", x = author_label_x, y = author_label_y, label = author_label, color = "gray", hjust = 1) +
         geom_point() +
         scale_color_manual(breaks = c(FALSE, TRUE), values=c("indianred1", "mediumseagreen")) +
         geom_line(aes(x = date, y = average_daily_cost), color='steelblue', size=1) +
@@ -212,7 +276,7 @@ calculate_daily_cost_anim <- function(plotuse, rolling_average_window = 30, cate
     # Generate cumulative data by day, including all dates prior to said day (THIS TAKES A WHILE)
     for (i in daterange) {
         
-        # Calculate complete plot dataup until current day
+        # Calculate complete plot data up until current day
         daily_cost_temp <- plotuse %>%
             filter(date <= i) %>% # Include data up until loop day only
             filter(!category %in% categories_exclude) %>%
@@ -235,22 +299,118 @@ calculate_daily_cost_anim <- function(plotuse, rolling_average_window = 30, cate
     return(daily_cost_anim)
 }
 
-# Function to setup daily cost animation
-setup_daily_cost_animation <- function(daily_cost_anim_plot) {
 
+# Function to setup daily cost animation
+setup_daily_cost_animation <- function(daily_cost_anim_plot, ymax = 40) {
+
+    # Set author label coordinates (upper right corner)
+    author_label_x <- max(daily_cost_anim_plot$date)
+    author_label_y <- ymax
+    
     # Set up animation
     animation <-
         ggplot(daily_cost_anim_plot, aes(x = date, y = daily_cost, color = !still_active)) +
+        annotate("text", x = author_label_x, y = author_label_y, label = author_label, color = "gray", hjust = 1) +
         geom_point(size=1.5) +
         scale_color_manual(breaks = c(FALSE, TRUE), values=c("indianred1", "mediumseagreen")) +
         geom_line(data = na.omit(daily_cost_anim_plot), aes(x = date, y = average_daily_cost), color='steelblue', size=1.5) +
-        scale_y_continuous(limits=c(0,40)) + # Set fixed Y (daily cost) limit at 50 to avoid plot scale from jumping around
+        scale_y_continuous(limits=c(0,ymax)) + # Set fixed Y (daily cost) limit at 40 to avoid plot scale from jumping around
         labs(x = "Date", y = "Daily cost and 30-day rolling average (shifted to midpoint of sample)", color = "All divested") +
         transition_states(day, state_length = 1, transition_length = 0) +
         labs(title = "Date: {closest_state}") + ease_aes('linear')
     
     return(animation)
 }
+
+
+
+
+
+# Funtion to set up daily cost vs category use plot
+setup_daily_cost_and_category_use_plot <- function(usetodate_anim, ymax = NA, animate = FALSE){
+    
+    # Animation marker size
+    marker_size <- 40
+    
+    # Use only last date for image plots
+    if(!animate) {
+        usetodate_anim <- usetodate_anim %>% filter(date == max(usetodate_anim$date))
+        marker_size <- 28 # Set still marker size
+    }
+    
+    # Set author label coordinates (upper right corner)
+    author_label_x <- 1.0
+    if(is.na(ymax)) { author_label_y = max(usetodate_anim$daily_cost) }
+    else { author_label_y <- ymax }
+    
+    # Setup plot
+    p <- usetodate_anim %>%
+        ggplot(aes(x = category_use, y = daily_cost)) +
+        annotate("text", x = author_label_x, y = author_label_y, label = author_label, color = "gray", hjust = 1) +
+        geom_point(aes(colour = category), size = marker_size) +
+        geom_image(aes(image = photo, group = date), size = 0.08) +
+        scale_x_continuous(limits=c(0,1)) +
+        scale_y_continuous(limits=c(NA,ymax)) +
+        scale_color_manual(name = "Category", values = category_colors) +
+        scale_size(range = c(1, 10)) +
+        guides(size = FALSE) +
+        labs(x = "Category daily use", y = "Average daily cost of use (all items)") +
+        guides(colour = guide_legend(override.aes = list(size = 2))) # Override plot point size to smaller for legend
+    
+    if(animate) {
+        p <- p +
+            transition_states(date, state_length = 1, transition_length = 0) +
+            labs(title = "Date: {closest_state}") + ease_aes('linear')
+    }
+    
+    return(p)
+}
+
+
+
+
+# Funtion to set up yearly cost vs category use plot
+setup_yearly_cost_and_category_use_plot <- function(usetodate_anim, ymax = NA, animate = FALSE){
+    
+    # Animation marker size
+    marker_size <- 40
+    
+    # Use only last date for image plots
+    if(!animate) {
+        usetodate_anim <- usetodate_anim %>% filter(date == max(usetodate_anim$date))
+        marker_size <- 28 # Set still marker size
+    }
+    
+    # Set author label coordinates (upper right corner)
+    author_label_x <- 1.0
+    if(is.na(ymax)) { author_label_y = max(usetodate_anim$yearly_cost) }
+    else { author_label_y <- ymax }
+    
+    # Setup plot
+    p <- usetodate_anim %>%
+        ggplot(aes(x = category_use, y = yearly_cost)) +
+        annotate("text", x = author_label_x, y = author_label_y, label = author_label, color = "gray", hjust = 1) +
+        geom_point(aes(colour = category), size = marker_size) +
+        geom_image(aes(image = photo, group = date), size = 0.08) +
+        scale_x_continuous(limits=c(0,1)) +
+        scale_y_continuous(limits=c(NA,ymax)) +
+        scale_color_manual(name = "Category", values = category_colors) +
+        scale_size(range = c(1, 10)) +
+        guides(size = FALSE) +
+        labs(x = "Category daily use", y = "Average yearly cost of use (all items)") +
+        guides(colour = guide_legend(override.aes = list(size = 2))) # Override plot point size to smaller for legend
+    
+    if(animate) {
+        p <- p +
+            transition_states(date, state_length = 1, transition_length = 0) +
+            labs(title = "Date: {closest_state}") + ease_aes('linear')
+    }
+    
+    return(p)
+}
+
+
+
 
 
 
@@ -328,11 +488,16 @@ setup_category_plot_image <- function(plot_data, categories, xmax, ymax, log_tra
 
     # Filter by last date only for non-animated plots
     if (!animate) { plot_data <- plot_data %>% filter(date == max(plot_data$date)) }
-    
+
+    # Set author label coordinates (upper right corner)
+    if(!is.na(xmax)) { author_label_x <- xmax } else { author_label_x <- max(plot_data$use_per_month) }
+    if(!is.na(ymax)) { author_label_y <- ymax } else { author_label_y <- max(plot_data$cost_per_use) }
+        
     # Set up plot
     p <- ggplot(
         plot_data, 
         aes(x = use_per_month, y = cost_per_use)) +
+        annotate("text", x = author_label_x, y = author_label_y, label = author_label, color = "gray", hjust = 1) +
         geom_vline(aes(xintercept = avg_use_per_month_divested), size = 0.8, colour = "darkgray", linetype = "dotted") +
         geom_hline(aes(yintercept = avg_cost_per_use_divested), size = 0.8, colour = "darkgray", linetype = "dotted") +
         geom_image(aes(image = photo), size = 0.08) +
@@ -387,10 +552,14 @@ setup_category_cumulative_plot_image <- function(plot_data, categories, xmax = N
         guides_data <- guides_data[guides_data$cost_per_use >= min(plot_data$cost_per_use),]
     }
     
+    # Set author label coordinates (upper right corner)
+    if(!is.na(xmax)) { author_label_x <- xmax } else { author_label_x <- max(plot_data$cumuse) }
+    if(!is.na(ymax)) { author_label_y <- ymax } else { author_label_y <- max(plot_data$cost_per_use) }
     
     # Build plot
-    p <- plot_data %>% ggplot(aes(x = cumuse, y = cost_per_use))
-    if (trails) { p <- p + geom_point(colour = "lightgray") }
+    p <- plot_data %>% ggplot(aes(x = cumuse, y = cost_per_use)) +
+        annotate("text", x = author_label_x, y = author_label_y, label = author_label, color = "gray", hjust = 1)
+      if (trails) { p <- p + geom_point(colour = "lightgray") }
     if (guides){ p <- p + geom_point(data = guides_data, aes(x = cumuse, y = cost_per_use), colour = "lightblue", size = 0.4) }
     p <- p +
         geom_image(data = plot_data[plot_data$date == max(plot_data$date),], aes(image = photo), size = 0.08) +
@@ -437,10 +606,16 @@ setup_category_times_used_plot <- function(plot_data, categories, animate = FALS
         mutate(rownumber = cumsum(!is.na(item))) %>% # Create counter according to order (!is.na(item) is just something to cumsum that spans the entire date vector)
         ungroup() %>% arrange(date, active, desc(days_active)) %>% # Ungroup and reorder for plotting
         as.data.frame() # Cast tibble to data frame
+
+    # Set author label coordinates (upper right corner)
+    author_label_x <- max(times_used$rownumber)
+    author_label_y <- max(times_used$cumuse)
     
+        
     # Set up animation
     animation <-
         ggplot(times_used, aes(x = rownumber, y = cumuse)) +
+        annotate("text", x = author_label_x, y = author_label_y, label = author_label, color = "gray", hjust = 1) +
         # Annotation for 1 and 2 standard deviation areas (rendered first to be behind the data layer)
         geom_rect(data = times_used[times_used$rownumber == 1,],
                   aes(xmin=0, xmax=max(times_used$rownumber), ymin=std1_low, ymax=std1_high, group = date), alpha=0.15, fill="green") +

@@ -229,6 +229,8 @@ ggsave(filename = "Website/Plots/Category-Jackets_and_hoodies-Daily_cost.png", p
 dev.off()
 
 
+
+
 # Add rest of categories (TODO)
 
 # Plot: Shirts
@@ -311,12 +313,12 @@ dev.off()
 # Reduce frames by removing every second date
 usetodate_anim_reduced <- usetodate_anim[usetodate_anim$date %in% unique(usetodate_anim$date)[c(TRUE, FALSE)],] # Reduce frames
 
-# Animation: Average daily cost vs category use (HEAVY COMPUTING)
+# Animation: Average DAILY cost vs category use (HEAVY COMPUTING)
 animation <- usetodate_anim_reduced %>% setup_daily_cost_and_category_use_plot(ymax = 15, animate = TRUE)
 animate(animation, height = 1000, width = 1150, nframes = length(unique(usetodate_anim_reduced$date)) + 72, fps = 24, end_pause = 72)
 anim_save("Website/Plots/Portfolio-Daily_cost_and_Category_use-animation.gif")
 
-# Animation: Average yearly cost vs category use (HEAVY COMPUTING)
+# Animation: Average YEARLY cost vs category use (HEAVY COMPUTING)
 animation <- usetodate_anim_reduced %>% setup_yearly_cost_and_category_use_plot(ymax = 1000, animate = TRUE)
 animate(animation, height = 1000, width = 1150, nframes = length(unique(usetodate_anim_reduced$date)) + 72, fps = 24, end_pause = 72)
 anim_save("Website/Plots/Portfolio-Yearly_cost_and_Category_use-animation.gif")
@@ -385,32 +387,70 @@ for (i in category_order){
 
 ## STANDARD CATEGORY IMAGE PLOTS ANIMATED ##
 
+# Jackets and hoodies
 plot_data_reduced %>% setup_category_plot_image("Jackets and hoodies", xmax = 20, ymax = 16, log_trans=TRUE, animate=TRUE) %>% 
   animate(height = 1000, width = 1000, nframes = length(unique(plot_data_reduced$date)) + 72, fps = 24, end_pause = 72)
 anim_save("Website/Plots/Category-Jackets_and_hoodies-animation.gif")
 
+# Blazers and vests
+plot_data_reduced %>% setup_category_plot_image("Blazers and vests", xmax = 1.5, ymax = 64, log_trans=TRUE, animate=TRUE) %>% 
+  animate(height = 1000, width = 1000, nframes = length(unique(plot_data_reduced$date)) + 72, fps = 24, end_pause = 72)
+anim_save("Website/Plots/Category-Blazers_and_vests-animation.gif")
 
-# SET THESE UP NEXT
+# Knits
+plot_data_reduced %>% setup_category_plot_image("Knits", xmax = 1.0, ymax = 32, log_trans=TRUE, animate=TRUE) %>% 
+  animate(height = 1000, width = 1000, nframes = length(unique(plot_data_reduced$date)) + 72, fps = 24, end_pause = 72)
+anim_save("Website/Plots/Category-Knits-animation.gif")
+
+# Shirts
 plot_data_reduced %>% setup_category_plot_image("Shirts", xmax = 3, ymax = 20, log_trans=TRUE, animate=TRUE) %>% 
   animate(height = 1000, width = 1000, nframes = length(unique(plot_data_reduced$date)) + 72, fps = 24, end_pause = 72)
-anim_save("Plots/Category-Shirts-animation.gif")
+anim_save("Website/Plots/Category-Shirts-animation.gif")
 
-plot_data_reduced %>% setup_category_plot_image("Shoes", xmax = 10, ymax = 16, log_trans=TRUE, animate=TRUE) %>%
+# T-shirts and tanks
+plot_data_reduced %>% setup_category_plot_image("T-shirts and tanks", xmax = 3, ymax = 16, log_trans=TRUE, animate=TRUE) %>% 
   animate(height = 1000, width = 1000, nframes = length(unique(plot_data_reduced$date)) + 72, fps = 24, end_pause = 72)
-anim_save("Plots/Category-Shoes-animation.gif")
+anim_save("Website/Plots/Category-T-shirts_and_tanks-animation.gif")
 
-plot_data_reduced %>% setup_category_plot_image("Pants", xmax = 8, ymax = 12, log_trans=TRUE, animate=TRUE) %>%
+# Pants
+plot_data_reduced %>% setup_category_plot_image("Pants", xmax = 20, ymax = 32, log_trans=TRUE, animate=TRUE) %>% 
   animate(height = 1000, width = 1000, nframes = length(unique(plot_data_reduced$date)) + 72, fps = 24, end_pause = 72)
-anim_save("Plots/Category-Pants-animation.gif")
+anim_save("Website/Plots/Category-Pants-animation.gif")
 
-plot_data_reduced %>% setup_category_plot_image("Underwear boxers", xmax = 3.5, ymax = 20, log_trans=TRUE, animate=TRUE) %>%
+# Shorts
+plot_data_reduced %>% setup_category_plot_image("Shorts", xmax = 8, ymax = 100, log_trans=TRUE, animate=TRUE) %>% 
   animate(height = 1000, width = 1000, nframes = length(unique(plot_data_reduced$date)) + 72, fps = 24, end_pause = 72)
-anim_save("Plots/Category-Underwear_boxers-animation.gif")
+anim_save("Website/Plots/Category-Shorts-animation.gif")
 
-plot_data_reduced %>% setup_category_plot_image("Underwear shirts", xmax = 3, ymax = 8, log_trans=TRUE, animate=TRUE) %>%
+# Belts
+plot_data_reduced %>% setup_category_plot_image("Belts", xmax = 9, ymax = 100, log_trans=TRUE, animate=TRUE) %>% 
   animate(height = 1000, width = 1000, nframes = length(unique(plot_data_reduced$date)) + 72, fps = 24, end_pause = 72)
-anim_save("Plots/Category-Underwear_shirts-animation.gif")
+anim_save("Website/Plots/Category-Belts-animation.gif")
 
+# Socks
+plot_data_reduced %>% setup_category_plot_image("Socks", xmax = 3, ymax = 10, log_trans=TRUE, animate=TRUE) %>% 
+  animate(height = 1000, width = 1000, nframes = length(unique(plot_data_reduced$date)) + 72, fps = 24, end_pause = 72)
+anim_save("Website/Plots/Category-Socks-animation.gif")
+
+# Shoes
+plot_data_reduced %>% setup_category_plot_image("Shoes", xmax = 9, ymax = 100, log_trans=TRUE, animate=TRUE) %>% 
+  animate(height = 1000, width = 1000, nframes = length(unique(plot_data_reduced$date)) + 72, fps = 24, end_pause = 72)
+anim_save("Website/Plots/Category-Shoes-animation.gif")
+
+# Underwear shirts
+plot_data_reduced %>% setup_category_plot_image("Underwear shirts", xmax = 3, ymax = 20, log_trans=TRUE, animate=TRUE) %>% 
+  animate(height = 1000, width = 1000, nframes = length(unique(plot_data_reduced$date)) + 72, fps = 24, end_pause = 72)
+anim_save("Website/Plots/Category-Underwear_shirts-animation.gif")
+
+# Underwear boxers
+plot_data_reduced %>% setup_category_plot_image("Underwear boxers", xmax = 3.5, ymax = 20, log_trans=TRUE, animate=TRUE) %>% 
+  animate(height = 1000, width = 1000, nframes = length(unique(plot_data_reduced$date)) + 72, fps = 24, end_pause = 72)
+anim_save("Website/Plots/Category-Underwear_boxers-animation.gif")
+
+# Sportswear
+plot_data_reduced %>% setup_category_plot_image("Sportswear", xmax = 6, ymax = 50, log_trans=TRUE, animate=TRUE) %>% 
+  animate(height = 1000, width = 1000, nframes = length(unique(plot_data_reduced$date)) + 72, fps = 24, end_pause = 72)
+anim_save("Website/Plots/Category-Sportswear-animation.gif")
 
 
 
@@ -428,35 +468,62 @@ p <- plot_data %>% setup_category_cumulative_plot_image("Jackets and hoodies", x
 ggsave(filename = "Website/Plots/Category-Jackets_and_hoodies-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
 dev.off()
 
+# Blazers and vests
+p <- plot_data %>% setup_category_cumulative_plot_image("Blazers and vests", xmax = 60, ymax = 50, log_trans=TRUE, trails=TRUE, guides=TRUE)
+ggsave(filename = "Website/Plots/Category-Blazers_and_vests-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
+dev.off()
 
-# SET THESE UP NEXT
-
-# Shoes
-p <- plot_data %>% setup_category_cumulative_plot_image("Shoes", xmax = 320, ymax = 16, log_trans=TRUE, trails=TRUE, guides=TRUE)
-ggsave(filename = "Plots/Category-Shoes-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
+# Knits
+p <- plot_data %>% setup_category_cumulative_plot_image("Knits", xmax = 30, ymax = 50, log_trans=TRUE, trails=TRUE, guides=TRUE)
+ggsave(filename = "Website/Plots/Category-Knits-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
 dev.off()
 
 # Shirts
-p <- plot_data %>% setup_category_cumulative_plot_image("Shirts", xmax = 60, ymax = 16, log_trans=TRUE, trails=TRUE, guides=TRUE)
-ggsave(filename = "Plots/Category-Shirts-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
+p <- plot_data %>% setup_category_cumulative_plot_image("Shirts", xmax = 60, ymax = 45, log_trans=TRUE, trails=TRUE, guides=TRUE)
+ggsave(filename = "Website/Plots/Category-Shirts-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
+dev.off()
+
+# T-shirts and tanks
+p <- plot_data %>% setup_category_cumulative_plot_image("T-shirts and tanks", xmax = 110, ymax = 20, log_trans=TRUE, trails=TRUE, guides=TRUE)
+ggsave(filename = "Website/Plots/Category-T-shirts_and_tanks-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
+dev.off()
+
+# Pants
+p <- plot_data %>% setup_category_cumulative_plot_image("Pants", xmax = 120, ymax = 35, log_trans=TRUE, trails=TRUE, guides=TRUE)
+ggsave(filename = "Website/Plots/Category-Pants-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
+dev.off()
+
+# Shorts
+p <- plot_data %>% setup_category_cumulative_plot_image("Shorts", xmax = 160, ymax = 100, log_trans=TRUE, trails=TRUE, guides=TRUE)
+ggsave(filename = "Website/Plots/Category-Shorts-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
 dev.off()
 
 # Belts
-p <- plot_data %>% setup_category_cumulative_plot_image("Belts", xmax = 350, ymax = 100, log_trans=TRUE, trails=TRUE)
-ggsave(filename = "Plots/Category-Belts-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
+p <- plot_data %>% setup_category_cumulative_plot_image("Belts", xmax = 220, ymax = 100, log_trans=TRUE, trails=TRUE, guides=TRUE)
+ggsave(filename = "Website/Plots/Category-Belts-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
+dev.off()
+
+# Socks
+p <- plot_data %>% setup_category_cumulative_plot_image("Socks", xmax = 50, ymax = 10, log_trans=TRUE, trails=TRUE, guides=TRUE)
+ggsave(filename = "Website/Plots/Category-Socks-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
+dev.off()
+
+# Shoes
+p <- plot_data %>% setup_category_cumulative_plot_image("Shoes", xmax = 340, ymax = 30, log_trans=TRUE, trails=TRUE, guides=TRUE)
+ggsave(filename = "Website/Plots/Category-Shoes-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
 dev.off()
 
 # Underwear shirts
-p <- plot_data %>% setup_category_cumulative_plot_image("Underwear shirts", xmax = 35, ymax = 16, log_trans=TRUE, trails=TRUE)
-ggsave(filename = "Plots/Category-Underwear_shirts-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
+p <- plot_data %>% setup_category_cumulative_plot_image("Underwear shirts", xmax = 45, ymax = 42, log_trans=TRUE, trails=TRUE, guides=TRUE)
+ggsave(filename = "Website/Plots/Category-Underwear_shirts-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
 dev.off()
 
-# Belts and Shoes
-p <- plot_data %>% setup_category_cumulative_plot_image(c("Belts", "Shoes"), xmax = 350, ymax = 100, log_trans=TRUE, trails=TRUE)
-ggsave(filename = "Plots/Category-Belts_and_Shoes-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
+# Underwear boxers
+p <- plot_data %>% setup_category_cumulative_plot_image("Underwear boxers", xmax = 35, ymax = 16, log_trans=TRUE, trails=TRUE, guides=TRUE)
+ggsave(filename = "Website/Plots/Category-Underwear_boxers-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
 dev.off()
 
-
+# Sportswear (this plot does not make sense for Sportswear)
 
 
 
@@ -474,45 +541,23 @@ for (i in category_order){
 }
 
 
-## ANIMATED PLOTS ##
+# ANIMATED PLOTS #
 
 # Reduce dates (frames) to half for animation: remove every second date (c(T,F) replicates automatically)
 # Animation used transition_state(), which avoids rendering multiple dates in one frame, but also
 # causes the number of frames to determine the date to be included. Thus the number of frames needs to
 # match the amount of dates to be animated. Reducing the amount of dates (frames) is the best way.
 
+# Reduce frames
 plot_data_reduced <- plot_data[plot_data$date %in% unique(plot_data$date)[c(TRUE, FALSE)],]
-#length(unique(plot_data_reduced$date)) # Reduced length (number of frames)
 
+# Create and save animations for all categories (HEAVY COMPUTING ~ 12 x 4-8 min = 1h)
+for (i in category_order){
+  setup_category_times_used_plot(plot_data_reduced, categories = c(i), animate = TRUE) %>%
+    animate(height = 1000, width = 1000, nframes = length(unique(plot_data_reduced$date)) + 72, fps = 24, end_pause = 72) # Frames = states + end pause
+  anim_save(paste("Website/Plots/Category-", gsub(" ", "_", i), "-Times_used-animation.gif", sep=""))
+}
 
-# Jackets and hoodies
-setup_category_times_used_plot(plot_data_reduced, categories = c("Jackets and hoodies"), animate = TRUE) %>%
-  animate(height = 1000, width = 1000, nframes = length(unique(plot_data_reduced$date)) + 72, fps = 24, end_pause = 72) # Frames = states + end pause
-anim_save("Website/Plots/Category-Jackets_and_hoodies-Times_used-animation.gif")
-
-
-
-# SET THESE UP NEXT
-
-# Shoes
-setup_category_times_used_plot(plot_data_reduced, categories = c("Shoes"), animate = TRUE) %>%
-  animate(height = 1000, width = 1000, nframes = length(unique(plot_data_reduced$date)) + 72, fps = 24, end_pause = 72) # Frames = states + end pause
-anim_save("Plots/Category-Shoes-Times_used-animation.gif")
-
-# Shirts
-setup_category_times_used_plot(plot_data_reduced, categories = c("Shirts"), animate = TRUE) %>%
-  animate(height = 1000, width = 1000, nframes = length(unique(plot_data_reduced$date)) + 72, fps = 24, end_pause = 72) # Frames = states + end pause
-anim_save("Plots/Category-Shirts-Times_used-animation.gif")
-
-# Underwear shirts
-setup_category_times_used_plot(plot_data_reduced, categories = c("Underwear shirts"), animate = TRUE) %>%
-  animate(height = 1000, width = 1000, nframes = length(unique(plot_data_reduced$date)) + 72, fps = 24, end_pause = 72) # Frames = states + end pause
-anim_save("Plots/Category-Underwear_shirts-Times_used-animation.gif")
-
-# Underwear boxers
-setup_category_times_used_plot(plot_data_reduced, categories = c("Underwear boxers"), animate = TRUE) %>%
-  animate(height = 1000, width = 1000, nframes = length(unique(plot_data_reduced$date)) + 72, fps = 24, end_pause = 72) # Frames = states + end pause
-anim_save("Plots/Category-Underwear_boxers-Times_used-animation.gif")
 
 
 

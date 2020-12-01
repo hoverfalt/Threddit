@@ -33,14 +33,52 @@ source("01-Read_and_preprocess_data.R")
 source("02-Calculate_active_use_data.R")
 source("03-Calculate_plot_data.R")
 source("04-Google_Drive_access.R")
+source("05-Build_plots.R")
+
 
 ## Set up static variables
 
 # Set category order (DEPENDENCY)
-category_order = c("Jackets and hoodies", "Blazers and vests", "Knits",
-                   "Shirts", "T-shirts and tanks", "Pants", "Shorts", "Belts",
-                   "Socks", "Shoes", "Underwear shirts", "Underwear boxers",
-                   "Sportswear")
+category_order = c("Jackets and hoodies", "Blazers and vests", "Knits", "Shirts", "T-shirts and tanks", "Pants",
+                   "Shorts", "Belts", "Socks", "Shoes", "Underwear shirts", "Underwear boxers", "Sportswear")
+
+# Set gray and white theme
+theme_set(theme_gray())
+
+# Set plot palette for 13 categories
+category_colors <- c('#960001', '#FC3334', '#FF9A02', '#FFDB05', '#4CDA00', '#00B0F0',
+                     '#0070C0', '#002060', '#A860E9', '#7030A0', '#A5A5A5', '#7B7B7B', '#444444')
+
+# Set color names by category name for consistent category colors in plots
+names(category_colors) <- levels(plotuse$category)
+
+# Set category photos
+category_photos <- data.frame(
+  "category" = levels(plotuse$category),
+  "photo" = c('Photos/Category-Jackets_and_hoodies.png',
+              'Photos/Category-Blazers_and_vests.png',
+              'Photos/Category-Knits.png',
+              'Photos/Category-Shirts.png',
+              'Photos/Category-T-shirts_and_tanks.png',
+              'Photos/Category-Pants.png',
+              'Photos/Category-Shorts.png',
+              'Photos/Category-Belts.png',
+              'Photos/Category-Socks.png',
+              'Photos/Category-Shoes.png',
+              'Photos/Category-Underwear_shirts.png',
+              'Photos/Category-Underwear_boxers.png',
+              'Photos/Category-Sportswear.png'))
+
+# Set rolling average window size to 30 days
+rolling_average_window <- 30
+
+# Set guides for daily cost vs cumulative use plots
+guides_prices <- c(5, 10, 20, 50, 100, 200, 400, 800)
+
+# Set author label to add in the upper right corner of plots
+author_label <- "hoverfalt.github.io"
+
+
 
 
 #################################################################################################
@@ -71,51 +109,13 @@ calculate_plot_data() # 4) Calculate plot data for the standard plots
 ## Save master plotting data 'plotuse' to file to avoid repetitive reprocessing
 
 # Save tidy data data.frame to file for easier retrieval
-save(plotuse,file="Data/Threddit-plotuse-2020-11-29.Rda")
+save(plotuse,file="Data/Threddit-plotuse-2020-12-01.Rda")
 
 # Load data from file
-load("Data/Threddit-plotuse-2020-11-29.Rda")
+load("Data/Threddit-plotuse-2020-12-01.Rda")
 
 
 
-#################################################################################################
-################################ SET UP PLOTTING ENVIRONMENT ####################################
-#################################################################################################
-
-### This section sets up the plotting environment
-
-# Set gray and white theme
-theme_set(theme_gray())
-
-# Set plot palette for 13 categories
-category_colors <- c('#960001', '#FC3334', '#FF9A02', '#FFDB05', '#4CDA00', '#00B0F0',
-                      '#0070C0', '#002060', '#A860E9', '#7030A0', '#A5A5A5', '#7B7B7B', '#444444')
-
-# Set color names by category name for consistent category colors in plots
-names(category_colors) <- levels(plotuse$category)
-
-# Set category photos
-category_photos <- data.frame(
-  "category" = levels(plotuse$category),
-  "photo" = c('Photos/Category-Jackets_and_hoodies.png',
-              'Photos/Category-Blazers_and_vests.png',
-              'Photos/Category-Knits.png',
-              'Photos/Category-Shirts.png',
-              'Photos/Category-T-shirts_and_tanks.png',
-              'Photos/Category-Pants.png',
-              'Photos/Category-Shorts.png',
-              'Photos/Category-Belts.png',
-              'Photos/Category-Socks.png',
-              'Photos/Category-Shoes.png',
-              'Photos/Category-Underwear_shirts.png',
-              'Photos/Category-Underwear_boxers.png',
-              'Photos/Category-Sportswear.png'))
-
-# Set rolling average window size to 30 days
-rolling_average_window <- 30
-
-# Set author label to add in the upper right corner of plots
-author_label <- "hoverfalt.github.io"
 
 
 
@@ -184,26 +184,17 @@ anim_save("Plots/Category-Shoes-Cumulative_use-animation.gif")
 ######################################## PORTFOLIO PLOTS ########################################
 #################################################################################################
 
-### Calculate active inventory item count and value by category
-inventory <- calculate_portfolio_plot_data(plotuse)
 
 
 ### STANDARD PORTFOLIO PLOTS #################################################################################################
 
-# Active inventory item count by category
-p <- inventory %>% filter(category != "Sportswear") %>% setup_inventory_item_count_plot()
-ggsave(filename = "Website/Plots/Portfolio-Inventory-Item_count.png", p, width = 12, height = 10, dpi = 300, units = "in", device='png')
-dev.off()
+# Calculate active inventory item count and value by category
+inventory <- calculate_portfolio_plot_data(plotuse)
+# Build plots and save as png into Website/Plots/
+build_standard_portfolio_plots()
 
-# Active inventory value by category (line plot)
-p <- inventory %>% filter(category != "Sportswear") %>% setup_inventory_value_by_category_plot()
-ggsave(filename = "Website/Plots/Portfolio-Inventory-Value_by_category.png", p, width = 12, height = 10, dpi = 300, units = "in", device='png')
-dev.off()
 
-# Active inventory value by category (stacked area plot)
-p <- inventory %>% filter(category != "Sportswear") %>% setup_inventory_value_stacked_plot()
-ggsave(filename = "Website/Plots/Portfolio-Inventory-Value_stacked.png", p, width = 12, height = 10, dpi = 300, units = "in", device='png')
-dev.off()
+
 
 
 
@@ -216,7 +207,6 @@ daily_cost <- calculate_daily_cost(plotuse, rolling_average_window, categories_i
 # Portfolio plot: daily cost and rolling average
 p <- setup_daily_cost_plot(daily_cost, ymax = 40, seasons = TRUE)
 ggsave(filename = "Website/Plots/Portfolio-Daily_cost.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
-dev.off()
 
 
 
@@ -226,31 +216,9 @@ dev.off()
 daily_cost_category <- calculate_daily_cost(plotuse, rolling_average_window, categories_include = "Jackets and hoodies")
 p <- setup_daily_cost_plot(daily_cost_category, ymax = 8)
 ggsave(filename = "Website/Plots/Category-Jackets_and_hoodies-Daily_cost.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
-dev.off()
-
-
 
 
 # Add rest of categories (TODO)
-
-# Plot: Shirts
-daily_cost <- calculate_daily_cost(plotuse, rolling_average_window, categories_include = "Shirts")
-p <- setup_daily_cost_plot(daily_cost, ymax = 20)
-ggsave(filename = "Plots/Category-Shirts-Daily_cost.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
-dev.off()
-
-# Plot: Shoes
-daily_cost <- calculate_daily_cost(plotuse, rolling_average_window, categories_include = "Shoes")
-p <- setup_daily_cost_plot(daily_cost, ymax = 20)
-ggsave(filename = "Plots/Category-Shoes-Daily_cost.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
-dev.off()
-
-# Plot: Underwear including socks
-daily_cost <- calculate_daily_cost(plotuse, rolling_average_window, categories_include = c("Underwear shirts","Underwear boxers","Socks"))
-p <- setup_daily_cost_plot(daily_cost, ymax = 10)
-ggsave(filename = "Plots/Category-Underwear_and_socks-Daily_cost.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
-dev.off()
-
 
 
 
@@ -459,8 +427,6 @@ anim_save("Website/Plots/Category-Sportswear-animation.gif")
 
 ### CATEGORY PLOT - COST PER USE vs CUMULATIVE USE ###
 
-## Set guides as global variable to be used in plot functions
-guides_prices <- c(5, 10, 20, 50, 100, 200, 400, 800)
 
 
 # Jackets and hoodies
@@ -523,7 +489,10 @@ p <- plot_data %>% setup_category_cumulative_plot_image("Underwear boxers", xmax
 ggsave(filename = "Website/Plots/Category-Underwear_boxers-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
 dev.off()
 
-# Sportswear (this plot does not make sense for Sportswear)
+# Sportswear
+p <- plot_data %>% setup_category_cumulative_plot_image("Sportswear", xmax = 70, ymax = 35, log_trans=TRUE, trails=TRUE, guides=TRUE)
+ggsave(filename = "Website/Plots/Category-Sportswear-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
+dev.off()
 
 
 

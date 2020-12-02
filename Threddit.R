@@ -1,229 +1,65 @@
 ### Threddit.R - Olof Hoverfält - 2020 ###
 
 ### Functions to process and plot Threddit data
-### Input: Excel file with specific structure and formatting
-
-
-#################################################################################################
-###################################### SET UP ENVIRONMENT #######################################
-###################################### SET UP ENVIRONMENT #######################################
-###################################### SET UP ENVIRONMENT #######################################
-#################################################################################################
-
-# Remove all objects from workspace
-rm(list = ls())
-
-# Load required packages
-library(readxl)
-library(lubridate)
-library(dplyr)
-library(tidyr)
-library(ggplot2)
-library(plotly)
-library(gganimate)
-library(ggimage)
-library(transformr)
-library(gifski)
-library(imager)
-library(roll)
-library(googlesheets4)
-
-# Source required files
-source("01-Read_and_preprocess_data.R")
-source("02-Calculate_active_use_data.R")
-source("03-Calculate_plot_data.R")
-source("04-Google_Drive_access.R")
-source("05-Build_plots.R")
-
-
-## Set up static variables
-
-# Set category order (DEPENDENCY)
-category_order = c("Jackets and hoodies", "Blazers and vests", "Knits", "Shirts", "T-shirts and tanks", "Pants",
-                   "Shorts", "Belts", "Socks", "Shoes", "Underwear shirts", "Underwear boxers", "Sportswear")
-
-# Set gray and white theme
-theme_set(theme_gray())
-
-# Set plot palette for 13 categories
-category_colors <- c('#960001', '#FC3334', '#FF9A02', '#FFDB05', '#4CDA00', '#00B0F0',
-                     '#0070C0', '#002060', '#A860E9', '#7030A0', '#A5A5A5', '#7B7B7B', '#444444')
-
-# Set color names by category name for consistent category colors in plots
-names(category_colors) <- levels(plotuse$category)
-
-# Set category photos
-category_photos <- data.frame(
-  "category" = levels(plotuse$category),
-  "photo" = c('Photos/Category-Jackets_and_hoodies.png',
-              'Photos/Category-Blazers_and_vests.png',
-              'Photos/Category-Knits.png',
-              'Photos/Category-Shirts.png',
-              'Photos/Category-T-shirts_and_tanks.png',
-              'Photos/Category-Pants.png',
-              'Photos/Category-Shorts.png',
-              'Photos/Category-Belts.png',
-              'Photos/Category-Socks.png',
-              'Photos/Category-Shoes.png',
-              'Photos/Category-Underwear_shirts.png',
-              'Photos/Category-Underwear_boxers.png',
-              'Photos/Category-Sportswear.png'))
-
-# Set rolling average window size to 30 days
-rolling_average_window <- 30
-
-# Set guides for daily cost vs cumulative use plots
-guides_prices <- c(5, 10, 20, 50, 100, 200, 400, 800)
-
-# Set author label to add in the upper right corner of plots
-author_label <- "hoverfalt.github.io"
+### Input: Google Sheets with specific structure and formatting
+### Output: Portfolio and category plots (png) and animations (gif) for publishing
 
 
 
+### SET UP ENVIRONMENT ##########################################################################################
 
-#################################################################################################
-################################ READ AND PROCESS STANDARD DATA #################################
-#################################################################################################
+# Set up computing and plotting environment
+set_up_environment()
 
-# This section calls the functions to read, clean and transform use data,
-# as well as calulate the data for the standard plots
+
+
+### READ DATA ##########################################################################################
 
 ## Read and clean master raw data
-
-# Excel
-#raw_data_file <- "Threddit.xlsx"
-#masterdata <- read_data(raw_data_file)
-
-# Google Sheets
-gs4_auth() # Authenticate Tidyverse packages to Google Drive
 masterdata <- read_data_GD(get_Google_sheet_ID()) # Read master data from Google Drive
-
 
 ## Transform data
 plotuse <- transform_data(masterdata) %>% # 1) Transform raw data into tidy data
-calculate_active_use_data() %>% # 2) Calculate cumulative use data
-calculate_total_use_data() %>% # 3) Calculate total use data, including divested items 
-calculate_plot_data() # 4) Calculate plot data for the standard plots
-
-
-## Save master plotting data 'plotuse' to file to avoid repetitive reprocessing
+  calculate_active_use_data() %>% # 2) Calculate cumulative use data
+  calculate_total_use_data() %>% # 3) Calculate total use data, including divested items 
+  calculate_plot_data() # 4) Calculate plot data for the standard plots
 
 # Save tidy data data.frame to file for easier retrieval
-save(plotuse,file="Data/Threddit-plotuse-2020-12-01.Rda")
-
+save(plotuse,file="Data/Threddit-plotuse-2020-12-02.Rda")
 # Load data from file
-load("Data/Threddit-plotuse-2020-12-01.Rda")
+load("Data/Threddit-plotuse-2020-12-02.Rda")
 
 
 
+### IMAGE PLOTS #################################################################################################
+
+# Calculate image plot master data (this is also required for animations)
+calculate_image_plot_master_data()
+
+# Build image plots 
+build_standard_plots()
 
 
 
-
-##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
-##### ##### ##### ##### ##### ##### ##### DEVELOPMENT ##### ##### ##### ##### ##### ##### #####
-##### ##### ##### ##### ##### ##### ##### DEVELOPMENT ##### ##### ##### ##### ##### ##### #####
-##### ##### ##### ##### ##### ##### ##### DEVELOPMENT ##### ##### ##### ##### ##### ##### #####
-##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
-
-plot_data %>% filter(category == "Shirts" & date == max(plot_data$date))
-
-p <- plot_data %>% filter(category == "Shirts" & date == max(plot_data$date)) %>%
-  ggplot(aes(x = use_per_month, y = cost_per_use)) +
-  geom_image(aes(image = photo), size = 0.08) +
-  annotate("text", x = max(use_per_month), y = max(cost_per_use), label = "Olof")
-
-dev.off()  
-
-p <- plot_data %>% setup_category_plot_image(categories = "Shirts", xmax = NA, ymax = NA, log_trans=TRUE)
-
-
-
-
-
-### CATEGORY PLOT - COST PER USE vs CUMULATIVE USE - ANIMATED ###
-
-# DEVELOPMENT DEVELOPMENT #
-
-animation <- plot_data %>% filter(category == 'Shoes') %>%
-  ggplot(aes(x = cumuse, y = cost_per_use)) +
-  geom_image(aes(image = photo), size = 0.08) +
-  scale_x_continuous(limits=c(0,320)) +
-  labs(x = "Cumulative times used", y = "Cost per use (€)") +
-  scale_y_continuous(trans="log10", limits=c(NA,16)) +
-  transition_time(date) + labs(title = "Date: {frame_time}") + ease_aes('linear')
-
-p <- p + transition_time(date) + labs(title = "Date: {frame_time}") + ease_aes('linear')
-
-animate(p, height = 1000, width = 1000, nframes = 100, fps = 24, end_pause = 72) # Frames = states + end pause
-animate(height = 1000, width = 1000, nframes = length(unique(plot_data_reduced$date)) + 72, fps = 24, end_pause = 72) # Frames = states + end pause
-anim_save("Plots/Category-Shoes-Cumulative_use-animation.gif")
-
-
-
-
-################################################################################################
-##################################### END OF DEVELOPMENT #######################################
-################################################################################################
-
-
-
-
-
-
-
-
-
-
-
-
-
-#################################################################################################
-######################################## PORTFOLIO PLOTS ########################################
-######################################## PORTFOLIO PLOTS ########################################
-######################################## PORTFOLIO PLOTS ########################################
-#################################################################################################
-
-
-
-### STANDARD PORTFOLIO PLOTS #################################################################################################
-
-# Calculate active inventory item count and value by category
-inventory <- calculate_portfolio_plot_data(plotuse)
-# Build plots and save as png into Website/Plots/
-build_standard_portfolio_plots()
-
-
-
-
-
-
-
-### DAILY COST WITH ROLLING AVERAGE ##########################################################################################
-
-# Calculate daily cost and rolling average (Sportswear excluded by default, can be overridden)
-daily_cost <- calculate_daily_cost(plotuse, rolling_average_window, categories_include = category_order, categories_exclude = "Sportswear")
-
-# Portfolio plot: daily cost and rolling average
-p <- setup_daily_cost_plot(daily_cost, ymax = 40, seasons = TRUE)
-ggsave(filename = "Website/Plots/Portfolio-Daily_cost.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
-
-
-
-## Category daily cost with rolling average ##
-
+## TODO: ADD THIS TO ALL CATEGORIES
+## Category image plot: daily cost with rolling average
 # Plot: Jackets and hoodies
 daily_cost_category <- calculate_daily_cost(plotuse, rolling_average_window, categories_include = "Jackets and hoodies")
 p <- setup_daily_cost_plot(daily_cost_category, ymax = 8)
 ggsave(filename = "Website/Plots/Category-Jackets_and_hoodies-Daily_cost.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
 
 
-# Add rest of categories (TODO)
 
 
 
 
-## Animations
+
+
+### ANIMATIONS ##################################################################################################
+
+
+
+### DAILY COST WITH ROLLING AVERAGE ##########################################################################################
 
 # Prepare data for animated daily cost plotting (HEAVY COMPUTING)
 daily_cost_anim <- calculate_daily_cost_anim(plotuse, rolling_average_window, categories_include = category_order, categories_exclude = "Sportswear")
@@ -240,7 +76,6 @@ animate(height = 1000, width = 1000, nframes = length(unique(daily_cost_anim_plo
 anim_save("Website/Plots/Portfolio-Daily_cost-animation.gif")
 
 
-
 ## Animation: Jackets and hoodies
 # Prepare data (HEAVY COMPUTING) and subset. Set up animation, animate, and save (HEAVY COMPUTING).
 daily_cost_anim <- calculate_daily_cost_anim(plotuse, rolling_average_window, categories_include = c("Jackets and hoodies"))
@@ -250,33 +85,12 @@ setup_daily_cost_animation(daily_cost_anim_plot_reduced, ymax = 20) %>%
 animate(height = 1000, width = 1000, nframes = length(unique(daily_cost_anim_plot$day)) + 72, fps = 24, end_pause = 72)
 anim_save("Website/Plots/Category-Jackets_and_hoodies-Daily_cost-animation.gif")
 
-
-
+# ADD OTHER CATEGORIES
 
 
 
 
 ### AVERAGE DAILY/YEARLY COST vs CATEGORY USE ################################################################################
-
-# Calculate complete portfolio data
-usetodate <- calculate_complete_portfolio_plot_data(plotuse)
-# Add category photos to data frame
-usetodate_anim <- merge(usetodate, category_photos, by.x = "category")
-
-
-# Image plot: Average DAILY cost vs category use
-p <- usetodate_anim %>% setup_daily_cost_and_category_use_plot(animate = FALSE)
-ggsave(filename = "Website/Plots/Portfolio-Daily_cost_and_Category_use.png", p, width = 12, height = 10, dpi = 300, units = "in", device=png())
-dev.off()
-
-# Image plot: Average YEARLY cost vs category use
-p <- usetodate_anim %>% setup_yearly_cost_and_category_use_plot(animate = FALSE)
-ggsave(filename = "Website/Plots/Portfolio-Yearly_cost_and_Category_use.png", p, width = 12, height = 10, dpi = 300, units = "in", device=png())
-dev.off()
-
-
-
-## Animations
 
 # Reduce frames by removing every second date
 usetodate_anim_reduced <- usetodate_anim[usetodate_anim$date %in% unique(usetodate_anim$date)[c(TRUE, FALSE)],] # Reduce frames
@@ -294,66 +108,7 @@ anim_save("Website/Plots/Portfolio-Yearly_cost_and_Category_use-animation.gif")
 
 
 
-
-
-
-
-
-
-
-################################################################################################
-######################################## CATEGORY PLOTS ########################################
-######################################## CATEGORY PLOTS ########################################
-######################################## CATEGORY PLOTS ########################################
-################################################################################################
-
-### The following functions are used to set up standard category plots
-### Image plot: setup_category_plot_image(plot_data, cat, xmax, ymax, log_trans=TRUE, animated=FALSE)
-### Point plot: setup_category_plot_point(plot_data, cat, xmax, ymax, log_trans=TRUE, avg_lines=TRUE)
-
-
-### SET UP CATEGORY PLOTS MASTER DATA ###
-
-# All following plotting sections rely on this data to be prepared first.
-
-# Create category plots master data and group by date to calculate averages
-plot_data <- plotuse %>% group_by(category, date)
-
-# Calculate use weighted average use per month and average cost per use for divested items
-avg_merge_divested <- plot_data %>% filter(active == FALSE &  days_active >= 30) %>%
-    select(category, item, date, use_per_month, cost_per_use, days_active, cumuse) %>%
-    mutate(avg_use_per_month_divested = sum(cumuse) / sum(days_active) * 30.5, avg_cost_per_use_divested = sum(cost_per_use * cumuse) / sum(cumuse)) %>%
-    select(-use_per_month, -cost_per_use, -days_active, -cumuse)
-plot_data <- merge(plot_data, avg_merge_divested, all = TRUE)
-rm(avg_merge_divested)
-plot_data <- plot_data %>% ungroup()
-
-# Create data set (plot_data_reduced) suitable for animation
-# Reduce dates (frames) to half for animation: remove every second date (c(T,F) replicates automatically)
-# Animation used transition_state(), which avoids rendering multiple dates in one frame, but also
-# causes the number of frames to determine the dates to be included. Thus the number of frames needs to
-# match the amount of dates to be animated. Reducing the amount of dates (frames) is the best way.
-
-#length(unique(plot_data$date)) # Current length
-plot_data_reduced <- plot_data[plot_data$date %in% unique(plot_data$date)[c(TRUE, FALSE)],]
-#length(unique(plot_data_reduced$date)) # New length confirmed
-
-
-
-
-
-### STANDARD CATEGORY IMAGE PLOTS ###
-
-# Create and save image plots for all categories
-for (i in category_order){
-  p <- plot_data %>% setup_category_plot_image(categories = c(i), xmax = NA, ymax = NA, log_trans=TRUE)
-  ggsave(filename = paste("Website/Plots/Category-", gsub(" ", "_", i), ".png", sep=""),
-         p, width = 10, height = 10, dpi = 300, units = "in", device=png())
-  dev.off()
-}
-
-
-## STANDARD CATEGORY IMAGE PLOTS ANIMATED ##
+## STANDARD CATEGORY IMAGE PLOTS ANIMATED ####################################################################################
 
 # Jackets and hoodies
 plot_data_reduced %>% setup_category_plot_image("Jackets and hoodies", xmax = 20, ymax = 16, log_trans=TRUE, animate=TRUE) %>% 
@@ -424,91 +179,7 @@ anim_save("Website/Plots/Category-Sportswear-animation.gif")
 
 
 
-
-### CATEGORY PLOT - COST PER USE vs CUMULATIVE USE ###
-
-
-
-# Jackets and hoodies
-p <- plot_data %>% setup_category_cumulative_plot_image("Jackets and hoodies", xmax = 400, ymax = 10, log_trans=TRUE, trails=TRUE, guides=TRUE)
-ggsave(filename = "Website/Plots/Category-Jackets_and_hoodies-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
-dev.off()
-
-# Blazers and vests
-p <- plot_data %>% setup_category_cumulative_plot_image("Blazers and vests", xmax = 60, ymax = 50, log_trans=TRUE, trails=TRUE, guides=TRUE)
-ggsave(filename = "Website/Plots/Category-Blazers_and_vests-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
-dev.off()
-
-# Knits
-p <- plot_data %>% setup_category_cumulative_plot_image("Knits", xmax = 30, ymax = 50, log_trans=TRUE, trails=TRUE, guides=TRUE)
-ggsave(filename = "Website/Plots/Category-Knits-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
-dev.off()
-
-# Shirts
-p <- plot_data %>% setup_category_cumulative_plot_image("Shirts", xmax = 60, ymax = 45, log_trans=TRUE, trails=TRUE, guides=TRUE)
-ggsave(filename = "Website/Plots/Category-Shirts-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
-dev.off()
-
-# T-shirts and tanks
-p <- plot_data %>% setup_category_cumulative_plot_image("T-shirts and tanks", xmax = 110, ymax = 20, log_trans=TRUE, trails=TRUE, guides=TRUE)
-ggsave(filename = "Website/Plots/Category-T-shirts_and_tanks-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
-dev.off()
-
-# Pants
-p <- plot_data %>% setup_category_cumulative_plot_image("Pants", xmax = 120, ymax = 35, log_trans=TRUE, trails=TRUE, guides=TRUE)
-ggsave(filename = "Website/Plots/Category-Pants-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
-dev.off()
-
-# Shorts
-p <- plot_data %>% setup_category_cumulative_plot_image("Shorts", xmax = 160, ymax = 100, log_trans=TRUE, trails=TRUE, guides=TRUE)
-ggsave(filename = "Website/Plots/Category-Shorts-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
-dev.off()
-
-# Belts
-p <- plot_data %>% setup_category_cumulative_plot_image("Belts", xmax = 220, ymax = 100, log_trans=TRUE, trails=TRUE, guides=TRUE)
-ggsave(filename = "Website/Plots/Category-Belts-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
-dev.off()
-
-# Socks
-p <- plot_data %>% setup_category_cumulative_plot_image("Socks", xmax = 50, ymax = 10, log_trans=TRUE, trails=TRUE, guides=TRUE)
-ggsave(filename = "Website/Plots/Category-Socks-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
-dev.off()
-
-# Shoes
-p <- plot_data %>% setup_category_cumulative_plot_image("Shoes", xmax = 340, ymax = 30, log_trans=TRUE, trails=TRUE, guides=TRUE)
-ggsave(filename = "Website/Plots/Category-Shoes-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
-dev.off()
-
-# Underwear shirts
-p <- plot_data %>% setup_category_cumulative_plot_image("Underwear shirts", xmax = 45, ymax = 42, log_trans=TRUE, trails=TRUE, guides=TRUE)
-ggsave(filename = "Website/Plots/Category-Underwear_shirts-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
-dev.off()
-
-# Underwear boxers
-p <- plot_data %>% setup_category_cumulative_plot_image("Underwear boxers", xmax = 35, ymax = 16, log_trans=TRUE, trails=TRUE, guides=TRUE)
-ggsave(filename = "Website/Plots/Category-Underwear_boxers-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
-dev.off()
-
-# Sportswear
-p <- plot_data %>% setup_category_cumulative_plot_image("Sportswear", xmax = 70, ymax = 35, log_trans=TRUE, trails=TRUE, guides=TRUE)
-ggsave(filename = "Website/Plots/Category-Sportswear-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
-dev.off()
-
-
-
-
-
-
 ### CATEGORY PLOT - TIMES USED ###
-
-# Create and save image plots for all categories
-for (i in category_order){
-  p <- setup_category_times_used_plot(plot_data, categories = c(i), animate = FALSE)
-  ggsave(filename = paste("Website/Plots/Category-", gsub(" ", "_", i), "-Times_used.png", sep=""),
-         p, width = 10, height = 10, dpi = 300, units = "in", device=png())
-  dev.off()
-}
-
 
 # ANIMATED PLOTS #
 
@@ -530,6 +201,64 @@ for (i in category_order){
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
+##### ##### ##### ##### ##### ##### ##### DEVELOPMENT ##### ##### ##### ##### ##### ##### #####
+##### ##### ##### ##### ##### ##### ##### DEVELOPMENT ##### ##### ##### ##### ##### ##### #####
+##### ##### ##### ##### ##### ##### ##### DEVELOPMENT ##### ##### ##### ##### ##### ##### #####
+##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
+
+plot_data %>% filter(category == "Shirts" & date == max(plot_data$date))
+
+p <- plot_data %>% filter(category == "Shirts" & date == max(plot_data$date)) %>%
+  ggplot(aes(x = use_per_month, y = cost_per_use)) +
+  geom_image(aes(image = photo), size = 0.08) +
+  annotate("text", x = max(use_per_month), y = max(cost_per_use), label = "Olof")
+
+dev.off()  
+
+p <- plot_data %>% setup_category_plot_image(categories = "Shirts", xmax = NA, ymax = NA, log_trans=TRUE)
+
+
+
+
+
+### CATEGORY PLOT - COST PER USE vs CUMULATIVE USE - ANIMATED ###
+
+# DEVELOPMENT DEVELOPMENT #
+
+animation <- plot_data %>% filter(category == 'Shoes') %>%
+  ggplot(aes(x = cumuse, y = cost_per_use)) +
+  geom_image(aes(image = photo), size = 0.08) +
+  scale_x_continuous(limits=c(0,320)) +
+  labs(x = "Cumulative times used", y = "Cost per use (€)") +
+  scale_y_continuous(trans="log10", limits=c(NA,16)) +
+  transition_time(date) + labs(title = "Date: {frame_time}") + ease_aes('linear')
+
+p <- p + transition_time(date) + labs(title = "Date: {frame_time}") + ease_aes('linear')
+
+animate(p, height = 1000, width = 1000, nframes = 100, fps = 24, end_pause = 72) # Frames = states + end pause
+animate(height = 1000, width = 1000, nframes = length(unique(plot_data_reduced$date)) + 72, fps = 24, end_pause = 72) # Frames = states + end pause
+anim_save("Plots/Category-Shoes-Cumulative_use-animation.gif")
+
+################################################################################################
+##################################### END OF DEVELOPMENT #######################################
+################################################################################################
 
 
 

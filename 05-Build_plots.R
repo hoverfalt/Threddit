@@ -176,6 +176,72 @@ build_standard_plots <- function(){
     ggsave(filename = paste("Website/Plots/Category-", gsub(" ", "_", i), "-Times_used.png", sep=""),
            p, width = 10, height = 10, dpi = 300, units = "in", device=png())
   }
+
+  
+  ## Category plot: daily cost with rolling average
+  
+  # Plot: Jackets and hoodies
+  daily_cost_category <- calculate_daily_cost(plotuse, rolling_average_window, categories_include = "Jackets and hoodies")
+  p <- setup_daily_cost_plot(daily_cost_category, ymax = 8)
+  ggsave(filename = "Website/Plots/Category-Jackets_and_hoodies-Daily_cost.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
+  
+  # Blazers and vests
+  daily_cost_category <- calculate_daily_cost(plotuse, rolling_average_window, categories_include = "Blazers and vests")
+  p <- setup_daily_cost_plot(daily_cost_category, ymax = 40)
+  ggsave(filename = "Website/Plots/Category-Blazers_and_vests-Daily_cost.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
+  
+  # Knits
+  daily_cost_category <- calculate_daily_cost(plotuse, rolling_average_window, categories_include = "Knits")
+  p <- setup_daily_cost_plot(daily_cost_category, ymax = 20)
+  ggsave(filename = "Website/Plots/Category-Knits-Daily_cost.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
+  
+  # Shirts
+  daily_cost_category <- calculate_daily_cost(plotuse, rolling_average_window, categories_include = "Shirts")
+  p <- setup_daily_cost_plot(daily_cost_category, ymax = 20)
+  ggsave(filename = "Website/Plots/Category-Shirts-Daily_cost.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
+  
+  # T-shirts and tanks
+  daily_cost_category <- calculate_daily_cost(plotuse, rolling_average_window, categories_include = "T-shirts and tanks")
+  p <- setup_daily_cost_plot(daily_cost_category, ymax = 8)
+  ggsave(filename = "Website/Plots/Category-T-shirts_and_tanks-Daily_cost.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
+  
+  # Pants
+  daily_cost_category <- calculate_daily_cost(plotuse, rolling_average_window, categories_include = "Pants")
+  p <- setup_daily_cost_plot(daily_cost_category, ymax = 8)
+  ggsave(filename = "Website/Plots/Category-Pants-Daily_cost.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
+  
+  # Shorts
+  daily_cost_category <- calculate_daily_cost(plotuse, rolling_average_window, categories_include = "Shorts")
+  p <- setup_daily_cost_plot(daily_cost_category, ymax = 8)
+  ggsave(filename = "Website/Plots/Category-Shorts-Daily_cost.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
+  
+  # Belts
+  daily_cost_category <- calculate_daily_cost(plotuse, rolling_average_window, categories_include = "Belts")
+  p <- setup_daily_cost_plot(daily_cost_category, ymax = 4)
+  ggsave(filename = "Website/Plots/Category-Belts-Daily_cost.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
+  
+  # Socks
+  daily_cost_category <- calculate_daily_cost(plotuse, rolling_average_window, categories_include = "Socks")
+  p <- setup_daily_cost_plot(daily_cost_category, ymax = 2)
+  ggsave(filename = "Website/Plots/Category-Socks-Daily_cost.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
+  
+  # Shoes
+  daily_cost_category <- calculate_daily_cost(plotuse, rolling_average_window, categories_include = "Shoes")
+  p <- setup_daily_cost_plot(daily_cost_category, ymax = 16)
+  ggsave(filename = "Website/Plots/Category-Shoes-Daily_cost.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
+  
+  # Underwear shirts
+  daily_cost_category <- calculate_daily_cost(plotuse, rolling_average_window, categories_include = "Underwear shirts")
+  p <- setup_daily_cost_plot(daily_cost_category, ymax = 8)
+  ggsave(filename = "Website/Plots/Category-Underwear_shirts-Daily_cost.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
+  
+  # Underwear boxers
+  daily_cost_category <- calculate_daily_cost(plotuse, rolling_average_window, categories_include = "Underwear boxers")
+  p <- setup_daily_cost_plot(daily_cost_category, ymax = 4)
+  ggsave(filename = "Website/Plots/Category-Underwear_shirts-Daily_cost.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
+  
+  # Sportswear
+  # Doesn't make sense
 }
 
 

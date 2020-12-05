@@ -9,6 +9,7 @@
 ### SET UP ENVIRONMENT ##########################################################################################
 
 # Set up computing and plotting environment
+source("00-Set_up_environment.R")
 set_up_environment()
 
 
@@ -25,9 +26,11 @@ plotuse <- transform_data(masterdata) %>% # 1) Transform raw data into tidy data
   calculate_plot_data() # 4) Calculate plot data for the standard plots
 
 # Save tidy data data.frame to file for easier retrieval
-save(plotuse,file="Data/Threddit-plotuse-2020-12-02.Rda")
+save(masterdata,file="Data/Threddit-masterdata-2020-12-05.Rda")
+save(plotuse,file="Data/Threddit-plotuse-2020-12-05.Rda")
 # Load data from file
-load("Data/Threddit-plotuse-2020-12-02.Rda")
+load("Data/Threddit-masterdata-2020-12-05.Rda")
+load("Data/Threddit-plotuse-2020-12-05.Rda")
 
 
 
@@ -39,14 +42,6 @@ calculate_image_plot_master_data()
 # Build image plots 
 build_standard_plots()
 
-
-
-## TODO: ADD THIS TO ALL CATEGORIES
-## Category image plot: daily cost with rolling average
-# Plot: Jackets and hoodies
-daily_cost_category <- calculate_daily_cost(plotuse, rolling_average_window, categories_include = "Jackets and hoodies")
-p <- setup_daily_cost_plot(daily_cost_category, ymax = 8)
-ggsave(filename = "Website/Plots/Category-Jackets_and_hoodies-Daily_cost.png", p, width = 10, height = 10, dpi = 300, units = "in", device=png())
 
 
 

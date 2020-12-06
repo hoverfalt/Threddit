@@ -229,7 +229,7 @@ calculate_daily_cost <- function(plotuse, rolling_average_window = 30, categorie
 }
 
 # Function to setup daily cost plot
-setup_daily_cost_plot <- function(daily_cost, ymax = 40, ybreaks = 2, seasons = FALSE, legend = TRUE) {
+setup_daily_cost_plot <- function(daily_cost, ymax = 40, ybreaks = 2, seasons = TRUE, legend = TRUE) {
 
     # Set author label coordinates (upper right corner)
     author_label_x <- max(daily_cost$date)
@@ -308,23 +308,34 @@ calculate_daily_cost_anim <- function(plotuse, rolling_average_window = 30, cate
 
 
 # Function to setup daily cost animation
-setup_daily_cost_animation <- function(daily_cost_anim_plot, ymax = 40) {
+setup_daily_cost_animation <- function(daily_cost_anim_plot, ymax = 40, seasons = TRUE) {
 
     # Set author label coordinates (upper right corner)
     author_label_x <- max(daily_cost_anim_plot$date)
     author_label_y <- ymax
-    
+
     # Set up animation
-    animation <-
-        ggplot(daily_cost_anim_plot, aes(x = date, y = daily_cost, color = !still_active)) +
-        annotate("text", x = author_label_x, y = author_label_y, label = author_label, color = "gray", hjust = 1) +
-        geom_point(size=1.5) +
-        scale_color_manual(breaks = c(FALSE, TRUE), values=c("indianred1", "mediumseagreen")) +
-        geom_line(data = na.omit(daily_cost_anim_plot), aes(x = date, y = average_daily_cost), color='steelblue', size=1.5) +
-        scale_y_continuous(limits=c(0,ymax)) + # Set fixed Y (daily cost) limit at 40 to avoid plot scale from jumping around
-        labs(x = "Date", y = "Daily cost and 30-day rolling average (shifted to midpoint of sample)", color = "All divested") +
-        transition_states(day, state_length = 1, transition_length = 0) +
-        labs(title = "Date: {closest_state}") + ease_aes('linear')
+    animation <- ggplot(daily_cost_anim_plot, aes(x = date, y = daily_cost, color = !still_active))
+
+    # Add season overlay (consider refactoring to avoid hard coded data)
+    if (seasons) {
+      animation <- animation +
+        annotate("rect", xmin = as.Date("2018-06-22"), xmax = as.Date("2018-08-15"), ymin = 0, ymax = ymax, alpha = 0.3, fill = "lightyellow", size = 0) +
+        annotate("rect", xmin = as.Date("2019-06-22"), xmax = as.Date("2019-08-15"), ymin = 0, ymax = ymax, alpha = 0.3, fill = "lightyellow", size = 0) +
+        annotate("rect", xmin = as.Date("2020-06-22"), xmax = as.Date("2020-08-15"), ymin = 0, ymax = ymax, alpha = 0.3, fill = "lightyellow", size = 0)
+      #            annotate("rect", xmin = as.Date("2020-03-18"), xmax = as.Date("2020-06-21"), ymin = 0, ymax = ymax, alpha = 0.1, fill = "lightpink", size = 0) + # Corona
+      #            annotate("rect", xmin = as.Date("2020-08-16"), xmax = as.Date("2020-12-21"), ymin = 0, ymax = ymax, alpha = 0.1, fill = "lightpink", size = 0) # Corona
+    }
+    
+    animation <- animation + 
+      annotate("text", x = author_label_x, y = author_label_y, label = author_label, color = "gray", hjust = 1) +
+      geom_point(size=1.5) +
+      scale_color_manual(breaks = c(FALSE, TRUE), values=c("indianred1", "mediumseagreen")) +
+      geom_line(data = na.omit(daily_cost_anim_plot), aes(x = date, y = average_daily_cost), color='steelblue', size=1.5) +
+      scale_y_continuous(limits=c(0,ymax)) + # Set fixed Y (daily cost) limit at 40 to avoid plot scale from jumping around
+      labs(x = "Date", y = "Daily cost and 30-day rolling average (shifted to midpoint of sample)", color = "All divested") +
+      transition_states(day, state_length = 1, transition_length = 0) +
+      labs(title = "Date: {closest_state}") + ease_aes('linear')
     
     return(animation)
 }
@@ -509,7 +520,7 @@ setup_category_plot_image <- function(plot_data, categories, xmax, ymax, ybreaks
         geom_hline(aes(yintercept = avg_cost_per_use_divested), size = 0.8, colour = "darkgray", linetype = "dotted") +
         geom_image(aes(image = photo), size = 0.08) +
         geom_label(aes(x = avg_use_per_month_divested, y = min(cost_per_use), label=round(avg_use_per_month_divested, digits = 1)), color = "darkgray") +
-        geom_label(aes(x = min(use_per_month), y = avg_cost_per_use_divested, label=round(avg_cost_per_use_divested, digits = 2)), color = "darkgray") +
+        geom_label(aes(x = min(use_per_month), y = avg_cost_per_use_divested, label=paste(round(avg_cost_per_use_divested, digits = 2)," €", sep="")), color = "darkgray") +
         scale_x_continuous(limits=c(NA,xmax)) +
         labs(x = "Average times worn per month", y = "Cost per wear (€)")
     

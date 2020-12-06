@@ -73,7 +73,7 @@ set_up_environment <- function(){
   guides_prices <<- c(5, 10, 20, 50, 100, 200, 400, 800)
 
   # Set logarithmic y scale breaks
-  log_breaks <- c(0.05, 0.1, 0.25, 0.5, 1, 2, 5, 10, 20, 50, 100, 200, 400, 800)
+  log_breaks <<- c(0.05, 0.1, 0.25, 0.5, 1, 2, 5, 10, 20, 50, 100, 200, 400, 800)
     
   # Set author label to add in the upper right corner of plots
   author_label <<- "hoverfalt.github.io"

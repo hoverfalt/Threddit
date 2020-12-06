@@ -47,7 +47,7 @@ set_up_environment <- function(){
                        '#0070C0', '#002060', '#A860E9', '#7030A0', '#A5A5A5', '#7B7B7B', '#444444')
   
   # Set color names by category name for consistent category colors in plots
-  names(category_colors) <- levels(plotuse$category)
+  names(category_colors) <- category_order
   
   # Set category photos
   category_photos <<- data.frame(
@@ -71,7 +71,10 @@ set_up_environment <- function(){
   
   # Set guides for daily cost vs cumulative use plots
   guides_prices <<- c(5, 10, 20, 50, 100, 200, 400, 800)
-  
+
+  # Set logarithmic y scale breaks
+  log_breaks <- c(0.05, 0.1, 0.25, 0.5, 1, 2, 5, 10, 20, 50, 100, 200, 400, 800)
+    
   # Set author label to add in the upper right corner of plots
   author_label <<- "hoverfalt.github.io"
 

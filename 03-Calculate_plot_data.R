@@ -158,6 +158,7 @@ setup_inventory_item_count_plot <- function(inventory){
         annotate("text", x = author_label_x, y = author_label_y, label = author_label, color = "gray", hjust = 1) +
         geom_line() +
         scale_color_manual(name = "Category", values = category_colors) +
+        scale_y_continuous(breaks=seq(0, 100, by = 10)) + # Set y axis break interval
         labs(x = "Date", y = "Active inventory (number of items)")
     
     return(p)
@@ -177,6 +178,7 @@ setup_inventory_value_by_category_plot <- function(inventory){
         annotate("text", x = author_label_x, y = author_label_y, label = author_label, color = "gray", hjust = 1) +
         geom_line() +
         scale_color_manual(name = "Category", values = category_colors) +
+        scale_y_continuous(breaks=seq(0, 5000, by = 500)) + # Set y axis break interval
         labs(x = "Date", y = "Active inventory value at purchase price (€)")
     
     return(p)
@@ -184,7 +186,7 @@ setup_inventory_value_by_category_plot <- function(inventory){
 
 
 # Funtion to set up inventory value stacked by category plot
-setup_inventory_value_stacked_plot <- function(inventory){
+setup_inventory_value_stacked_plot <- function(inventory, ymax = NA){
     
     # Set author label coordinates (upper right corner)
     author_label_x <- max(inventory$date)
@@ -196,6 +198,7 @@ setup_inventory_value_stacked_plot <- function(inventory){
         annotate("text", x = author_label_x, y = author_label_y, label = author_label, color = "gray", hjust = 1) +
         geom_area() +
         scale_fill_manual(name = "Category", values = category_colors) +
+        scale_y_continuous(limits=c(0,ymax), breaks=seq(0, 15000, by = 1000)) + # Set y axis break interval
         labs(x = "Date", y = "Active inventory value at purchase price (€)")
     
     return(p)
@@ -226,7 +229,7 @@ calculate_daily_cost <- function(plotuse, rolling_average_window = 30, categorie
 }
 
 # Function to setup daily cost plot
-setup_daily_cost_plot <- function(daily_cost, ymax = 40, seasons = FALSE) {
+setup_daily_cost_plot <- function(daily_cost, ymax = 40, ybreaks = 2, seasons = FALSE, legend = TRUE) {
 
     # Set author label coordinates (upper right corner)
     author_label_x <- max(daily_cost$date)
@@ -251,8 +254,13 @@ setup_daily_cost_plot <- function(daily_cost, ymax = 40, seasons = FALSE) {
         geom_point() +
         scale_color_manual(breaks = c(FALSE, TRUE), values=c("indianred1", "mediumseagreen")) +
         geom_line(aes(x = date, y = average_daily_cost), color='steelblue', size=1) +
-        scale_y_continuous(limits=c(0,ymax)) + # Set y limit to NA for automatic scale
+#        scale_x_date(date_breaks = "3 months", date_labels = "%Y-%m") +
+        scale_y_continuous(limits=c(0,ymax), breaks=seq(0, 100, by = ybreaks)) + # Set y limit to NA in function call for automatic scale
         labs(x = "Date", y = "Daily cost and 30-day rolling average (shifted to midpoint of sample)", color = "All divested")
+    
+    # Hide legend 
+    if (!legend){ p <- p + guides(color = FALSE) }
+    #    if (!legend){ theme(legend.position = "none") }
     
     return(p)
 }
@@ -326,7 +334,7 @@ setup_daily_cost_animation <- function(daily_cost_anim_plot, ymax = 40) {
 
 
 # Funtion to set up daily cost vs category use plot
-setup_daily_cost_and_category_use_plot <- function(usetodate_anim, ymax = NA, animate = FALSE){
+setup_daily_cost_and_category_use_plot <- function(usetodate_anim, ymax = NA, ybreaks = 1, animate = FALSE){
     
     # Animation marker size
     marker_size <- 40
@@ -349,11 +357,11 @@ setup_daily_cost_and_category_use_plot <- function(usetodate_anim, ymax = NA, an
         geom_point(aes(colour = category), size = marker_size) +
         geom_image(aes(image = photo, group = date), size = 0.08) +
         scale_x_continuous(limits=c(0,1)) +
-        scale_y_continuous(limits=c(NA,ymax)) +
+        scale_y_continuous(limits=c(NA,ymax), breaks=seq(0, 500, by = ybreaks)) +
         scale_color_manual(name = "Category", values = category_colors) +
         scale_size(range = c(1, 10)) +
         guides(size = FALSE) +
-        labs(x = "Category daily use", y = "Average daily cost of use (all items)") +
+        labs(x = "Category frequency of use (share of all days)", y = "Average cost per wear (€)") +
         guides(colour = guide_legend(override.aes = list(size = 2))) # Override plot point size to smaller for legend
     
     if(animate) {
@@ -369,7 +377,7 @@ setup_daily_cost_and_category_use_plot <- function(usetodate_anim, ymax = NA, an
 
 
 # Funtion to set up yearly cost vs category use plot
-setup_yearly_cost_and_category_use_plot <- function(usetodate_anim, ymax = NA, animate = FALSE){
+setup_yearly_cost_and_category_use_plot <- function(usetodate_anim, ymax = NA, ybreaks = 200, animate = FALSE){
     
     # Animation marker size
     marker_size <- 40
@@ -392,11 +400,11 @@ setup_yearly_cost_and_category_use_plot <- function(usetodate_anim, ymax = NA, a
         geom_point(aes(colour = category), size = marker_size) +
         geom_image(aes(image = photo, group = date), size = 0.08) +
         scale_x_continuous(limits=c(0,1)) +
-        scale_y_continuous(limits=c(NA,ymax)) +
+        scale_y_continuous(limits=c(NA,ymax), breaks=seq(0, 2000, by = ybreaks)) +
         scale_color_manual(name = "Category", values = category_colors) +
         scale_size(range = c(1, 10)) +
         guides(size = FALSE) +
-        labs(x = "Category daily use", y = "Average yearly cost of use (all items)") +
+        labs(x = "Category frequency of use", y = "Yearly cost of use (€)") +
         guides(colour = guide_legend(override.aes = list(size = 2))) # Override plot point size to smaller for legend
     
     if(animate) {
@@ -454,7 +462,7 @@ setup_category_plot_point <- function(plot_data, categories, xmax, ymax, log_tra
         scale_alpha(range = c(0.5, 1.0)) +
         scale_size(range = c(2, 3)) +
         guides(alpha = FALSE, size = FALSE) +
-        labs(x = "Average times used per month", y = "Cost per use (€)")
+        labs(x = "Average times worn per month", y = "Cost per wear (€)")
 
     if (log_trans) { p <- p + scale_y_continuous(limits=c(NA,ymax), trans="log10") }
     else { p <- p + scale_y_continuous(limits=c(NA,ymax)) }
@@ -480,7 +488,7 @@ setup_category_plot_point <- function(plot_data, categories, xmax, ymax, log_tra
 
 
 # Function to setup (multi) category image plot y = cost per use, x = monthly use
-setup_category_plot_image <- function(plot_data, categories, xmax, ymax, log_trans=TRUE, animate=FALSE) {
+setup_category_plot_image <- function(plot_data, categories, xmax, ymax, ybreaks = log_breaks, log_trans=TRUE, animate=FALSE) {
 
     # Filter data by category
     plot_data <- plot_data %>% filter(category %in% categories)
@@ -503,9 +511,9 @@ setup_category_plot_image <- function(plot_data, categories, xmax, ymax, log_tra
         geom_label(aes(x = avg_use_per_month_divested, y = min(cost_per_use), label=round(avg_use_per_month_divested, digits = 1)), color = "darkgray") +
         geom_label(aes(x = min(use_per_month), y = avg_cost_per_use_divested, label=round(avg_cost_per_use_divested, digits = 2)), color = "darkgray") +
         scale_x_continuous(limits=c(NA,xmax)) +
-        labs(x = "Average times used per month", y = "Cost per use (€)")
+        labs(x = "Average times worn per month", y = "Cost per wear (€)")
     
-    if (log_trans) { p <- p + scale_y_continuous(trans="log10", limits=c(NA,ymax)) }
+    if (log_trans) { p <- p + scale_y_continuous(trans="log10", limits=c(NA,ymax), breaks=ybreaks) }
     else { p <- p + scale_y_continuous(limits=c(NA,ymax)) }
 
     if (animate) {
@@ -524,7 +532,7 @@ setup_category_plot_image <- function(plot_data, categories, xmax, ymax, log_tra
 ### CATEGORY PLOT - COST PER USE vs CUMULATIVE USE ###
 
 # Function to setup (multi) category image plot y = cost per use, x = cumulative use
-setup_category_cumulative_plot_image <- function(plot_data, categories, xmax = NA, ymin = NA, ymax = NA, log_trans=TRUE, trails=FALSE, guides=TRUE) {
+setup_category_cumulative_plot_image <- function(plot_data, categories, xmax = NA, ymin = NA, ymax = NA, ybreaks = log_breaks, log_trans=TRUE, trails=FALSE, guides=TRUE) {
     
     # Filter data by category
     plot_data <- plot_data %>% filter(category %in% categories)
@@ -563,8 +571,8 @@ setup_category_cumulative_plot_image <- function(plot_data, categories, xmax = N
     p <- p +
         geom_image(data = plot_data[plot_data$date == max(plot_data$date),], aes(image = photo), size = 0.08) +
         scale_x_continuous(limits=c(0,xmax)) +
-        labs(x = "Times used", y = "Cost per use (€)")
-    if (log_trans) { p <- p + scale_y_continuous(trans="log10", limits=c(ymin,ymax)) }
+        labs(x = "Times worn", y = "Cost per wear (€)")
+    if (log_trans) { p <- p + scale_y_continuous(trans="log10", limits=c(ymin,ymax), breaks=ybreaks) }
     else { p <- p + scale_y_continuous(limits=c(ymin,ymax)) }
     
     return(p)
@@ -625,7 +633,7 @@ setup_category_times_used_plot <- function(plot_data, categories, animate = FALS
                  width = max(times_used$rownumber)/300, position = position_dodge2(preserve = "total", padding = 0)) +
         scale_fill_manual(breaks = c(FALSE, TRUE), values=c("lightgreen", "lightgray")) +
         geom_image(aes(image = photo, group = date), size = 0.08) +
-        labs(x = "Item", y = "Times used") +
+        labs(x = "Items by status (green divested, gray active) and in purchase order (newer higher)", y = "Times worn") +
         coord_flip() + # Flip coordinates to be horizontal (this switches x and y)
         theme(legend.position = "none") + # Remove legend
         # Add numeric labels for standard deviations, 1 and 2, high and low

@@ -98,8 +98,6 @@ build_standard_plots <- function(){
   file.remove("Plots/Portfolio-Daily_cost-plot.png")
 
   
-  
-  
   ## CATEGORY PLOTS
 
   # Standard category plots
@@ -193,7 +191,6 @@ build_standard_plots <- function(){
   file.copy("Plots/Category-Sportswear-Cost_and_Cumulative_use.png", "Website/Plots/Category-Sportswear-Cost_and_Cumulative_use.png", overwrite = TRUE)
   file.remove("Plots/Category-Sportswear-Cost_and_Cumulative_use.png")
 
-  
   
   ## Category plot - Times used
 

@@ -111,67 +111,94 @@ file.copy("Plots/Portfolio-Yearly_cost_and_Category_use-animation.gif", "Website
 # Jackets and hoodies
 plot_data_reduced %>% setup_category_plot_image("Jackets and hoodies", xmax = 20, ymax = 16, log_trans=TRUE, animate=TRUE) %>% 
   animate(height = 1000, width = 1000, nframes = length(unique(plot_data_reduced$date)) + 72, fps = 24, end_pause = 72)
-anim_save("Website/Plots/Category-Jackets_and_hoodies-animation.gif")
+anim_save("Plots/Category-Jackets_and_hoodies-animation.gif")
+file.copy("Plots/Category-Jackets_and_hoodies-animation.gif", "Website/Plots/Category-Jackets_and_hoodies-animation.gif", overwrite = TRUE)
+file.remove("Plots/Category-Jackets_and_hoodies-animation.gif")
+
 
 # Blazers and vests
-plot_data_reduced %>% setup_category_plot_image("Blazers and vests", xmax = 1.5, ymax = 64, log_trans=TRUE, animate=TRUE) %>% 
+plot_data_reduced %>% setup_category_plot_image("Blazers and vests", xmax = 2, ymax = NA, log_trans=TRUE, animate=TRUE) %>% 
   animate(height = 1000, width = 1000, nframes = length(unique(plot_data_reduced$date)) + 72, fps = 24, end_pause = 72)
-anim_save("Website/Plots/Category-Blazers_and_vests-animation.gif")
+anim_save("Plots/Category-Blazers_and_vests-animation.gif")
+file.copy("Plots/Category-Blazers_and_vests-animation.gif", "Website/Plots/Category-Blazers_and_vests-animation.gif", overwrite = TRUE)
+#file.remove("Plots/Category-Blazers_and_vests-animation.gif")
 
 # Knits
 plot_data_reduced %>% setup_category_plot_image("Knits", xmax = 1.0, ymax = 32, log_trans=TRUE, animate=TRUE) %>% 
   animate(height = 1000, width = 1000, nframes = length(unique(plot_data_reduced$date)) + 72, fps = 24, end_pause = 72)
-anim_save("Website/Plots/Category-Knits-animation.gif")
+anim_save("Plots/Category-Knits-animation.gif")
+file.copy("Plots/Category-Knits-animation.gif", "Website/Plots/Category-Knits-animation.gif", overwrite = TRUE)
+#file.remove("Plots/Category-Knits-animation.gif")
 
 # Shirts
-plot_data_reduced %>% setup_category_plot_image("Shirts", xmax = 3, ymax = 20, log_trans=TRUE, animate=TRUE) %>% 
+plot_data_reduced %>% setup_category_plot_image("Shirts", xmax = 3, ymax = 70, log_trans=TRUE, animate=TRUE) %>% 
   animate(height = 1000, width = 1000, nframes = length(unique(plot_data_reduced$date)) + 72, fps = 24, end_pause = 72)
-anim_save("Website/Plots/Category-Shirts-animation.gif")
+anim_save("Plots/Category-Shirts-animation.gif")
+file.copy("Plots/Category-Shirts-animation.gif", "Website/Plots/Category-Shirts-animation.gif", overwrite = TRUE)
+#file.remove("Plots/Category-Shirts-animation.gif")
 
 # T-shirts and tanks
 plot_data_reduced %>% setup_category_plot_image("T-shirts and tanks", xmax = 3, ymax = 16, log_trans=TRUE, animate=TRUE) %>% 
   animate(height = 1000, width = 1000, nframes = length(unique(plot_data_reduced$date)) + 72, fps = 24, end_pause = 72)
-anim_save("Website/Plots/Category-T-shirts_and_tanks-animation.gif")
+anim_save("Plots/Category-T-shirts_and_tanks-animation.gif")
+file.copy("Plots/Category-T-shirts_and_tanks-animation.gif", "Website/Plots/Category-T-shirts_and_tanks-animation.gif", overwrite = TRUE)
+#file.remove("Plots/Category-T-shirts_and_tanks-animation.gif")
 
 # Pants
 plot_data_reduced %>% setup_category_plot_image("Pants", xmax = 20, ymax = 32, log_trans=TRUE, animate=TRUE) %>% 
   animate(height = 1000, width = 1000, nframes = length(unique(plot_data_reduced$date)) + 72, fps = 24, end_pause = 72)
-anim_save("Website/Plots/Category-Pants-animation.gif")
+anim_save("Plots/Category-Pants-animation.gif")
+file.copy("Plots/Category-Pants-animation.gif", "Website/Plots/Category-Pants-animation.gif", overwrite = TRUE)
+#file.remove("Plots/Category-Pants-animation.gif")
 
 # Shorts
 plot_data_reduced %>% setup_category_plot_image("Shorts", xmax = 8, ymax = 100, log_trans=TRUE, animate=TRUE) %>% 
   animate(height = 1000, width = 1000, nframes = length(unique(plot_data_reduced$date)) + 72, fps = 24, end_pause = 72)
-anim_save("Website/Plots/Category-Shorts-animation.gif")
+anim_save("Plots/Category-Shorts-animation.gif")
+file.copy("Plots/Category-Shorts-animation.gif", "Website/Plots/Category-Shorts-animation.gif", overwrite = TRUE)
+#file.remove("Plots/Category-Shorts-animation.gif")
 
 # Belts
 plot_data_reduced %>% setup_category_plot_image("Belts", xmax = 9, ymax = 100, log_trans=TRUE, animate=TRUE) %>% 
   animate(height = 1000, width = 1000, nframes = length(unique(plot_data_reduced$date)) + 72, fps = 24, end_pause = 72)
-anim_save("Website/Plots/Category-Belts-animation.gif")
+anim_save("Plots/Category-Belts-animation.gif")
+file.copy("Plots/Category-Belts-animation.gif", "Website/Plots/Category-Belts-animation.gif", overwrite = TRUE)
+#file.remove("Plots/Category-Belts-animation.gif")
 
 # Socks
 plot_data_reduced %>% setup_category_plot_image("Socks", xmax = 3, ymax = 10, log_trans=TRUE, animate=TRUE) %>% 
   animate(height = 1000, width = 1000, nframes = length(unique(plot_data_reduced$date)) + 72, fps = 24, end_pause = 72)
-anim_save("Website/Plots/Category-Socks-animation.gif")
+anim_save("Plots/Category-Socks-animation.gif")
+file.copy("Plots/Category-Socks-animation.gif", "Website/Plots/Category-Socks-animation.gif", overwrite = TRUE)
+#file.remove("Plots/Category-Socks-animation.gif")
 
 # Shoes
 plot_data_reduced %>% setup_category_plot_image("Shoes", xmax = 9, ymax = 100, log_trans=TRUE, animate=TRUE) %>% 
   animate(height = 1000, width = 1000, nframes = length(unique(plot_data_reduced$date)) + 72, fps = 24, end_pause = 72)
-anim_save("Website/Plots/Category-Shoes-animation.gif")
+anim_save("Plots/Category-Shoes-animation.gif")
+file.copy("Plots/Category-Shoes-animation.gif", "Website/Plots/Category-Shoes-animation.gif", overwrite = TRUE)
+#file.remove("Plots/Category-Shoes-animation.gif")
 
 # Underwear shirts
 plot_data_reduced %>% setup_category_plot_image("Underwear shirts", xmax = 3, ymax = 20, log_trans=TRUE, animate=TRUE) %>% 
   animate(height = 1000, width = 1000, nframes = length(unique(plot_data_reduced$date)) + 72, fps = 24, end_pause = 72)
-anim_save("Website/Plots/Category-Underwear_shirts-animation.gif")
+anim_save("Plots/Category-Underwear_shirts-animation.gif")
+file.copy("Plots/Category-Underwear_shirts-animation.gif", "Website/Plots/Category-Underwear_shirts-animation.gif", overwrite = TRUE)
+#file.remove("Plots/Category-Underwear_shirts-animation.gif")
 
 # Underwear boxers
 plot_data_reduced %>% setup_category_plot_image("Underwear boxers", xmax = 3.5, ymax = 20, log_trans=TRUE, animate=TRUE) %>% 
   animate(height = 1000, width = 1000, nframes = length(unique(plot_data_reduced$date)) + 72, fps = 24, end_pause = 72)
-anim_save("Website/Plots/Category-Underwear_boxers-animation.gif")
+anim_save("Plots/Category-Underwear_boxers-animation.gif")
+file.copy("Plots/Category-Underwear_boxers-animation.gif", "Website/Plots/Category-Underwear_boxers-animation.gif", overwrite = TRUE)
+#file.remove("Plots/Category-Underwear_boxers-animation.gif")
 
 # Sportswear
 plot_data_reduced %>% setup_category_plot_image("Sportswear", xmax = 6, ymax = 50, log_trans=TRUE, animate=TRUE) %>% 
   animate(height = 1000, width = 1000, nframes = length(unique(plot_data_reduced$date)) + 72, fps = 24, end_pause = 72)
-anim_save("Website/Plots/Category-Sportswear-animation.gif")
+anim_save("Plots/Category-Sportswear-animation.gif")
+file.copy("Plots/Category-Sportswear-animation.gif", "Website/Plots/Category-Sportswear-animation.gif", overwrite = TRUE)
+#file.remove("Plots/Category-Sportswear-animation.gif")
 
 
 
@@ -193,9 +220,22 @@ plot_data_reduced <- plot_data[plot_data$date %in% unique(plot_data$date)[c(TRUE
 for (i in category_order){
   setup_category_times_used_plot(plot_data_reduced, categories = c(i), animate = TRUE) %>%
     animate(height = 1000, width = 1000, nframes = length(unique(plot_data_reduced$date)) + 72, fps = 24, end_pause = 72) # Frames = states + end pause
-  anim_save(paste("Website/Plots/Category-", gsub(" ", "_", i), "-Times_used-animation.gif", sep=""))
+  anim_save(paste("Plots/Category-", gsub(" ", "_", i), "-Times_used-animation.gif", sep=""))
+  file.copy(paste("Plots/Category-", gsub(" ", "_", i), "-Times_used-animation.gif", sep=""),
+            paste("Website/", paste("Plots/Category-", gsub(" ", "_", i), "-Times_used-animation.gif", sep=""), sep=""),
+            overwrite = TRUE)
+  #file.remove("Plots/Portfolio-Yearly_cost_and_Category_use-animation.gif")
 }
 
+
+# TESTING
+i <- category_order[1]
+setup_category_times_used_plot(plot_data_reduced, categories = c(i), animate = TRUE) %>%
+  animate(height = 1000, width = 1000, nframes = length(unique(plot_data_reduced$date)) + 72, fps = 24, end_pause = 72) # Frames = states + end pause
+anim_save(paste("Plots/Category-", gsub(" ", "_", i), "-Times_used-animation.gif", sep=""))
+file.copy(paste("Plots/Category-", gsub(" ", "_", i), "-Times_used-animation.gif", sep=""),
+          paste("Website/", paste("Plots/Category-", gsub(" ", "_", i), "-Times_used-animation.gif", sep=""), sep=""),
+          overwrite = TRUE)
 
 
 

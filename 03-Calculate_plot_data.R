@@ -528,7 +528,8 @@ setup_category_plot_image <- function(plot_data, categories, xmax, ymax, ybreaks
         geom_vline(aes(xintercept = avg_use_per_month_divested), size = 0.8, colour = "mediumseagreen", linetype = "dotted") +
         geom_hline(aes(yintercept = avg_cost_per_use_divested), size = 0.8, colour = "mediumseagreen", linetype = "dotted") +
         geom_point(data = plot_data %>% filter(active == FALSE), size = marker_size, color = "mediumseagreen", alpha = 0.6) + # Mark divested items with green circle
-        geom_image(aes(image = photo, group = date), size = 0.08) +
+        geom_image(data = plot_data %>% filter(active == FALSE), aes(image = photo, group = date), size = 0.08) + # Render divested items first
+        geom_image(data = plot_data %>% filter(active == TRUE), aes(image = photo, group = date), size = 0.08) + # Render active items on top
         geom_label(aes(x = avg_use_per_month_divested, y = min(cost_per_use), label=round(avg_use_per_month_divested, digits = 1)), color = "mediumseagreen") +
         geom_label(aes(x = min(use_per_month), y = avg_cost_per_use_divested, label=paste(round(avg_cost_per_use_divested, digits = 2)," €", sep="")), color = "mediumseagreen") +
         scale_x_continuous(limits=c(NA,xmax)) +
@@ -597,7 +598,10 @@ setup_category_cumulative_plot_image <- function(plot_data, categories, xmax = N
     p <- p +
       #geom_point(data = plot_data[plot_data$date == max(plot_data$date) & plot_data$active == FALSE,], size = marker_size, color = "mediumseagreen", alpha = 0.6) + # Mark divested items with green circle
         geom_point(data = plot_data %>% filter(date == max(plot_data$date), active == FALSE), size = marker_size, color = "mediumseagreen", alpha = 0.6) + # Mark divested items with green circle
-        geom_image(data = plot_data[plot_data$date == max(plot_data$date),], aes(image = photo), size = 0.08) +
+        geom_image(data = plot_data %>% filter(date == max(plot_data$date), active = FALSE), aes(image = photo), size = 0.08) + # Render divested items first
+        geom_image(data = plot_data %>% filter(date == max(plot_data$date), active = TRUE), aes(image = photo), size = 0.08) + # Render active items in top
+        #geom_image(data = plot_data[plot_data$date == max(plot_data$date),], aes(image = photo), size = 0.08) + # Render divested items first
+        #geom_image(data = plot_data[plot_data$date == max(plot_data$date),], aes(image = photo), size = 0.08) + # Render active items in top
         scale_x_continuous(limits=c(0,xmax)) +
         labs(x = "Times worn", y = "Cost per wear (€)")
     if (log_trans) { p <- p + scale_y_continuous(trans="log10", limits=c(ymin,ymax), breaks=ybreaks) }
@@ -632,8 +636,9 @@ setup_category_times_used_plot <- function(plot_data, categories, animate = FALS
         summarise(std1_low = quantile(cumuse, 0.32), std1_high = quantile(cumuse, 0.68), std2_low = quantile(cumuse, 0.05), std2_high = quantile(cumuse, 0.95)) %>%
         as.data.frame()
     
-    # Add standard deviation data
-    times_used <- merge(times_used, times_used_std, by = "date", all.x = TRUE) 
+    # Add standard deviation data (only if there is any)
+    times_used <- merge(times_used, times_used_std, by = "date", all.x = TRUE)
+    #if (nrow(times_used_std) > 0) { times_used <- merge(times_used, times_used_std, by = "date", all.x = TRUE) } 
     
     # Add rownumber variable telling the order in which to plot the items
     times_used <- times_used %>% 
@@ -651,7 +656,7 @@ setup_category_times_used_plot <- function(plot_data, categories, animate = FALS
     
     # Use only last date for image plots
     if(!animate) {
-      usetodate_anim <- usetodate_anim %>% filter(date == max(usetodate_anim$date))
+      #usetodate_anim <- usetodate_anim %>% filter(date == max(usetodate_anim$date))
       marker_size <- 28 # Set still marker size
     }
           
@@ -667,9 +672,10 @@ setup_category_times_used_plot <- function(plot_data, categories, animate = FALS
         # Bars marking the progress of each item, color coded by wether item is active of divested
         geom_col(data = times_used, aes(x = rownumber, y = cumuse, fill = active, group = date),
                  width = max(times_used$rownumber)/300, position = position_dodge2(preserve = "total", padding = 0)) +
-        scale_fill_manual(breaks = c(FALSE, TRUE), values=c(alpha("seagreen2", 0.6), "lightgray")) +
+        scale_fill_manual(breaks = c(FALSE, TRUE), values=c(alpha("mediumseagreen", 0.6), "lightgray")) +
         geom_point(data = times_used %>% filter(active == FALSE), size = marker_size, color = "mediumseagreen", alpha = 0.6) + # Mark divested items with green circle
-        geom_image(aes(image = photo, group = date), size = 0.08) +
+        geom_image(data = times_used %>% filter(active == FALSE), aes(image = photo, group = date), size = 0.08) + # Render divested items first
+        geom_image(data = times_used %>% filter(active == TRUE), aes(image = photo, group = date), size = 0.08) + # Render active items on top
         labs(x = "Items by status (green divested, gray active) and in purchase order (newer higher)", y = "Times worn") +
         coord_flip() + # Flip coordinates to be horizontal (this switches x and y)
         theme(legend.position = "none") + # Remove legend

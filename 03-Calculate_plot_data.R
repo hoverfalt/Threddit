@@ -526,14 +526,20 @@ setup_category_plot_image <- function(plot_data, categories, xmax, ymax, ybreaks
         aes(x = use_per_month, y = cost_per_use)) +
         annotate("text", x = author_label_x, y = author_label_y, label = author_label, color = "gray", hjust = 1) +
         geom_vline(aes(xintercept = avg_use_per_month_divested), size = 0.8, colour = "mediumseagreen", linetype = "dotted") +
-        geom_hline(aes(yintercept = avg_cost_per_use_divested), size = 0.8, colour = "mediumseagreen", linetype = "dotted") +
+        geom_hline(aes(yintercept = avg_cost_per_use_divested), size = 0.8, colour = "mediumseagreen", linetype = "dotted")
+
+    if (nrow(plot_data %>% filter(active == FALSE)) > 0) { # If there are divested items, render them first
+      p <- p +
         geom_point(data = plot_data %>% filter(active == FALSE), size = marker_size, color = "mediumseagreen", alpha = 0.6) + # Mark divested items with green circle
-        geom_image(data = plot_data %>% filter(active == FALSE), aes(image = photo, group = date), size = 0.08) + # Render divested items first
-        geom_image(data = plot_data %>% filter(active == TRUE), aes(image = photo, group = date), size = 0.08) + # Render active items on top
-        geom_label(aes(x = avg_use_per_month_divested, y = min(cost_per_use), label=round(avg_use_per_month_divested, digits = 1)), color = "mediumseagreen") +
-        geom_label(aes(x = min(use_per_month), y = avg_cost_per_use_divested, label=paste(round(avg_cost_per_use_divested, digits = 2)," €", sep="")), color = "mediumseagreen") +
-        scale_x_continuous(limits=c(NA,xmax)) +
-        labs(x = "Average times worn per month", y = "Cost per wear (€)")
+        geom_image(data = plot_data %>% filter(active == FALSE), aes(image = photo, group = date), size = 0.08) # Render divested items first
+    }
+    
+    p <- p +
+      geom_image(data = plot_data %>% filter(active == TRUE), aes(image = photo, group = date), size = 0.08) + # Render active items on top
+      geom_label(aes(x = avg_use_per_month_divested, y = min(cost_per_use), label=round(avg_use_per_month_divested, digits = 1)), color = "mediumseagreen") +
+      geom_label(aes(x = min(use_per_month), y = avg_cost_per_use_divested, label=paste(round(avg_cost_per_use_divested, digits = 2)," €", sep="")), color = "mediumseagreen") +
+      scale_x_continuous(limits=c(NA,xmax)) +
+      labs(x = "Average times worn per month", y = "Cost per wear (€)")
         
     if (log_trans) { p <- p + scale_y_continuous(trans="log10", limits=c(NA,ymax), breaks=ybreaks) }
     else { p <- p + scale_y_continuous(limits=c(NA,ymax)) }
@@ -616,83 +622,96 @@ setup_category_cumulative_plot_image <- function(plot_data, categories, xmax = N
 ### CATEGORY PLOT - TIMES USED ###
 
 # Function to setup category image plot y = item (listing), x = Times used
-setup_category_times_used_plot <- function(plot_data, categories, animate = FALSE) {
+setup_category_times_used_plot <- function(input_data, categories, animate = FALSE) {
 
-    # Initiate times_ised data frame and data
-    times_used <- plot_data %>%
-        filter(category %in% categories) %>%
-        select(item, category, date, cumuse, days_active, active, photo) %>%
-        as.data.frame()
-
-    # For non-animations, include only data for the last date
-    if (!animate) {
-        times_used <- times_used %>% filter(date == max(times_used$date))
-    }
-        
-    # Calculate the standard deviations ranges for divested items
-    times_used_std <- times_used %>%
-        filter(active == FALSE) %>%
-        group_by(date) %>%
-        summarise(std1_low = quantile(cumuse, 0.32), std1_high = quantile(cumuse, 0.68), std2_low = quantile(cumuse, 0.05), std2_high = quantile(cumuse, 0.95)) %>%
-        as.data.frame()
-    
-    # Add standard deviation data (only if there is any)
+  # Initiate times_ised data frame and data
+  times_used <- input_data %>%
+    filter(category %in% categories) %>%
+    select(item, category, date, cumuse, days_active, active, photo) %>%
+    as.data.frame()
+  
+  # For non-animations, include only data for the last date
+  if (!animate) {
+    times_used <- times_used %>% filter(date == max(times_used$date))
+  }
+  
+  # Calculate the standard deviations ranges for divested items
+  times_used_std <- times_used %>%
+    filter(active == FALSE) %>%
+    group_by(date) %>%
+    summarise(std1_low = quantile(cumuse, 0.32), std1_high = quantile(cumuse, 0.68), std2_low = quantile(cumuse, 0.05), std2_high = quantile(cumuse, 0.95)) %>%
+    as.data.frame()
+  
+  # Add standard deviation data (only if there is any)
+  if (nrow(times_used_std) > 0) {
     times_used <- merge(times_used, times_used_std, by = "date", all.x = TRUE)
-    #if (nrow(times_used_std) > 0) { times_used <- merge(times_used, times_used_std, by = "date", all.x = TRUE) } 
-    
-    # Add rownumber variable telling the order in which to plot the items
-    times_used <- times_used %>% 
-        group_by(date) %>% arrange(active, desc(days_active), item) %>% # Create correct grouping and in-group order
-        mutate(rownumber = cumsum(!is.na(item))) %>% # Create counter according to order (!is.na(item) is just something to cumsum that spans the entire date vector)
-        ungroup() %>% arrange(date, active, desc(days_active)) %>% # Ungroup and reorder for plotting
-        as.data.frame() # Cast tibble to data frame
+  } else { # If there is not SD data (no divested item in category), set to NA
+    times_used$std1_low <- as.numeric(NA)
+    times_used$std1_high <- as.numeric(NA)
+    times_used$std2_low <- as.numeric(NA)
+    times_used$std2_high <- as.numeric(NA)
+  } 
+  
+  # Add rownumber variable telling the order in which to plot the items
+  times_used <- times_used %>% 
+    group_by(date) %>% arrange(active, desc(days_active), item) %>% # Create correct grouping and in-group order
+    mutate(rownumber = cumsum(!is.na(item))) %>% # Create counter according to order (!is.na(item) is just something to cumsum that spans the entire date vector)
+    ungroup() %>% arrange(date, active, desc(days_active)) %>% # Ungroup and reorder for plotting
+    as.data.frame() # Cast tibble to data frame
+  
+  # Set author label coordinates (upper right corner)
+  author_label_x <- max(times_used$rownumber)
+  author_label_y <- max(times_used$cumuse)
+  
+  # Animation marker size
+  marker_size <- 40
+  
+  # Use only last date for image plots
+  if(!animate) {
+    #usetodate_anim <- usetodate_anim %>% filter(date == max(usetodate_anim$date))
+    marker_size <- 28 # Set still marker size
+  }
+  
+  
+  # Set up animation
+  animation <-
+    ggplot(times_used, aes(x = rownumber, y = cumuse)) +
+    annotate("text", x = author_label_x, y = author_label_y, label = author_label, color = "gray", hjust = 1) +
+    # Annotation for 1 and 2 standard deviation areas (rendered first to be behind the data layer)
+    geom_rect(data = times_used[times_used$rownumber == 1,],
+              aes(xmin=0, xmax=max(times_used$rownumber), ymin=std1_low, ymax=std1_high, group = date), alpha=0.15, fill="mediumseagreen") +
+    geom_rect(data = times_used[times_used$rownumber == 1,],
+              aes(xmin=0, xmax=max(times_used$rownumber), ymin=std2_low, ymax=std2_high, group = date), alpha=0.15, fill="mediumseagreen") +
+    # Bars marking the progress of each item, color coded by wether item is active of divested
+    geom_col(data = times_used, aes(x = rownumber, y = cumuse, fill = active, group = date),
+             width = max(times_used$rownumber)/300, position = position_dodge2(preserve = "total", padding = 0)) +
+    scale_fill_manual(breaks = c(FALSE, TRUE), values=c(alpha("mediumseagreen", 0.6), "lightgray"))
 
-    # Set author label coordinates (upper right corner)
-    author_label_x <- max(times_used$rownumber)
-    author_label_y <- max(times_used$cumuse)
-    
-    # Animation marker size
-    marker_size <- 40
-    
-    # Use only last date for image plots
-    if(!animate) {
-      #usetodate_anim <- usetodate_anim %>% filter(date == max(usetodate_anim$date))
-      marker_size <- 28 # Set still marker size
-    }
-          
-    # Set up animation
-    animation <-
-        ggplot(times_used, aes(x = rownumber, y = cumuse)) +
-        annotate("text", x = author_label_x, y = author_label_y, label = author_label, color = "gray", hjust = 1) +
-        # Annotation for 1 and 2 standard deviation areas (rendered first to be behind the data layer)
-        geom_rect(data = times_used[times_used$rownumber == 1,],
-                  aes(xmin=0, xmax=max(times_used$rownumber), ymin=std1_low, ymax=std1_high, group = date), alpha=0.15, fill="mediumseagreen") +
-        geom_rect(data = times_used[times_used$rownumber == 1,],
-                  aes(xmin=0, xmax=max(times_used$rownumber), ymin=std2_low, ymax=std2_high, group = date), alpha=0.15, fill="mediumseagreen") +
-        # Bars marking the progress of each item, color coded by wether item is active of divested
-        geom_col(data = times_used, aes(x = rownumber, y = cumuse, fill = active, group = date),
-                 width = max(times_used$rownumber)/300, position = position_dodge2(preserve = "total", padding = 0)) +
-        scale_fill_manual(breaks = c(FALSE, TRUE), values=c(alpha("mediumseagreen", 0.6), "lightgray")) +
-        geom_point(data = times_used %>% filter(active == FALSE), size = marker_size, color = "mediumseagreen", alpha = 0.6) + # Mark divested items with green circle
-        geom_image(data = times_used %>% filter(active == FALSE), aes(image = photo, group = date), size = 0.08) + # Render divested items first
-        geom_image(data = times_used %>% filter(active == TRUE), aes(image = photo, group = date), size = 0.08) + # Render active items on top
-        labs(x = "Items by status (green divested, gray active) and in purchase order (newer higher)", y = "Times worn") +
-        coord_flip() + # Flip coordinates to be horizontal (this switches x and y)
-        theme(legend.position = "none") + # Remove legend
-        # Add numeric labels for standard deviations, 1 and 2, high and low
-        geom_label(data = times_used, aes(x = 0, y = std1_low, label=round(std1_low, digits = 0), group = date), color = "mediumseagreen") +
-        geom_label(data = times_used, aes(x = 0, y = std1_high, label=round(std1_high, digits = 0), group = date), color = "mediumseagreen") +
-        geom_label(data = times_used, aes(x = 0, y = std2_low, label=round(std2_low, digits = 0), group = date), color = "mediumseagreen") +
-        geom_label(data = times_used, aes(x = 0, y = std2_high, label=round(std2_high, digits = 0), group = date), color = "mediumseagreen")
-
-    if (animate) {
-        animation <- animation +
-            # Transition_state using date (as opposed to transition_time) avoids multiple dates rendering in the same frame
-            transition_states(date, state_length = 1, transition_length = 0) +
-            labs(title = "Date: {closest_state}") + ease_aes('linear')
-    }
-
-    return(animation)
+  if (nrow(times_used %>% filter(active == FALSE)) > 0) { # If there are divested items, render them first
+    animation <- animation +
+      geom_point(data = times_used %>% filter(active == FALSE), size = marker_size, color = "mediumseagreen", alpha = 0.6) + # Mark divested items with green circle
+      geom_image(data = times_used %>% filter(active == FALSE), aes(image = photo, group = date), size = 0.08) # Render divested items first
+  }
+      
+  animation <- animation +    
+    geom_image(data = times_used %>% filter(active == TRUE), aes(image = photo, group = date), size = 0.08) + # Render active items on top
+    labs(x = "Items by status (green divested, gray active) and in purchase order (newer higher)", y = "Times worn") +
+    coord_flip() + # Flip coordinates to be horizontal (this switches x and y)
+    theme(legend.position = "none") + # Remove legend
+    # Add numeric labels for standard deviations, 1 and 2, high and low
+    geom_label(data = times_used, aes(x = 0, y = std1_low, label=round(std1_low, digits = 0), group = date), color = "mediumseagreen") +
+    geom_label(data = times_used, aes(x = 0, y = std1_high, label=round(std1_high, digits = 0), group = date), color = "mediumseagreen") +
+    geom_label(data = times_used, aes(x = 0, y = std2_low, label=round(std2_low, digits = 0), group = date), color = "mediumseagreen") +
+    geom_label(data = times_used, aes(x = 0, y = std2_high, label=round(std2_high, digits = 0), group = date), color = "mediumseagreen")
+  
+  if (animate) {
+    animation <- animation +
+      # Transition_state using date (as opposed to transition_time) avoids multiple dates rendering in the same frame
+      transition_states(date, state_length = 1, transition_length = 0) +
+      labs(title = "Date: {closest_state}") + ease_aes('linear')
+  }
+  
+  return(animation)
 }
 
 

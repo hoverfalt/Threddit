@@ -118,7 +118,6 @@ anim_save("Plots/Category-Jackets_and_hoodies-animation.gif")
 file.copy("Plots/Category-Jackets_and_hoodies-animation.gif", "Website/Plots/Category-Jackets_and_hoodies-animation.gif", overwrite = TRUE)
 file.remove("Plots/Category-Jackets_and_hoodies-animation.gif")
 
-
 # Blazers and vests
 plot_data_reduced %>% setup_category_plot_image("Blazers and vests", xmax = 2, ymax = NA, log_trans=TRUE, animate=TRUE) %>% 
   animate(height = 1000, width = 1000, nframes = length(unique(plot_data_reduced$date)) + 72, fps = 24, end_pause = 72)
@@ -220,6 +219,7 @@ file.copy("Plots/Category-Sportswear-animation.gif", "Website/Plots/Category-Spo
 plot_data_reduced <- plot_data[plot_data$date %in% unique(plot_data$date)[c(TRUE, FALSE)],]
 
 # Create and save animations for all categories (HEAVY COMPUTING ~ 12 x 4-8 min = 1h)
+#for (i in category_order){
 for (i in category_order){
   setup_category_times_used_plot(plot_data_reduced, categories = c(i), animate = TRUE) %>%
     animate(height = 1000, width = 1000, nframes = length(unique(plot_data_reduced$date)) + 72, fps = 24, end_pause = 72) # Frames = states + end pause
@@ -229,7 +229,6 @@ for (i in category_order){
             overwrite = TRUE)
   #file.remove("Plots/Portfolio-Yearly_cost_and_Category_use-animation.gif")
 }
-
 
 
 # Animating only selected categories
@@ -243,31 +242,15 @@ file.copy(paste("Plots/Category-", gsub(" ", "_", i), "-Times_used-animation.gif
           overwrite = TRUE)
 
 
-categories <- c("Blazers and vests")
 
-# Initiate times_ised data frame and data
-times_used_TMP <- plot_data_reduced %>%
-  filter(category %in% categories) %>%
-  select(item, category, date, cumuse, days_active, active, photo) %>%
-  as.data.frame()
 
-# Calculate the standard deviations ranges for divested items
-times_used_std <- times_used_TMP %>%
-  filter(active == FALSE) %>%
-  group_by(date) %>%
-  summarise(std1_low = quantile(cumuse, 0.32), std1_high = quantile(cumuse, 0.68), std2_low = quantile(cumuse, 0.05), std2_high = quantile(cumuse, 0.95)) %>%
-  as.data.frame()
 
-# Add standard deviation data (only if there is any)
-times_used_TMP <- merge(times_used_TMP, times_used_std, by = "date", all.x = TRUE)
-#if (nrow(times_used_std) > 0) { times_used <- merge(times_used, times_used_std, by = "date", all.x = TRUE) } 
 
-# Add rownumber variable telling the order in which to plot the items
-times_used_TMP <- times_used_TMP %>% 
-  group_by(date) %>% arrange(active, desc(days_active), item) %>% # Create correct grouping and in-group order
-  mutate(rownumber = cumsum(!is.na(item))) %>% # Create counter according to order (!is.na(item) is just something to cumsum that spans the entire date vector)
-  ungroup() %>% arrange(date, active, desc(days_active)) %>% # Ungroup and reorder for plotting
-  as.data.frame() # Cast tibble to data frame
+
+
+
+
+
 
 
 

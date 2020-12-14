@@ -25,8 +25,14 @@ calculate_plot_data <- function(totaluse){
     # Extract item photos and convert item to factor matching main data frame
     item_photos <- masterdata %>% distinct(Item, .keep_all = TRUE) %>%
         select(item = Item, photo = Photo) %>%
-        mutate(item = factor(item), photo_small = paste("Photos/", photo,"-small.png", sep=""), photo = paste("Photos/", photo,".png", sep=""))
+        mutate(item = factor(item), photo = paste("Photos/", photo,".png", sep=""))
+
+    # OLD VERSION: Extract item photos and convert item to factor matching main data frame
+    #item_photos <- masterdata %>% distinct(Item, .keep_all = TRUE) %>%
+    #  select(item = Item, photo = Photo) %>%
+    #  mutate(item = factor(item), photo_small = paste("Photos/", photo,"-small.png", sep=""), photo = paste("Photos/", photo,".png", sep=""))
     
+        
     # Add item photo data to main data frame
     plotuse <- plotuse %>% left_join(item_photos, by = "item")
         

@@ -34,19 +34,27 @@ load("Data/Threddit-masterdata.Rda")
 load("Data/Threddit-plotuse.Rda")
 load("Data/Threddit-daterange.Rda")
 
+# DEVELOPMENT (REMOVE)
+save(masterdata,file="Data/Threddit-masterdata-development.Rda")
+load(file="Data/Threddit-masterdata-development.Rda")
+save(plotuse,file="Data/Threddit-plotuse-development.Rda")
+load(file="Data/Threddit-plotuse-development.Rda")
+
+
 ### ITEM TABLES #################################################################################################
 
 # Extract and format item listings as a publishing-ready data frame
-item_linstings <- plotuse %>% filter(date == max(plotuse$date)) %>%
-  select(category, item, cumuse, cost_per_use, days_active, use_per_month, active) %>%
-  mutate('Times used' = cumuse, 'Cost per wear' = round(cost_per_use, 2), 'Months active' = round(days_active / 30.5, 0), 'Wears per month' = round(use_per_month, 1), Active = active) %>%
-  select(-cumuse, -cost_per_use, -days_active, -use_per_month, -active) %>%
-  merge(masterdata %>% select(item = Item, Price)) %>%
-  select(category, item, Price, 'Times used', 'Cost per wear', 'Wears per month', 'Months active', Active) %>%
-  arrange(category, desc(Active), desc('Times used'))
+item_listings <- plotuse %>% filter(date == max(plotuse$date)) %>%
+  select(Category = category, Item = item, 'Times worn' = cumuse, cost_per_use, days_active, use_per_month, active) %>%
+  mutate('Cost per wear' = round(cost_per_use, 2), 'Months active' = round(days_active / 30.5, 0), 'Wears per month' = round(use_per_month, 1)) %>%
+  select(-cost_per_use, -days_active, -use_per_month) %>%
+  merge(masterdata %>% select(Item, Price)) %>%
+  mutate(Status = ifelse(active == TRUE, "Active", "Divested")) %>%
+  select(Category, Item, Price, 'Times worn', 'Cost per wear', 'Wears per month', 'Months active', Status, -active) %>%
+  arrange(Category, Status, desc('Times worn'))
 
 # Save item listings to a file for access by the Website builder
-save(item_linstings,file="Website/Threddit-item_listings.Rda")
+save(item_listings,file="Website/Threddit-item_listings.Rda")
 
 
 

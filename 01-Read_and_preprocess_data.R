@@ -17,13 +17,13 @@ read_data_GD <- function (data_file = get_Google_sheet_ID()){
     masterdata <- read_sheet(data_file)
     
     # Set the column number where the data starts (DEPENDENCY)
-    date_column_number <- 12
+    date_column_number <- 13
     
     # Remove rows with <NA> in first column
     masterdata <- masterdata[complete.cases(masterdata[ , 1]),]
 
-    # Remove Google Sheet item photo placeholder column
-    masterdata <- masterdata %>% select(-'Photo placeholder')
+    # Remove Google Sheet item photo placeholder and details columns
+    masterdata <- masterdata %>% select(-'Photo placeholder', -Details)
 
     # Convert purchase and divestement dates from character to date
     masterdata <- masterdata %>%
@@ -59,7 +59,7 @@ transform_data <- function (masterdata){
     ### Transform masterdata into tidy data with variables: category, item, date, used
     # select: select only relevant columns (Category, Item, and all dates)
     # gather: key = date = column name, value = used = data, Category and Item unchanged
-    itemuse <- masterdata %>% select(-Photo, -Price, -'Date purchased', -'Date divested', -'Times used init',
+    itemuse <- masterdata %>% select(-Photo, -'Photo URI', -Price, -'Date purchased', -'Date divested', -'Times used init',
                                      -'Materials', -'Weight', -'Times used', -'Cost per time used') %>%
         gather(key = "date", value = "used", -Category, -Item, na.rm = TRUE) %>%
         rename(category = "Category", item = "Item") %>%

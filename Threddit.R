@@ -40,8 +40,17 @@ load(file="Data/Threddit-masterdata-development.Rda")
 save(plotuse,file="Data/Threddit-plotuse-development.Rda")
 load(file="Data/Threddit-plotuse-development.Rda")
 
+# Refresh Dropbox share links
+#refresh_share_links() 
+
 
 ### ITEM TABLES #################################################################################################
+
+
+# WIP: insert photo urls into extract
+item_photo_URLs
+
+
 
 # Extract and format item listings as a publishing-ready data frame
 item_listings <- plotuse %>% filter(date == max(plotuse$date)) %>%
@@ -50,11 +59,21 @@ item_listings <- plotuse %>% filter(date == max(plotuse$date)) %>%
   select(-cost_per_use, -days_active, -use_per_month) %>%
   merge(masterdata %>% select(Item, Price)) %>%
   mutate(Status = ifelse(active == TRUE, "Active", "Divested")) %>%
-  select(Category, Item, Price, 'Times worn', 'Cost per wear', 'Wears per month', 'Months active', Status, -active) %>%
+  merge(masterdata %>% select(Item, Img = 'Photo URI')) %>% 
+  mutate(Img = paste0("<img class='item_image' src='", Img ,"'></img>"), collapse="") %>%
+  select(Img, Category, Item, Price, 'Times worn', 'Cost per wear', 'Wears per month', 'Months active', Status, -active) %>%
   arrange(Category, Status, desc('Times worn'))
 
+#masterdata %>% filter(Category == "Jackets and hoodies") %>% select('Photo URI')
+#item_listings %>% filter(Category == "Jackets and hoodies")
 # Save item listings to a file for access by the Website builder
 save(item_listings,file="Website/Threddit-item_listings.Rda")
+
+
+
+
+
+
 
 
 

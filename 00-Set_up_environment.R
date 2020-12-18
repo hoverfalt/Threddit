@@ -24,6 +24,7 @@ set_up_environment <- function(){
   library(imager)
   library(roll)
   library(googlesheets4)
+
   
   # Source required files
   source("01-Read_and_preprocess_data.R")
@@ -78,10 +79,15 @@ set_up_environment <- function(){
   # Set author label to add in the upper right corner of plots
   author_label <<- "hoverfalt.github.io"
 
+  # Set Dropbox Threddit photo links path identifier used to filter our non-Threddit links 
+  Threddit_Dropbox_path_identifier<- "/thredditr/"
+  
   
   # Set Google API Key to use Google Sheets API 
   set_Google_API_key()
-
+  
+  # Load item photo URL data frame
+  load("Data/item_photo_URLs.Rda")
 }
 
 

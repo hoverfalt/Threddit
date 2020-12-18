@@ -98,6 +98,79 @@ transform_data <- function (masterdata){
 
 
 
+# Define function to refresh local list of Dropbox share links
+# This is needed each time a new item has been added
+refresh_share_links <- function (){
+
+    ### Initiate Dropbox API use
+    library(rdrop2)
+    library(data.table)
+    library(httr)
+    
+    # Auth, needed if local token expired
+    #drop_auth() 
+    
+    
+    ### Create share links for all item photos and plots
+    
+    ## Retrieve shared links
+    
+    # Initiate URL retrieval (BUG: path filtering does not work, instead retreives all links in account)
+    raw <- httr::POST(url = "https://api.dropboxapi.com/2/sharing/list_shared_links",
+                      #body = list(path="/threddit/ThredditR/Threddit/Photos"),
+                      httr::config(token = dtoken),
+                      encode = "json") %>% content("parsed")
+    
+    # Initiate URL list data frame
+    item_photo_URLs <- rbindlist(raw$links, fill = TRUE) # Convert JSON to data.frame
+    
+    # Add rest of listings (200 retreival limit per call)
+    while(raw$has_more) {
+        # Retrieve next lsting with cursor
+        raw <- httr::POST(url = "https://api.dropboxapi.com/2/sharing/list_shared_links",
+                          body = list(cursor=raw$cursor),
+                          httr::config(token = dtoken),
+                          encode = "json") %>% content("parsed")
+        
+        item_photo_URLs <- rbind(item_photo_URLs, rbindlist(raw$links, fill = TRUE))
+    }
+    
+    # Filter listing into global variable
+    item_photo_URLs <<- item_photo_URLs %>%
+        select(-client_modified, -server_modified, -rev, -id, -link_permissions, -preview_type) %>%
+        distinct() %>%
+        select(item = name, path = path_lower, photo_url = url, size) %>%
+        filter(grepl(Threddit_Dropbox_path_identifier, path, fixed = TRUE) == TRUE) %>% # Filter out non-Threddit links using identifier set in environment
+        mutate(photo_url = gsub("?dl=0", "?raw=1", photo_url, fixed = TRUE))
+    
+    # Save temp to disk
+    save(item_photo_URLs,file="Data/item_photo_URLs.Rda")
+
+    #item_photo_URIs %>% select(item, photo_url)
+    
+    
+    
+    ## Check if there are items for which there is no sharing link
+    
+    # List files in /Photos folder
+    item_photo_listing <- drop_dir(path = "Threddit/ThredditR/Threddit/Photos", include_media_info = TRUE, include_has_explicit_shared_members = TRUE) %>%
+        select(item = name, path = path_display) %>% as.data.frame()
+    
+    # List items for which there is not a Dropbox share link
+    item_link_missing <- item_photo_listing[!(item_photo_listing$item %in% item_photo_URIs$item),]
+    
+    # Create share links for missing items
+    if (length(item_link_missing$path) > 0) {
+        sapply(item_link_missing$path, function(path){drop_share(path, requested_visibility = "public")})
+        
+        # WIP: ADD RERUN OF SHARED LINKS LISTING ABOVE
+    }
+    
+}    
+
+
+
+
 
 
 
@@ -146,3 +219,9 @@ read_data <- function (data_file = "Threddit.xlsx"){
     
     return(masterdata)
 }
+
+
+
+
+
+

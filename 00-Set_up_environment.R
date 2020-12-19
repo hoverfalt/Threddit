@@ -88,6 +88,7 @@ set_up_environment <- function(){
   
   # Load item photo URL data frame
   load("Data/item_photo_URLs.Rda")
+  item_photo_URLs <<- item_photo_URLs
 }
 
 

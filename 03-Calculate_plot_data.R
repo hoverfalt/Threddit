@@ -40,6 +40,36 @@ calculate_plot_data <- function(totaluse){
 }
 
 
+#################################################################################################
+###################################### CATEGORY DATA TABLES #####################################
+#################################################################################################
+
+### Thius function calculates and formats all item data for category data tables for web publishing
+### Input: plotuse, masterdata, item_photoURLs
+### Output: saves the Threddit-item_listings variable into a file for the CMS to read
+
+library(stringr)
+
+calculate_category_data_tables <- function(plotuse, masterdata, item_photo_URLs){
+  # Extract and format item listings as a publishing-ready data frame
+  item_listings <- plotuse %>% filter(date == max(plotuse$date)) %>%
+    select(Category = category, Item = item, 'Times worn' = cumuse, cost_per_use, days_active, use_per_month, active, photo) %>%
+    mutate('Cost per wear' = round(cost_per_use, 2), 'Months active' = round(days_active / 30.5, 0), 'Wears per month' = round(use_per_month, 1)) %>%
+    select(-cost_per_use, -days_active, -use_per_month) %>%
+    merge(masterdata %>% select(Item, Price)) %>%
+    mutate(Status = ifelse(active == TRUE, "Active", "Divested")) %>%
+    merge(item_photo_URLs %>% select(photo = item, Img = photo_url) %>% mutate(photo = paste0("Photos/", photo, sep="")), by = "photo", all.x = TRUE) %>% 
+    mutate(Img = paste0("<img class='item_image' src='", Img ,"'></img>"), collapse="") %>%
+    select(Img, Category, Item, Price, 'Times worn', 'Cost per wear', 'Wears per month', 'Months active', Status, -active, -photo) %>%
+    arrange(Category, Status, desc('Times worn'))
+  
+  # Save item listings to a file for access by the Website builder
+  save(item_listings,file="Website/Threddit-item_listings.Rda")
+  item_listings <<- item_listings
+}
+
+
+
 
 #################################################################################################
 ######################################## PORTFOLIO PLOTS ########################################

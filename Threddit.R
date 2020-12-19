@@ -36,44 +36,21 @@ load("Data/Threddit-daterange.Rda")
 
 # DEVELOPMENT (REMOVE)
 save(masterdata,file="Data/Threddit-masterdata-development.Rda")
-load(file="Data/Threddit-masterdata-development.Rda")
 save(plotuse,file="Data/Threddit-plotuse-development.Rda")
+load(file="Data/Threddit-masterdata-development.Rda")
 load(file="Data/Threddit-plotuse-development.Rda")
 
-# Refresh Dropbox share links
+# Refresh Dropbox share links (this need to be done only when a new item has been added, or a link has been broken)
 #refresh_share_links() 
 
 
 ### ITEM TABLES #################################################################################################
 
+# Calculate item data tables
+calculate_category_data_tables(plotuse, masterdata, item_photo_URLs)
 
-# WIP: insert photo urls into extract
-item_photo_URLs
-
-
-
-# Extract and format item listings as a publishing-ready data frame
-item_listings <- plotuse %>% filter(date == max(plotuse$date)) %>%
-  select(Category = category, Item = item, 'Times worn' = cumuse, cost_per_use, days_active, use_per_month, active) %>%
-  mutate('Cost per wear' = round(cost_per_use, 2), 'Months active' = round(days_active / 30.5, 0), 'Wears per month' = round(use_per_month, 1)) %>%
-  select(-cost_per_use, -days_active, -use_per_month) %>%
-  merge(masterdata %>% select(Item, Price)) %>%
-  mutate(Status = ifelse(active == TRUE, "Active", "Divested")) %>%
-  merge(masterdata %>% select(Item, Img = 'Photo URI')) %>% 
-  mutate(Img = paste0("<img class='item_image' src='", Img ,"'></img>"), collapse="") %>%
-  select(Img, Category, Item, Price, 'Times worn', 'Cost per wear', 'Wears per month', 'Months active', Status, -active) %>%
-  arrange(Category, Status, desc('Times worn'))
-
-#masterdata %>% filter(Category == "Jackets and hoodies") %>% select('Photo URI')
-#item_listings %>% filter(Category == "Jackets and hoodies")
-# Save item listings to a file for access by the Website builder
-save(item_listings,file="Website/Threddit-item_listings.Rda")
-
-
-
-
-
-
+item_photo_URLs %>% filter(item == "Makia black jacket long")
+item_listings %>% filter(Item == "Makia black jacket long")
 
 
 

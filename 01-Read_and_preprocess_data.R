@@ -98,11 +98,11 @@ transform_data <- function (masterdata){
 
 
 
-# Define function to refresh local list of Dropbox share links
-# This is needed each time a new item has been added
+
+# Function to refresh local list of Dropbox share links. This need to be run each time a new item has been added
 refresh_share_links <- function (){
 
-    ### Initiate Dropbox API use
+    ## Initiate Dropbox API use
     library(rdrop2)
     library(data.table)
     library(httr)
@@ -110,8 +110,6 @@ refresh_share_links <- function (){
     # Auth, needed if local token expired
     #drop_auth() 
     
-    
-    ### Create share links for all item photos and plots
     
     ## Retrieve shared links
     
@@ -124,7 +122,7 @@ refresh_share_links <- function (){
     # Initiate URL list data frame
     item_photo_URLs <- rbindlist(raw$links, fill = TRUE) # Convert JSON to data.frame
     
-    # Add rest of listings (200 retreival limit per call)
+    # Add rest of listings using cursor froim initial request (200 retreival limit per API call)
     while(raw$has_more) {
         # Retrieve next lsting with cursor
         raw <- httr::POST(url = "https://api.dropboxapi.com/2/sharing/list_shared_links",
@@ -146,9 +144,6 @@ refresh_share_links <- function (){
     # Save temp to disk
     save(item_photo_URLs,file="Data/item_photo_URLs.Rda")
 
-    #item_photo_URIs %>% select(item, photo_url)
-    
-    
     
     ## Check if there are items for which there is no sharing link
     
@@ -163,10 +158,11 @@ refresh_share_links <- function (){
     if (length(item_link_missing$path) > 0) {
         sapply(item_link_missing$path, function(path){drop_share(path, requested_visibility = "public")})
         
-        # WIP: ADD RERUN OF SHARED LINKS LISTING ABOVE
+        # WIP: Add storing results from drop_share into item_photo_URLs
     }
     
 }    
+
 
 
 

@@ -25,7 +25,7 @@ plotuse <- transform_data(masterdata) %>% # 1) Transform raw data into tidy data
   calculate_total_use_data() %>% # 3) Calculate total use data, including divested items 
   calculate_plot_data() # 4) Calculate plot data for the standard plots
 
-# Save tidy data data.frame to file for easier retrieval (2020-12-06)
+# Save tidy data data.frame to file for easier retrieval (2020-12-21)
 save(masterdata,file="Data/Threddit-masterdata.Rda")
 save(plotuse,file="Data/Threddit-plotuse.Rda")
 save(daterange,file="Data/Threddit-daterange.Rda")
@@ -33,12 +33,6 @@ save(daterange,file="Data/Threddit-daterange.Rda")
 load("Data/Threddit-masterdata.Rda")
 load("Data/Threddit-plotuse.Rda")
 load("Data/Threddit-daterange.Rda")
-
-# DEVELOPMENT (REMOVE)
-save(masterdata,file="Data/Threddit-masterdata-development.Rda")
-save(plotuse,file="Data/Threddit-plotuse-development.Rda")
-load(file="Data/Threddit-masterdata-development.Rda")
-load(file="Data/Threddit-plotuse-development.Rda")
 
 # Refresh Dropbox share links (this need to be done only when a new item has been added, or a link has been broken)
 #refresh_share_links() 
@@ -49,8 +43,6 @@ load(file="Data/Threddit-plotuse-development.Rda")
 # Calculate item data tables
 calculate_category_data_tables(plotuse, masterdata, item_photo_URLs)
 
-item_photo_URLs %>% filter(item == "Makia black jacket long")
-item_listings %>% filter(Item == "Makia black jacket long")
 
 
 

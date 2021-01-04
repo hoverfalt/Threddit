@@ -80,7 +80,7 @@ set_up_environment <- function(){
   author_label <<- "hoverfalt.github.io"
 
   # Set Dropbox Threddit photo links path identifier used to filter our non-Threddit links 
-  Threddit_Dropbox_path_identifier<- "/thredditr/"
+  Threddit_Dropbox_path_identifier <<- "/thredditr/"
   
   
   # Set Google API Key to use Google Sheets API 

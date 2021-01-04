@@ -27,12 +27,6 @@ calculate_plot_data <- function(totaluse){
         select(item = Item, photo = Photo) %>%
         mutate(item = factor(item), photo = paste("Photos/", photo,".png", sep=""))
 
-    # OLD VERSION: Extract item photos and convert item to factor matching main data frame
-    #item_photos <- masterdata %>% distinct(Item, .keep_all = TRUE) %>%
-    #  select(item = Item, photo = Photo) %>%
-    #  mutate(item = factor(item), photo_small = paste("Photos/", photo,"-small.png", sep=""), photo = paste("Photos/", photo,".png", sep=""))
-    
-        
     # Add item photo data to main data frame
     plotuse <- plotuse %>% left_join(item_photos, by = "item")
         
@@ -51,7 +45,9 @@ calculate_plot_data <- function(totaluse){
 library(stringr)
 
 calculate_category_data_tables <- function(plotuse, masterdata, item_photo_URLs){
+
   # Extract and format item listings as a publishing-ready data frame
+  
   item_listings <- plotuse %>% filter(date == max(plotuse$date)) %>%
     select(Category = category, Item = item, 'Times worn' = cumuse, cost_per_use, days_active, use_per_month, active, photo) %>%
     mutate('Cost per wear' = round(cost_per_use, 2), 'Months active' = round(days_active / 30.5, 0), 'Wears per month' = round(use_per_month, 1)) %>%
@@ -66,6 +62,38 @@ calculate_category_data_tables <- function(plotuse, masterdata, item_photo_URLs)
   # Save item listings to a file for access by the Website builder
   save(item_listings,file="Website/Threddit-item_listings.Rda")
   item_listings <<- item_listings
+
+  
+  
+  # Extract and format category listings as a publishing-ready data frame
+  
+  category_listings <- usetodate_anim %>% filter(date == max(usetodate_anim$date)) %>%
+    arrange(match(category, category_order))
+
+  category_listings <- inventory %>% filter(date == max(usetodate_anim$date)) %>%
+    arrange(match(category, category_order)) %>%
+    select(category, itemcount, categoryvalue) %>%
+    merge(category_listings, by = "category")
+  
+  category_listings %>%
+    mutate(category_use = paste(round(category_use * 100,0), "%")) %>%
+    mutate(categoryvalue = paste(round(categoryvalue, 0), "€")) %>%
+    mutate(daily_cost = paste(round(daily_cost, 2), "€")) %>%
+    merge(item_photo_URLs %>% select(photo = item, Img = photo_url) %>% mutate(photo = paste0("Photos/", photo, sep="")), by = "photo", all.x = TRUE) %>% 
+    mutate(yearly_cost = paste(round(yearly_cost, 0), "€")) %>%
+    mutate(Img = paste0("<img class='item_image' src='", Img ,"'></img>"), collapse="") %>%
+    select(Img,
+           Category = category,
+           'Active items' = itemcount,
+           'Inventory value' = categoryvalue,
+           'Avg. cost per wear' = daily_cost,
+           'Cat. days used' = category_use,
+           'Yearly cost' = yearly_cost) %>%
+    arrange(match(Category, category_order))
+  
+  # Save category listings to a file for access by the Website builder
+  save(category_listings,file="Website/Threddit-category_listings.Rda")
+  category_listings <<- category_listings
 }
 
 

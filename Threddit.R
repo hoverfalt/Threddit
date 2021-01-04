@@ -25,7 +25,7 @@ plotuse <- transform_data(masterdata) %>% # 1) Transform raw data into tidy data
   calculate_total_use_data() %>% # 3) Calculate total use data, including divested items 
   calculate_plot_data() # 4) Calculate plot data for the standard plots
 
-# Save tidy data data.frame to file for easier retrieval (2020-12-21)
+# Save tidy data data.frame to file for easier retrieval (2020-12-31)
 save(masterdata,file="Data/Threddit-masterdata.Rda")
 save(plotuse,file="Data/Threddit-plotuse.Rda")
 save(daterange,file="Data/Threddit-daterange.Rda")
@@ -34,8 +34,12 @@ load("Data/Threddit-masterdata.Rda")
 load("Data/Threddit-plotuse.Rda")
 load("Data/Threddit-daterange.Rda")
 
+# Calculate image plot master data (this is also required for animations)
+calculate_image_plot_master_data()
+
 # Refresh Dropbox share links (this need to be done only when a new item has been added, or a link has been broken)
 #refresh_share_links() 
+
 
 
 ### ITEM TABLES #################################################################################################
@@ -45,11 +49,7 @@ calculate_category_data_tables(plotuse, masterdata, item_photo_URLs)
 
 
 
-
 ### IMAGE PLOTS #################################################################################################
-
-# Calculate image plot master data (this is also required for animations)
-calculate_image_plot_master_data()
 
 # Build image plots 
 build_standard_plots()
@@ -73,7 +73,7 @@ daily_cost_anim_plot <- daily_cost_anim %>% filter(day >= daterange[rolling_aver
 # Reduce frames by removing every second day (note: not date!)
 daily_cost_anim_plot_reduced <- daily_cost_anim_plot[daily_cost_anim_plot$day %in% unique(daily_cost_anim_plot$day)[c(TRUE, FALSE)],]
 
-# Set up animation, animate, and save (HEAVY COMPUTING) - Latest: 2020-12-06
+# Set up animation, animate, and save (HEAVY COMPUTING) - Latest: 2020-12-31
 setup_daily_cost_animation(daily_cost_anim_plot_reduced, ymax = 40) %>%
 animate(height = 1000, width = 1000, nframes = length(unique(daily_cost_anim_plot_reduced$day)) + 72, fps = 24, end_pause = 72)
 anim_save("Plots/Portfolio-Daily_cost-animation.gif")
@@ -99,14 +99,14 @@ file.copy("Plots/Portfolio-Daily_cost-animation.gif", "Website/Plots/Portfolio-D
 # Reduce frames by removing every second date
 usetodate_anim_reduced <- usetodate_anim[usetodate_anim$date %in% unique(usetodate_anim$date)[c(TRUE, FALSE)],] # Reduce frames
 
-# Animation: Average DAILY cost vs category use (HEAVY COMPUTING) - Latest: 2020-12-06
+# Animation: Average DAILY cost vs category use (HEAVY COMPUTING) - Latest: 2020-12-24
 animation <- usetodate_anim_reduced %>% setup_daily_cost_and_category_use_plot(ymax = 15, ybreaks = 2, animate = TRUE)
 animate(animation, height = 1000, width = 1150, nframes = length(unique(usetodate_anim_reduced$date)) + 72, fps = 24, end_pause = 72)
 anim_save("Plots/Portfolio-Daily_cost_and_Category_use-animation.gif")
 file.copy("Plots/Portfolio-Daily_cost_and_Category_use-animation.gif", "Website/Plots/Portfolio-Daily_cost_and_Category_use-animation.gif", overwrite = TRUE)
 #file.remove("Plots/Portfolio-Daily_cost_and_Category_use-animation.gif")
 
-# Animation: Average YEARLY cost vs category use (HEAVY COMPUTING) - Latest: 2020-12-06
+# Animation: Average YEARLY cost vs category use (HEAVY COMPUTING) - Latest: 2020-12-24
 animation <- usetodate_anim_reduced %>% setup_yearly_cost_and_category_use_plot(ymax = 1000, ybreaks = 200, animate = TRUE)
 animate(animation, height = 1000, width = 1150, nframes = length(unique(usetodate_anim_reduced$date)) + 72, fps = 24, end_pause = 72)
 anim_save("Plots/Portfolio-Yearly_cost_and_Category_use-animation.gif")

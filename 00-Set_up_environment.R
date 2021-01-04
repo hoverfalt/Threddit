@@ -53,19 +53,19 @@ set_up_environment <- function(){
   # Set category photos
   category_photos <<- data.frame(
     "category" = levels(plotuse$category),
-    "photo" = c('Photos/Category-Jackets_and_hoodies.png',
-                'Photos/Category-Blazers_and_vests.png',
-                'Photos/Category-Knits.png',
-                'Photos/Category-Shirts.png',
-                'Photos/Category-T-shirts_and_tanks.png',
-                'Photos/Category-Pants.png',
-                'Photos/Category-Shorts.png',
-                'Photos/Category-Belts.png',
-                'Photos/Category-Socks.png',
-                'Photos/Category-Shoes.png',
-                'Photos/Category-Underwear_shirts.png',
-                'Photos/Category-Underwear_boxers.png',
-                'Photos/Category-Sportswear.png'))
+    "photo" = c('Photos/Category_image-Jackets_and_hoodies.png',
+                'Photos/Category_image-Blazers_and_vests.png',
+                'Photos/Category_image-Knits.png',
+                'Photos/Category_image-Shirts.png',
+                'Photos/Category_image-T-shirts_and_tanks.png',
+                'Photos/Category_image-Pants.png',
+                'Photos/Category_image-Shorts.png',
+                'Photos/Category_image-Belts.png',
+                'Photos/Category_image-Socks.png',
+                'Photos/Category_image-Shoes.png',
+                'Photos/Category_image-Underwear_shirts.png',
+                'Photos/Category_image-Underwear_boxers.png',
+                'Photos/Category_image-Sportswear.png'))
   
   # Set rolling average window size to 30 days
   rolling_average_window <<- 30

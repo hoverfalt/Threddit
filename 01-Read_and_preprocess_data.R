@@ -108,9 +108,9 @@ refresh_share_links <- function (){
     library(httr)
     
     # Auth, needed if local token expired
-    #drop_auth() 
-    
-    
+    dtoken <- drop_auth() 
+    #drop_acc()
+
     ## Retrieve shared links
     
     # Initiate URL retrieval (BUG: path filtering does not work, instead retreives all links in account)

@@ -75,12 +75,8 @@ calculate_category_data_tables <- function(plotuse, masterdata, item_photo_URLs)
     select(category, itemcount, categoryvalue) %>%
     merge(category_listings, by = "category")
   
-  category_listings %>%
-    mutate(category_use = paste(round(category_use * 100,0), "%")) %>%
-    mutate(categoryvalue = paste(round(categoryvalue, 0), "€")) %>%
-    mutate(daily_cost = paste(round(daily_cost, 2), "€")) %>%
+  category_listings <- category_listings %>%
     merge(item_photo_URLs %>% select(photo = item, Img = photo_url) %>% mutate(photo = paste0("Photos/", photo, sep="")), by = "photo", all.x = TRUE) %>% 
-    mutate(yearly_cost = paste(round(yearly_cost, 0), "€")) %>%
     mutate(Img = paste0("<img class='item_image' src='", Img ,"'></img>"), collapse="") %>%
     select(Img,
            Category = category,
@@ -95,7 +91,6 @@ calculate_category_data_tables <- function(plotuse, masterdata, item_photo_URLs)
   save(category_listings,file="Website/Threddit-category_listings.Rda")
   category_listings <<- category_listings
 }
-
 
 
 

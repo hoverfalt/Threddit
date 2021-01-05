@@ -67,30 +67,48 @@ calculate_category_data_tables <- function(plotuse, masterdata, item_photo_URLs)
   
   # Extract and format category listings as a publishing-ready data frame
   
-  category_listings <- usetodate_anim %>% filter(date == max(usetodate_anim$date)) %>%
+  # Exclude Sportswear and order
+  category_listing <- usetodate_anim %>% filter(date == max(usetodate_anim$date), category != "Sportswear") %>%
     arrange(match(category, category_order))
 
-  category_listings <- inventory %>% filter(date == max(usetodate_anim$date)) %>%
+  # Add categoryvalue (not category_value) describing the active value, not cumulative
+  category_listing <- inventory %>% filter(date == max(usetodate_anim$date)) %>%
     arrange(match(category, category_order)) %>%
     select(category, itemcount, categoryvalue) %>%
-    merge(category_listings, by = "category")
+    merge(category_listing, by = "category")
   
-  category_listings <- category_listings %>%
+  # Add tag and local url for images
+  category_listing <- category_listing %>%
     merge(item_photo_URLs %>% select(photo = item, Img = photo_url) %>% mutate(photo = paste0("Photos/", photo, sep="")), by = "photo", all.x = TRUE) %>% 
-    mutate(Img = paste0("<img class='item_image' src='", Img ,"'></img>"), collapse="") %>%
+    mutate(Img = paste0("<img class='item_image' src='", Img ,"'></img>"), collapse="")
+  
+  # Add row with totals
+  category_listing <- category_listing %>%
+    summarise(itemcount = sum(itemcount),
+              categoryvalue = sum(categoryvalue),
+              yearly_cost = sum(yearly_cost)) %>%
+    mutate(category = "Total") %>%
+    bind_rows(category_listing)
+  
+  # Calculate and format column names
+  category_listing <- category_listing %>%
+    mutate(turnover = yearly_cost / categoryvalue) %>%
     select(Img,
            Category = category,
            'Active items' = itemcount,
            'Inventory value' = categoryvalue,
-           'Avg. cost per wear' = daily_cost,
-           'Cat. days used' = category_use,
-           'Yearly cost' = yearly_cost) %>%
-    arrange(match(Category, category_order))
+           'Cost per wear' = daily_cost,
+           'Days used' = category_use,
+           'Yearly cost' = yearly_cost,
+           'Turnover' = turnover) %>%
+    arrange(match(Category, c("Total", category_order)))
   
   # Save category listings to a file for access by the Website builder
-  save(category_listings,file="Website/Threddit-category_listings.Rda")
-  category_listings <<- category_listings
+  save(category_listing,file="Website/Threddit-category_listing.Rda")
+  category_listing <<- category_listing
 }
+
+
 
 
 #################################################################################################

@@ -25,7 +25,7 @@ plotuse <- transform_data(masterdata) %>% # 1) Transform raw data into tidy data
   calculate_total_use_data() %>% # 3) Calculate total use data, including divested items 
   calculate_plot_data() # 4) Calculate plot data for the standard plots
 
-# Save tidy data data.frame to file for easier retrieval (2020-12-31)
+# Save tidy data data.frame to file for easier retrieval (2021-01-07)
 save(masterdata,file="Data/Threddit-masterdata.Rda")
 save(plotuse,file="Data/Threddit-plotuse.Rda")
 save(daterange,file="Data/Threddit-daterange.Rda")

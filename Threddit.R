@@ -276,6 +276,71 @@ file.copy(paste("Plots/Category-", gsub(" ", "_", i), "-Times_used-animation.gif
 ##### ##### ##### ##### ##### ##### ##### DEVELOPMENT ##### ##### ##### ##### ##### ##### #####
 ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
 
+
+# Reduce data to latest date available
+usetodate_comparison <- usetodate_anim %>% filter(date == max(usetodate_anim$date)) %>%
+  mutate(monthly_cost = yearly_cost / 12, comparison = FALSE) %>%
+  select(category, category_use, monthly_cost, photo, comparison, date)
+
+# Add comparison items (TO DO: replace manual input with Google Sheets)
+usetodate_comparison <- rbind (usetodate_comparison, data.frame(category = "Netflix", category_use = 0.15, monthly_cost = 11.99,
+                                                photo = "Photos/Comparison-001.png", comparison = TRUE, date = max(usetodate_anim$date)))
+
+
+
+# Setup plot of columns $category_use and $monthly_cost
+p <- setup_monthly_cost_and_category_use_plot(usetodate_comparison, ymax = 70, ybreaks = 5)
+dev.off()
+
+# Funtion to set up monthly cost vs category use plot
+setup_monthly_cost_and_category_use_plot <- function(usetodate_comparison, ymax = NA, ybreaks = 2, animate = FALSE){
+  
+  # Animation marker size
+  marker_size <- 40
+  
+  # Use only last date for image plots
+  if(!animate) {
+    usetodate_comparison <- usetodate_comparison %>% filter(date == max(usetodate_comparison$date))
+    marker_size <- 28 # Set still marker size
+  }
+  
+  # Set author label coordinates (upper right corner)
+  author_label_x <- 1.0
+  if(is.na(ymax)) { author_label_y = max(usetodate_comparison$yearly_cost) }
+  else { author_label_y <- ymax }
+  
+  # Setup plot
+  p <- usetodate_comparison %>%
+    ggplot(aes(x = category_use, y = monthly_cost)) +
+    annotate("text", x = author_label_x, y = author_label_y, label = author_label, color = "gray", hjust = 1) +
+    geom_point(data = usetodate_comparison[usetodate_comparison$comparison ==  FALSE,], aes(colour = category), size = marker_size) +
+    geom_point(data = usetodate_comparison[usetodate_comparison$comparison ==  TRUE,], colour = "lightgray", size = marker_size) +
+    geom_image(aes(image = photo, group = date), size = 0.08) +
+    scale_x_continuous(limits=c(0,1)) +
+    scale_y_continuous(limits=c(NA,ymax), breaks=seq(0, 100, by = ybreaks)) +
+    scale_color_manual(name = "Category", values = category_colors) +
+    scale_size(range = c(1, 10)) +
+    guides(size = FALSE) +
+    labs(x = "Frequency of use (share of days used)", y = "Monthly cost (€)") +
+    guides(colour = guide_legend(override.aes = list(size = 2))) # Override plot point size to smaller for legend
+  
+  if(animate) {
+    p <- p +
+      transition_states(date, state_length = 1, transition_length = 0) +
+      labs(title = "Date: {closest_state}") + ease_aes('linear')
+  }
+  
+  return(p)
+}
+
+
+
+
+
+
+
+
+
 plot_data %>% filter(category == "Shirts" & date == max(plot_data$date))
 
 p <- plot_data %>% filter(category == "Shirts" & date == max(plot_data$date)) %>%

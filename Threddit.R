@@ -277,31 +277,30 @@ file.copy(paste("Plots/Category-", gsub(" ", "_", i), "-Times_used-animation.gif
 ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
 
 
+# Read comparison data (only refresh from Google Sheets if changed) and save
+comparison_data <- read_data_GD_comparison()
+save(comparison_data,file="Data/Threddit-comparison_data.Rda")
+# Load comparison data from file
+load("Data/Threddit-comparison_data.Rda")
+
 # Reduce data to latest date available
 usetodate_comparison <- usetodate_anim %>% filter(date == max(usetodate_anim$date)) %>%
   mutate(monthly_cost = yearly_cost / 12, comparison = FALSE) %>%
   select(category, category_use, monthly_cost, photo, comparison, date)
 
-# Read comparison data (only refresh from Google Sheets if changed) and save
-#comparison_data <- read_data_GD_comparison()
-#save(comparison_data,file="Data/Threddit-comparison_data.Rda")
-
-# Load comparison data from file
-load("Data/Threddit-comparison_data.Rda")
-
 # Process raw comparison data to fit standard plot
 comparison_data <- comparison_data %>% mutate(Category = as.factor(Category), comparison = TRUE) %>%
-  select(-Details, -'Yearly cost', -Type, -Item) %>%
+  select(-Details, -'Yearly cost', -Type, -Item, -'Cost per use') %>%
   as.data.frame()
 colnames(comparison_data)<- c("category", "photo", "monthly_cost", "category_use", "comparison")
 
 
 # Combine category and comparison data sets for plotting
-usetodate_comparison <- rbind.fill(usetodate_comparison, comparison_data) %>% mutate(date = max(usetodate_anim$date))
+comparison_plot_data <- rbind.fill(usetodate_comparison, comparison_data) %>% mutate(date = max(usetodate_anim$date))
 
 
 # Setup plot of columns $category_use and $monthly_cost
-p <- setup_monthly_cost_and_category_use_plot(usetodate_comparison, ymax = 65, ybreaks = 5)
+p <- setup_monthly_cost_and_category_use_plot(comparison_plot_data, ymax = 65, ybreaks = 5)
 
 ggsave(filename = "Plots/Portfolio-Monthly_cost_and_Category_use-image.png", p, width = 12, height = 10, dpi = 300, units = "in")
 #file.copy("Plots/Portfolio-Monthly_cost_and_Category_use-image.png", "Website/Plots/Portfolio-Monthly_cost_and_Category_use-image.png", overwrite = TRUE)

@@ -100,7 +100,7 @@ calculate_category_data_tables <- function(plotuse, masterdata, item_photo_URLs)
            'Cost per wear' = daily_cost,
            'Days used' = category_use,
            'Yearly cost' = yearly_cost,
-           'Turnover' = turnover) %>%
+           'Inventory turnover' = turnover) %>%
     arrange(match(Category, c("Total", category_order)))
   
   # Save category listings to a file for access by the Website builder
@@ -131,7 +131,7 @@ calculate_portfolio_plot_data <- function(plotuse){
         as.data.frame()
     
     # List item values from master data
-    itemvalues <- masterdata %>% select(Item, Price, Category) %>% rename(item = Item, price = Price, category = Category)
+    itemvalues <- masterdata %>% select(Item, Price, Category) %>% dplyr::rename(item = Item, price = Price, category = Category)
     
     # Calculate total item inventory value by date and category 
     inventory_value <- plotuse %>%
@@ -182,7 +182,7 @@ calculate_complete_portfolio_plot_data <- function(plotuse){
         summarise(cumuse = sum(cumuse))
     
     # List item values from master data
-    itemvalues <- masterdata %>% select(Category, Item, Price) %>% rename(item = Item, price = Price, category = Category)
+    itemvalues <- masterdata %>% select(Category, Item, Price) %>% dplyr::rename(item = Item, price = Price, category = Category)
     # Remove "ADD NEXT" placeholder items (DEPENDENCY)
     itemvalues <- itemvalues[!(itemvalues$item %in% "ADD NEXT"),]
     
@@ -332,7 +332,7 @@ setup_daily_cost_plot <- function(daily_cost, ymax = 40, ybreaks = 2, seasons = 
         geom_line(aes(x = date, y = average_daily_cost), color='steelblue', size=1) +
 #        scale_x_date(date_breaks = "3 months", date_labels = "%Y-%m") +
         scale_y_continuous(limits=c(0,ymax), breaks=seq(0, 100, by = ybreaks)) + # Set y limit to NA in function call for automatic scale
-        labs(x = "Date", y = "Daily cost and 30-day rolling average (shifted to midpoint of sample)", color = "All divested")
+        labs(x = "Date", y = "Daily cost and 30-day rolling average shifted to midpoint of sample (€)", color = "All divested")
     
     # Hide legend 
     if (!legend){ p <- p + guides(color = FALSE) }
@@ -443,7 +443,7 @@ setup_daily_cost_and_category_use_plot <- function(usetodate_anim, ymax = NA, yb
         annotate("text", x = author_label_x, y = author_label_y, label = author_label, color = "gray", hjust = 1) +
         geom_point(aes(colour = category), size = marker_size) +
         geom_image(aes(image = photo, group = date), size = 0.08) +
-        scale_x_continuous(limits=c(0,1)) +
+        scale_x_continuous(limits=c(0,1), labels = scales::percent_format(accuracy = 1)) +
         scale_y_continuous(limits=c(NA,ymax), breaks=seq(0, 500, by = ybreaks)) +
         scale_color_manual(name = "Category", values = category_colors) +
         scale_size(range = c(1, 10)) +
@@ -486,12 +486,12 @@ setup_yearly_cost_and_category_use_plot <- function(usetodate_anim, ymax = NA, y
         annotate("text", x = author_label_x, y = author_label_y, label = author_label, color = "gray", hjust = 1) +
         geom_point(aes(colour = category), size = marker_size) +
         geom_image(aes(image = photo, group = date), size = 0.08) +
-        scale_x_continuous(limits=c(0,1)) +
+        scale_x_continuous(limits=c(0,1), labels = scales::percent_format(accuracy = 1)) +
         scale_y_continuous(limits=c(NA,ymax), breaks=seq(0, 2000, by = ybreaks)) +
         scale_color_manual(name = "Category", values = category_colors) +
         scale_size(range = c(1, 10)) +
         guides(size = FALSE) +
-        labs(x = "Category frequency of use", y = "Yearly cost of use (€)") +
+        labs(x = "Category frequency of use (share of all days)", y = "Yearly cost of use (€ / year)") +
         guides(colour = guide_legend(override.aes = list(size = 2))) # Override plot point size to smaller for legend
     
     if(animate) {

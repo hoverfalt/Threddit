@@ -48,6 +48,17 @@ read_data_GD <- function (data_file = get_Google_sheet_ID()){
     return(masterdata)
 }
 
+# Define function to read comparison data from Google Sheets
+read_data_GD_comparison <- function (data_file = get_Google_sheet_ID()){
+    
+    # Read comparison data from Google Drive
+    comparison_data <- read_sheet(data_file, sheet = "Comparison")
+    
+    return(comparison_data)
+}
+
+
+
 
 #################################################################
 ################ TRANSFORM DATA INTO TIDY FORMAT ################

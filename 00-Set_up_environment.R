@@ -13,6 +13,7 @@ set_up_environment <- function(){
   # Load required packages
   library(readxl)
   library(lubridate)
+  library(plyr)
   library(dplyr)
   library(tidyr)
   library(ggplot2)

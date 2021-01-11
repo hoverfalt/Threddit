@@ -214,84 +214,84 @@ build_standard_plots <- function(){
   
   # Plot: Jackets and hoodies
   daily_cost_category <- calculate_daily_cost(plotuse, rolling_average_window, categories_include = "Jackets and hoodies")
-  p <- setup_daily_cost_plot(daily_cost_category, ymax = 8, seasons = TRUE, legend = FALSE)
+  p <- setup_daily_cost_plot(daily_cost_category, ymax = 8, ybreaks = 1, seasons = TRUE, legend = FALSE)
   ggsave(filename = "Plots/Category-Jackets_and_hoodies-Daily_cost.png", p, width = 10, height = 10, dpi = 300, units = "in")
   file.copy("Plots/Category-Jackets_and_hoodies-Daily_cost.png", "Website/Plots/Category-Jackets_and_hoodies-Daily_cost.png", overwrite = TRUE)
   file.remove("Plots/Category-Jackets_and_hoodies-Daily_cost.png")
 
   # Blazers and vests
   daily_cost_category <- calculate_daily_cost(plotuse, rolling_average_window, categories_include = "Blazers and vests")
-  p <- setup_daily_cost_plot(daily_cost_category, ymax = 40, seasons = TRUE, legend = FALSE)
+  p <- setup_daily_cost_plot(daily_cost_category, ymax = 40, ybreaks = 2, seasons = TRUE, legend = FALSE)
   ggsave(filename = "Plots/Category-Blazers_and_vests-Daily_cost.png", p, width = 10, height = 10, dpi = 300, units = "in")
   file.copy("Plots/Category-Blazers_and_vests-Daily_cost.png", "Website/Plots/Category-Blazers_and_vests-Daily_cost.png", overwrite = TRUE)
   file.remove("Plots/Category-Blazers_and_vests-Daily_cost.png")
 
   # Knits
   daily_cost_category <- calculate_daily_cost(plotuse, rolling_average_window, categories_include = "Knits")
-  p <- setup_daily_cost_plot(daily_cost_category, ymax = 20, seasons = TRUE, legend = FALSE)
+  p <- setup_daily_cost_plot(daily_cost_category, ymax = 20, ybreaks = 2, seasons = TRUE, legend = FALSE)
   ggsave(filename = "Plots/Category-Knits-Daily_cost.png", p, width = 10, height = 10, dpi = 300, units = "in")
   file.copy("Plots/Category-Knits-Daily_cost.png", "Website/Plots/Category-Knits-Daily_cost.png", overwrite = TRUE)
   file.remove("Plots/Category-Knits-Daily_cost.png")
 
   # Shirts
   daily_cost_category <- calculate_daily_cost(plotuse, rolling_average_window, categories_include = "Shirts")
-  p <- setup_daily_cost_plot(daily_cost_category, ymax = 20, seasons = TRUE, legend = FALSE)
+  p <- setup_daily_cost_plot(daily_cost_category, ymax = 20, ybreaks = 2, seasons = TRUE, legend = FALSE)
   ggsave(filename = "Plots/Category-Shirts-Daily_cost.png", p, width = 10, height = 10, dpi = 300, units = "in")
   file.copy("Plots/Category-Shirts-Daily_cost.png", "Website/Plots/Category-Shirts-Daily_cost.png", overwrite = TRUE)
   file.remove("Plots/Category-Shirts-Daily_cost.png")
 
   # T-shirts and tanks
   daily_cost_category <- calculate_daily_cost(plotuse, rolling_average_window, categories_include = "T-shirts and tanks")
-  p <- setup_daily_cost_plot(daily_cost_category, ymax = 8, seasons = TRUE, legend = FALSE)
+  p <- setup_daily_cost_plot(daily_cost_category, ymax = 8, ybreaks = 1, seasons = TRUE, legend = FALSE)
   ggsave(filename = "Plots/Category-T-shirts_and_tanks-Daily_cost.png", p, width = 10, height = 10, dpi = 300, units = "in")
   file.copy("Plots/Category-T-shirts_and_tanks-Daily_cost.png", "Website/Plots/Category-T-shirts_and_tanks-Daily_cost.png", overwrite = TRUE)
   file.remove("Plots/Category-T-shirts_and_tanks-Daily_cost.png")
 
   # Pants
   daily_cost_category <- calculate_daily_cost(plotuse, rolling_average_window, categories_include = "Pants")
-  p <- setup_daily_cost_plot(daily_cost_category, ymax = 8, seasons = TRUE, legend = FALSE)
+  p <- setup_daily_cost_plot(daily_cost_category, ymax = 8, ybreaks = 1, seasons = TRUE, legend = FALSE)
   ggsave(filename = "Plots/Category-Pants-Daily_cost.png", p, width = 10, height = 10, dpi = 300, units = "in")
   file.copy("Plots/Category-Pants-Daily_cost.png", "Website/Plots/Category-Pants-Daily_cost.png", overwrite = TRUE)
   file.remove("Plots/Category-Pants-Daily_cost.png")
 
   # Shorts
   daily_cost_category <- calculate_daily_cost(plotuse, rolling_average_window, categories_include = "Shorts")
-  p <- setup_daily_cost_plot(daily_cost_category, ymax = 8, seasons = TRUE, legend = FALSE)
+  p <- setup_daily_cost_plot(daily_cost_category, ymax = 8, ybreaks = 1, seasons = TRUE, legend = FALSE)
   ggsave(filename = "Plots/Category-Shorts-Daily_cost.png", p, width = 10, height = 10, dpi = 300, units = "in")
   file.copy("Plots/Category-Shorts-Daily_cost.png", "Website/Plots/Category-Shorts-Daily_cost.png", overwrite = TRUE)
   file.remove("Plots/Category-Shorts-Daily_cost.png")
 
   # Belts
   daily_cost_category <- calculate_daily_cost(plotuse, rolling_average_window, categories_include = "Belts")
-  p <- setup_daily_cost_plot(daily_cost_category, ymax = 4, seasons = TRUE, legend = FALSE)
+  p <- setup_daily_cost_plot(daily_cost_category, ymax = 4, ybreaks = 0.5, seasons = TRUE, legend = FALSE)
   ggsave(filename = "Plots/Category-Belts-Daily_cost.png", p, width = 10, height = 10, dpi = 300, units = "in")
   file.copy("Plots/Category-Belts-Daily_cost.png", "Website/Plots/Category-Belts-Daily_cost.png", overwrite = TRUE)
   file.remove("Plots/Category-Belts-Daily_cost.png")
 
   # Socks
   daily_cost_category <- calculate_daily_cost(plotuse, rolling_average_window, categories_include = "Socks")
-  p <- setup_daily_cost_plot(daily_cost_category, ymax = 2, seasons = TRUE, legend = FALSE)
+  p <- setup_daily_cost_plot(daily_cost_category, ymax = 2, ybreaks = 0.5, seasons = TRUE, legend = FALSE)
   ggsave(filename = "Plots/Category-Socks-Daily_cost.png", p, width = 10, height = 10, dpi = 300, units = "in")
   file.copy("Plots/Category-Socks-Daily_cost.png", "Website/Plots/Category-Socks-Daily_cost.png", overwrite = TRUE)
   file.remove("Plots/Category-Socks-Daily_cost.png")
 
   # Shoes
   daily_cost_category <- calculate_daily_cost(plotuse, rolling_average_window, categories_include = "Shoes")
-  p <- setup_daily_cost_plot(daily_cost_category, ymax = 16, seasons = TRUE, legend = FALSE)
+  p <- setup_daily_cost_plot(daily_cost_category, ymax = 16, ybreaks = 2, seasons = TRUE, legend = FALSE)
   ggsave(filename = "Plots/Category-Shoes-Daily_cost.png", p, width = 10, height = 10, dpi = 300, units = "in")
   file.copy("Plots/Category-Shoes-Daily_cost.png", "Website/Plots/Category-Shoes-Daily_cost.png", overwrite = TRUE)
   file.remove("Plots/Category-Shoes-Daily_cost.png")
 
   # Underwear shirts
   daily_cost_category <- calculate_daily_cost(plotuse, rolling_average_window, categories_include = "Underwear shirts")
-  p <- setup_daily_cost_plot(daily_cost_category, ymax = 8, seasons = TRUE, legend = FALSE)
+  p <- setup_daily_cost_plot(daily_cost_category, ymax = 8, ybreaks = 1, seasons = TRUE, legend = FALSE)
   ggsave(filename = "Plots/Category-Underwear_shirts-Daily_cost.png", p, width = 10, height = 10, dpi = 300, units = "in")
   file.copy("Plots/Category-Underwear_shirts-Daily_cost.png", "Website/Plots/Category-Underwear_shirts-Daily_cost.png", overwrite = TRUE)
   file.remove("Plots/Category-Underwear_shirts-Daily_cost.png")
 
   # Underwear boxers
   daily_cost_category <- calculate_daily_cost(plotuse, rolling_average_window, categories_include = "Underwear boxers")
-  p <- setup_daily_cost_plot(daily_cost_category, ymax = 4, seasons = TRUE, legend = FALSE)
+  p <- setup_daily_cost_plot(daily_cost_category, ymax = 4, ybreaks = 0.5, seasons = TRUE, legend = FALSE)
   ggsave(filename = "Plots/Category-Underwear_boxers-Daily_cost.png", p, width = 10, height = 10, dpi = 300, units = "in")
   file.copy("Plots/Category-Underwear_boxers-Daily_cost.png", "Website/Plots/Category-Underwear_boxers-Daily_cost.png", overwrite = TRUE)
   file.remove("Plots/Category-Underwear_boxers-Daily_cost.png")

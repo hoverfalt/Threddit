@@ -25,7 +25,7 @@ plotuse <- transform_data(masterdata) %>% # 1) Transform raw data into tidy data
   calculate_total_use_data() %>% # 3) Calculate total use data, including divested items 
   calculate_plot_data() # 4) Calculate plot data for the standard plots
 
-# Save tidy data data.frame to file for easier retrieval (2021-01-07)
+# Save tidy data data.frame to file for easier retrieval (2021-01-10)
 save(masterdata,file="Data/Threddit-masterdata.Rda")
 save(plotuse,file="Data/Threddit-plotuse.Rda")
 save(daterange,file="Data/Threddit-daterange.Rda")
@@ -282,15 +282,33 @@ usetodate_comparison <- usetodate_anim %>% filter(date == max(usetodate_anim$dat
   mutate(monthly_cost = yearly_cost / 12, comparison = FALSE) %>%
   select(category, category_use, monthly_cost, photo, comparison, date)
 
-# Add comparison items (TO DO: replace manual input with Google Sheets)
-usetodate_comparison <- rbind (usetodate_comparison, data.frame(category = "Netflix", category_use = 0.15, monthly_cost = 11.99,
-                                                photo = "Photos/Comparison-001.png", comparison = TRUE, date = max(usetodate_anim$date)))
+# Read comparison data (only refresh from Google Sheets if changed) and save
+#comparison_data <- read_data_GD_comparison()
+#save(comparison_data,file="Data/Threddit-comparison_data.Rda")
 
+# Load comparison data from file
+load("Data/Threddit-comparison_data.Rda")
+
+# Process raw comparison data to fit standard plot
+comparison_data <- comparison_data %>% mutate(Category = as.factor(Category), comparison = TRUE) %>%
+  select(-Details, -'Yearly cost', -Type, -Item) %>%
+  as.data.frame()
+colnames(comparison_data)<- c("category", "photo", "monthly_cost", "category_use", "comparison")
+
+
+# Combine category and comparison data sets for plotting
+usetodate_comparison <- rbind.fill(usetodate_comparison, comparison_data) %>% mutate(date = max(usetodate_anim$date))
 
 
 # Setup plot of columns $category_use and $monthly_cost
-p <- setup_monthly_cost_and_category_use_plot(usetodate_comparison, ymax = 70, ybreaks = 5)
-dev.off()
+p <- setup_monthly_cost_and_category_use_plot(usetodate_comparison, ymax = 65, ybreaks = 5)
+
+ggsave(filename = "Plots/Portfolio-Monthly_cost_and_Category_use-image.png", p, width = 12, height = 10, dpi = 300, units = "in")
+#file.copy("Plots/Portfolio-Monthly_cost_and_Category_use-image.png", "Website/Plots/Portfolio-Monthly_cost_and_Category_use-image.png", overwrite = TRUE)
+#file.remove("Plots/Portfolio-Inventory-Item_count.png")
+
+
+
 
 # Funtion to set up monthly cost vs category use plot
 setup_monthly_cost_and_category_use_plot <- function(usetodate_comparison, ymax = NA, ybreaks = 2, animate = FALSE){
@@ -316,12 +334,12 @@ setup_monthly_cost_and_category_use_plot <- function(usetodate_comparison, ymax 
     geom_point(data = usetodate_comparison[usetodate_comparison$comparison ==  FALSE,], aes(colour = category), size = marker_size) +
     geom_point(data = usetodate_comparison[usetodate_comparison$comparison ==  TRUE,], colour = "lightgray", size = marker_size) +
     geom_image(aes(image = photo, group = date), size = 0.08) +
-    scale_x_continuous(limits=c(0,1)) +
+    scale_x_continuous(limits=c(0,1), labels = scales::percent_format(accuracy = 1)) +
     scale_y_continuous(limits=c(NA,ymax), breaks=seq(0, 100, by = ybreaks)) +
     scale_color_manual(name = "Category", values = category_colors) +
     scale_size(range = c(1, 10)) +
     guides(size = FALSE) +
-    labs(x = "Frequency of use (share of days used)", y = "Monthly cost (€)") +
+    labs(x = "Frequency of use (share of days used)", y = "Monthly cost (€ / month)") +
     guides(colour = guide_legend(override.aes = list(size = 2))) # Override plot point size to smaller for legend
   
   if(animate) {
@@ -332,7 +350,6 @@ setup_monthly_cost_and_category_use_plot <- function(usetodate_comparison, ymax 
   
   return(p)
 }
-
 
 
 

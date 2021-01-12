@@ -103,7 +103,7 @@ build_standard_plots <- function(){
 
   # Standard category plots
   for (i in category_order){
-    p <- plot_data %>% setup_category_plot_image(categories = c(i), xmax = NA, ymax = NA, ybreaks = log_breaks, log_trans=TRUE)
+    p <- plot_data %>% setup_category_plot_image(categories = c(i), xmax = NA, ymax = NA, ybreaks = plot_log_breaks, log_trans=TRUE)
     ggsave(filename = paste("Plots/Category-", gsub(" ", "_", i), ".png", sep=""),
            p, width = 10, height = 10, dpi = 300, units = "in")
     file.copy(paste("Plots/Category-", gsub(" ", "_", i), ".png", sep=""),
@@ -117,7 +117,7 @@ build_standard_plots <- function(){
   ## Category plot - Cost per use vs Cumulative use
   
   # Jackets and hoodies
-  p <- plot_data %>% setup_category_cumulative_plot_image("Jackets and hoodies", xmax = 400, ymax = 10, ybreaks = log_breaks, log_trans=TRUE, trails=TRUE, guides=TRUE)
+  p <- plot_data %>% setup_category_cumulative_plot_image("Jackets and hoodies", xmax = 400, ymax = 10, ybreaks = plot_log_breaks, log_trans=TRUE, trails=TRUE, guides=TRUE)
   ggsave(filename = "Plots/Category-Jackets_and_hoodies-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in")
   file.copy("Plots/Category-Jackets_and_hoodies-Cost_and_Cumulative_use.png", "Website/Plots/Category-Jackets_and_hoodies-Cost_and_Cumulative_use.png", overwrite = TRUE)
   file.remove("Plots/Category-Jackets_and_hoodies-Cost_and_Cumulative_use.png")

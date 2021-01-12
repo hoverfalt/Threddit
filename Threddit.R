@@ -8,6 +8,9 @@
 
 ### SET UP ENVIRONMENT ##########################################################################################
 
+# Clear workspace
+rm(list = ls())
+
 # Set up computing and plotting environment
 source("00-Set_up_environment.R")
 set_up_environment()

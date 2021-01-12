@@ -52,9 +52,9 @@ set_up_environment <- function(){
   # Set color names by category name for consistent category colors in plots
   names(category_colors) <- category_order
   
-  # Set category photos
+  # Set category photos levels(plotuse$category)
   category_photos <<- data.frame(
-    "category" = levels(plotuse$category),
+    "category" = category_order,
     "photo" = c('Photos/Category_image-Jackets_and_hoodies.png',
                 'Photos/Category_image-Blazers_and_vests.png',
                 'Photos/Category_image-Knits.png',
@@ -76,7 +76,7 @@ set_up_environment <- function(){
   guides_prices <<- c(5, 10, 20, 50, 100, 200, 400, 800)
 
   # Set logarithmic y scale breaks
-  log_breaks <<- c(0.05, 0.1, 0.25, 0.5, 1, 2, 5, 10, 20, 50, 100, 200, 400, 800)
+  plot_log_breaks <<- c(0.05, 0.1, 0.25, 0.5, 1, 2, 5, 10, 20, 50, 100, 200, 400, 800)
     
   # Set author label to add in the upper right corner of plots
   author_label <<- "hoverfalt.github.io"

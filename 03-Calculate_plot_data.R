@@ -575,7 +575,7 @@ setup_category_plot_point <- function(plot_data, categories, xmax, ymax, log_tra
 
 
 # Function to setup (multi) category image plot y = cost per use, x = monthly use
-setup_category_plot_image <- function(plot_data, categories, xmax, ymax, ybreaks = log_breaks, log_trans=TRUE, animate=FALSE) {
+setup_category_plot_image <- function(plot_data, categories, xmax, ymax, ybreaks = plot_log_breaks, log_trans=TRUE, animate=FALSE) {
 
     # Filter data by category
     plot_data <- plot_data %>% filter(category %in% categories)
@@ -636,7 +636,7 @@ setup_category_plot_image <- function(plot_data, categories, xmax, ymax, ybreaks
 ### CATEGORY PLOT - COST PER USE vs CUMULATIVE USE ###
 
 # Function to setup (multi) category image plot y = cost per use, x = cumulative use
-setup_category_cumulative_plot_image <- function(plot_data, categories, xmax = NA, ymin = NA, ymax = NA, ybreaks = log_breaks, log_trans=TRUE, trails=FALSE, guides=TRUE) {
+setup_category_cumulative_plot_image <- function(plot_data, categories, xmax = NA, ymin = NA, ymax = NA, ybreaks = plot_log_breaks, log_trans=TRUE, trails=FALSE, guides=TRUE) {
     
     # Filter data by category
     plot_data <- plot_data %>% filter(category %in% categories)
@@ -831,7 +831,7 @@ setup_shoes_steps_plot <- function(input_data) {
     geom_image(data = steps_taken %>% filter(active == TRUE), aes(image = photo), size = 0.08) +
     scale_y_continuous(labels = comma) +
     #scale_x_continuous(breaks=seq(0, max(steps_taken$rownumber), by = 1)) +
-    labs(x = "Shoes", y = "Total steps") +
+    labs(x = "Shoes by status (green divested, gray active)", y = "Total steps") +
     coord_flip() + # Flip coordinates to be horizontal (this switches x and y)
     theme(legend.position = "none") # Remove legend
   

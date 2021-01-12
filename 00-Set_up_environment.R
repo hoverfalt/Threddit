@@ -25,7 +25,8 @@ set_up_environment <- function(){
   library(imager)
   library(roll)
   library(googlesheets4)
-
+  library(scales)
+  
   
   # Source required files
   source("01-Read_and_preprocess_data.R")

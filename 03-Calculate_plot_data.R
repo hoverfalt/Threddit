@@ -791,6 +791,52 @@ setup_category_times_used_plot <- function(input_data, categories, animate = FAL
 }
 
 
+### SHOE STEPS USED SPECIAL PLOT ###
+
+# Function to setup shoe steps image plot y = item (listing), x = Steps taken
+setup_shoes_steps_plot <- function(input_data) {
+  
+  # Initiate times_ised data frame and data
+  steps_taken <- input_data %>%
+    select(item, active, cumsteps, photo) %>%
+    as.data.frame()
+  
+  # Add rownumber variable telling the order in which to plot the items
+  steps_taken <- steps_taken %>% 
+    ungroup() %>% arrange(active, desc(cumsteps)) %>% # Ungroup and reorder for plotting
+    mutate(rownumber = cumsum(!is.na(item))) %>% # Create counter according to order (!is.na(item) is just something to cumsum that spans the entire date vector)
+    as.data.frame() # Cast tibble to data frame
+  
+  # Set author label coordinates (upper right corner)
+  author_label_x <- max(steps_taken$rownumber)
+  author_label_y <- max(steps_taken$cumsteps)
+  
+  marker_size <- 28 # Set still marker size
+  
+  # Set up animation
+  p <-
+    ggplot(steps_taken, aes(x = rownumber, y = cumsteps)) +
+    annotate("text", x = author_label_x, y = author_label_y, label = author_label, color = "gray", hjust = 1) +
+    geom_col(data = steps_taken, aes(x = rownumber, y = cumsteps, fill = active),
+             width = max(steps_taken$rownumber)/300, position = position_dodge2(preserve = "total", padding = 0)) +
+    scale_fill_manual(breaks = c(FALSE, TRUE), values=c(alpha("mediumseagreen", 0.6), "lightgray"))
+  
+  if (nrow(steps_taken %>% filter(active == FALSE)) > 0) { # If there are divested items, render them first
+    p <- p +
+      geom_point(data = steps_taken %>% filter(active == FALSE), size = marker_size, color = "mediumseagreen", alpha = 0.6) + # Mark divested items with green circle
+      geom_image(data = steps_taken %>% filter(active == FALSE), aes(image = photo), size = 0.08) # Render divested items first
+  }
+  
+  p <- p +
+    geom_image(data = steps_taken %>% filter(active == TRUE), aes(image = photo), size = 0.08) +
+    scale_y_continuous(labels = comma) +
+    #scale_x_continuous(breaks=seq(0, max(steps_taken$rownumber), by = 1)) +
+    labs(x = "Shoes", y = "Total steps") +
+    coord_flip() + # Flip coordinates to be horizontal (this switches x and y)
+    theme(legend.position = "none") # Remove legend
+  
+  return(p)
+}
 
 
 

@@ -283,17 +283,16 @@ save(comparison_data,file="Data/Threddit-comparison_data.Rda")
 # Load comparison data from file
 load("Data/Threddit-comparison_data.Rda")
 
-# Reduce data to latest date available
-usetodate_comparison <- usetodate_anim %>% filter(date == max(usetodate_anim$date)) %>%
-  mutate(monthly_cost = yearly_cost / 12, comparison = FALSE) %>%
-  select(category, category_use, monthly_cost, photo, comparison, date)
-
 # Process raw comparison data to fit standard plot
 comparison_data <- comparison_data %>% mutate(Category = as.factor(Category), comparison = TRUE) %>%
   select(-Details, -'Yearly cost', -Type, -Item, -'Cost per use') %>%
   as.data.frame()
 colnames(comparison_data)<- c("category", "photo", "monthly_cost", "category_use", "comparison")
 
+# Reduce master use data to latest date available
+usetodate_comparison <- usetodate_anim %>% filter(date == max(usetodate_anim$date)) %>%
+  mutate(monthly_cost = yearly_cost / 12, comparison = FALSE) %>%
+  select(category, category_use, monthly_cost, photo, comparison, date)
 
 # Combine category and comparison data sets for plotting
 comparison_plot_data <- rbind.fill(usetodate_comparison, comparison_data) %>% mutate(date = max(usetodate_anim$date))
@@ -567,16 +566,18 @@ FITBIT_CALLBACK <- "http://localhost:1410/"
 token <- fitbitr::oauth_token()
 
 # Set date of latest data
-date <- "2020-04-25"
+date <- "2021-01-11"
 
 # Get daily step data for entire item data period and remove duplicates
-steps_2020 <- get_activity_time_series(token, "steps", date=date, period="1y")
+steps_2021 <- get_activity_time_series(token, "steps", date=date, period="1y")
+steps_2020 <- get_activity_time_series(token, "steps", date="2020-12-31", period="1y")
 steps_2019 <- get_activity_time_series(token, "steps", date="2019-12-31", period="1y")
 steps_2018 <- get_activity_time_series(token, "steps", date="2018-12-31", period="1y")
-steps <- rbind(steps_2020, rbind(steps_2018, steps_2019))
+steps <- rbind(steps_2021, steps_2020, steps_2019, steps_2018)
 steps <- steps[!duplicated(steps$dateTime),]
 
 # Remove temporary variables
+rm(steps_2021)
 rm(steps_2020)
 rm(steps_2019)
 rm(steps_2018)
@@ -589,11 +590,11 @@ steps <- steps %>%
   arrange(date)
 # Alt: mutate(date = as.POSIXct(strptime(steps$dateTime, "%Y-%m-%d"))) %>%
 
-# Save steps data.frame to file for easier retrieval
-save(steps,file="Data/Threddit-steps-2020-04-26.Rda")
+# Save steps data.frame to file for easier retrieval (refreshed until 2021-01-11)
+save(steps,file="Data/Threddit-steps.Rda")
 
-# Load data from file
-load("Data/Threddit-steps-2020-04-26.Rda")
+# Load 'steps' variable from file
+load("Data/Threddit-steps.Rda")
 
 # Plot steps
 ggplot2::ggplot(steps, aes(x=date, y=steps)) + geom_col()
@@ -646,25 +647,18 @@ for (item in steps_init$item){
 rm(steps_init)
 
 # Correct cumulative steps by initial cumulative steps
-shoe_use <- shoe_use %>%
-  mutate(cumsteps = cumsteps + cumsteps_init) %>%
-  select(-cumsteps_init)
-
-str(shoe_use)
+shoe_use <- shoe_use %>% mutate(cumsteps = cumsteps + cumsteps_init) %>% select(-cumsteps_init)
 
 
-### Plot item step data ###
 
 # Print total steps by item
 shoe_use %>% group_by(item) %>%
   filter(cumsteps == max(cumsteps) & date == max(date)) %>%
   arrange(desc(cumsteps))
 
-# Plot total steps by item
-shoe_use %>% group_by(item) %>%
-  filter(cumsteps == max(cumsteps) & date == max(date)) %>%
-  arrange(desc(cumsteps)) %>%
-  ggplot(aes(x=item, y=cumsteps)) + geom_col() + coord_flip()
-
-
+# Build and save plot
+p <- shoe_use %>% filter(date == max(date)) %>% arrange(desc(active), cumsteps) %>% setup_shoes_steps_plot()
+ggsave(filename = "Plots/Category-Shoes-Total_steps.png", p, width = 10, height = 10, dpi = 300, units = "in")
+file.copy("Plots/Category-Shoes-Total_steps.png", "Website/Plots/Category-Shoes-Total_steps.png", overwrite = TRUE)
+file.remove("Plots/Category-Shoes-Total_steps.png")
 

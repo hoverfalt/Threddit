@@ -8,9 +8,9 @@ In order to be able to do the computing and visualisaion I wanted, I built this 
 ### Motivation
 Visibility into item-level cost efficiency has been eye-opening. On a personal level, my main goal is not to drive down cost though, but to make better consumption choices especially from a sustainability perspective. In a broader perspective, I believe taking and enabling a data-driven approach to consumption and sustainability might be valuable at scale.
 
-I publish my continously updated wardrobe performance on [hoverfalt.github.io](https://hoverfalt.github.io/).
+I publish my continously updated wardrobe performance on <a href="https://hoverfalt.github.io/" target="_blank">hoverfalt.github.io</a>.
 
-For context and background, please see my blog post [Why I’ve tracked every single piece of clothing I’ve worn for three years](https://www.reaktor.com/blog/why-ive-tracked-every-single-piece-of-clothing-ive-worn-for-three-years/). 
+For context and background, please see my blog post <a href="https://www.reaktor.com/blog/why-ive-tracked-every-single-piece-of-clothing-ive-worn-for-three-years/" target="_blank">Why I’ve tracked every single piece of clothing I’ve worn for three years</a>.
 
 ### Tech and data pipeline
 Thie project is built entirely in R. It uses the Google Sheets API to read use data, and the Dropbox API to host plots and animations for publishing.
@@ -23,4 +23,4 @@ I'm not a professional developer. I built this to be a tool for myself.
 Due to increasing interest, I'm thinking about how to best go about making something like this available for broader good. If you have ideas or would like to contibute, please feel free to reach out :)  
 
 ### License
-This work is licensed under a [Creative Commons Attribution 4.0 International License](https://creativecommons.org/licenses/by/4.0/). CC BY, Olof Hoverfält 2018-2021
+This work is licensed under a <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank">Creative Commons Attribution 4.0 International License</a>. CC BY, Olof Hoverfält 2018-2021

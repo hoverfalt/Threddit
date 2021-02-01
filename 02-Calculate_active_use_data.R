@@ -1,8 +1,8 @@
-### Threddit.R - Olof Hoverfält - 2020 ###
+### Threddit.R - Olof Hoverfält - 2018-2021 - hoverfalt.github.io
 
-### Functions to calculate active use data
-### Input: itemuse (master tidy data)
-### Return: cumulativeuse (calculated cumulative use data)
+# Functions to calculate active use data
+# Input: itemuse (master tidy data)
+# Return: cumulativeuse (calculated cumulative use data)
 
 
 ###################################################

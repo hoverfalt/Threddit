@@ -1,6 +1,7 @@
-### Threddit.R - Olof Hoverfält - 2020 ###
+### Threddit.R - Olof Hoverfält - 2018-2021 - hoverfalt.github.io
 
-### Functions to prepare data for various standard plots
+# Functions to prepare data for various standard plots
+
 
 #################################################################################################
 ################################# SELECT AND ENHANCE PLOT DATA ##################################

@@ -1,9 +1,12 @@
-### Threddit.R - Olof Hoverfält - 2020 ###
+### Threddit.R - Olof Hoverfält - 2018-2021 - hoverfalt.github.io
 
-### Functions to process and plot Threddit data
-### Input: Google Sheets with specific structure and formatting
-### Output: Portfolio and category plots (png) and animations (gif) for publishing
+# For data and insights: https://hoverfalt.github.io/
+# For context and background: https://www.reaktor.com/blog/why-ive-tracked-every-single-piece-of-clothing-ive-worn-for-three-years/
 
+
+# Functions to process and plot wardrobe performance data
+# Input: Google Sheets with specific structure and formatting
+# Output: Portfolio and category plots (png), animations (gif), and data tables (Rda) for publishing
 
 
 ### SET UP ENVIRONMENT ##########################################################################################
@@ -17,7 +20,7 @@ set_up_environment()
 
 
 
-### READ DATA ##########################################################################################
+### READ AND PROCESS DATA ##########################################################################################
 
 ## Read and clean master raw data
 masterdata <- read_data_GD(get_Google_sheet_ID()) # Read master data from Google Drive
@@ -28,7 +31,7 @@ plotuse <- transform_data(masterdata) %>% # 1) Transform raw data into tidy data
   calculate_total_use_data() %>% # 3) Calculate total use data, including divested items 
   calculate_plot_data() # 4) Calculate plot data for the standard plots
 
-# Save tidy data data.frame to file for easier retrieval (2021-01-10)
+# Save tidy data data.frame to file for easier retrieval (2021-02-01)
 save(masterdata,file="Data/Threddit-masterdata.Rda")
 save(plotuse,file="Data/Threddit-plotuse.Rda")
 save(daterange,file="Data/Threddit-daterange.Rda")
@@ -40,27 +43,27 @@ load("Data/Threddit-daterange.Rda")
 # Calculate image plot master data (this is also required for animations)
 calculate_image_plot_master_data()
 
-# Refresh Dropbox share links (this need to be done only when a new item has been added, or a link has been broken)
-#refresh_share_links() 
 
 
+### REFRESH AND PUBLISH DATA AND PLOTS ##########################################################################
 
-### ITEM TABLES #################################################################################################
-
-# Calculate item data tables
+### Calculate item data tables
 calculate_category_data_tables(plotuse, masterdata, item_photo_URLs)
 
+### Refresh Dropbox share links (this need to be done only when a new item has been added, or a link has been broken)
+#refresh_share_links() 
 
-
-### IMAGE PLOTS #################################################################################################
-
-# Build image plots 
+### Build image plots 
 build_standard_plots()
+
+
 
 
 
 ### ANIMATIONS ##################################################################################################
 
+# Calculate and publich anumations
+# Animations are excluded from the standard refresh-and-publish cycle as they take some 60+ minutes to compute
 
 
 ### DAILY COST WITH ROLLING AVERAGE ##########################################################################################
@@ -301,11 +304,12 @@ usetodate_comparison <- usetodate_anim %>% filter(date == max(usetodate_anim$dat
 comparison_plot_data <- rbind.fill(usetodate_comparison, comparison_data) %>% mutate(date = max(usetodate_anim$date))
 
 
+
 # Setup plot of columns $category_use and $monthly_cost
 p <- setup_monthly_cost_and_category_use_plot(comparison_plot_data, ymax = 65, ybreaks = 5)
 
 ggsave(filename = "Plots/Portfolio-Monthly_cost_and_Category_use-image.png", p, width = 12, height = 10, dpi = 300, units = "in")
-#file.copy("Plots/Portfolio-Monthly_cost_and_Category_use-image.png", "Website/Plots/Portfolio-Monthly_cost_and_Category_use-image.png", overwrite = TRUE)
+file.copy("Plots/Portfolio-Monthly_cost_and_Category_use-image.png", "Website/Plots/Portfolio-Monthly_cost_and_Category_use-image.png", overwrite = TRUE)
 #file.remove("Plots/Portfolio-Inventory-Item_count.png")
 
 

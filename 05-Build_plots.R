@@ -1,6 +1,6 @@
-### Threddit.R - Olof Hoverfält - 2020 ###
+### Threddit.R - Olof Hoverfält - 2018-2021 - hoverfalt.github.io
 
-### Functions to build plots
+# Functions to build plots
 
 
 ### PREPARE PLOT DATA #################################################################################################

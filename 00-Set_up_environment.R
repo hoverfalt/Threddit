@@ -1,7 +1,7 @@
-### Threddit.R - Olof Hoverfält - 2020 ###
+### Threddit.R - Olof Hoverfält - 2018-2021 - hoverfalt.github.io
 
-### Functions to set computing and plotting up environment
-### Input: None
+# Functions to set computing and plotting up environment
+# Input: None
 
 
 # Set up computing and plotting environment in global variables

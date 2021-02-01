@@ -1,9 +1,9 @@
-### Threddit.R - Olof Hoverfält - 2020 ###
+### Threddit.R - Olof Hoverfält - 2018-2021 - hoverfalt.github.io
 
-### Functions to read and preprocess raw data
-### Input: data_file (raw data file name)
-### Return: masterdata (cleaned master raw data)
-### Sets up daterange (a list of all dates in the raw data set) in the global environment (REFACTOR THIS)
+# Functions to read and preprocess raw data
+# Input: data_file (raw data file name)
+# Return: masterdata (cleaned master raw data)
+# Sets up daterange (a list of all dates in the raw data set) in the global environment (REFACTOR THIS)
 
 ##########################################################
 ################ READ AND PREPROCESS DATA ################
@@ -163,7 +163,7 @@ refresh_share_links <- function (){
         select(item = name, path = path_display) %>% as.data.frame()
     
     # List items for which there is not a Dropbox share link
-    item_link_missing <- item_photo_listing[!(item_photo_listing$item %in% item_photo_URIs$item),]
+    item_link_missing <- item_photo_listing[!(item_photo_listing$item %in% item_photo_URLs$item),]
     
     # Create share links for missing items
     if (length(item_link_missing$path) > 0) {

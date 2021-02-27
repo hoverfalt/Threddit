@@ -31,7 +31,7 @@ plotuse <- transform_data(masterdata) %>% # 1) Transform raw data into tidy data
   calculate_total_use_data() %>% # 3) Calculate total use data, including divested items 
   calculate_plot_data() # 4) Calculate plot data for the standard plots
 
-# Save tidy data data.frame to file for easier retrieval (2021-02-01)
+# Save tidy data data.frame to file for easier retrieval (2021-02-24)
 save(masterdata,file="Data/Threddit-masterdata.Rda")
 save(plotuse,file="Data/Threddit-plotuse.Rda")
 save(daterange,file="Data/Threddit-daterange.Rda")
@@ -43,12 +43,15 @@ load("Data/Threddit-daterange.Rda")
 # Calculate image plot master data (this is also required for animations)
 calculate_image_plot_master_data()
 
+#write.csv(plotuse,"Data/use_data_long.csv", row.names = FALSE)
+#write.csv(masterdata,"Data/use_data_wide.csv", row.names = TRUE)
 
 
 ### REFRESH AND PUBLISH DATA AND PLOTS ##########################################################################
 
 ### Calculate item data tables
-calculate_category_data_tables(plotuse, masterdata, item_photo_URLs)
+# Sets global variables item_listings, and category_listing
+calculate_category_data_tables(plotuse, masterdata)
 
 ### Refresh Dropbox share links (this need to be done only when a new item has been added, or a link has been broken)
 #refresh_share_links() 

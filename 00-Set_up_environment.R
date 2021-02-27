@@ -22,10 +22,11 @@ set_up_environment <- function(){
   library(ggimage)
   library(transformr)
   library(gifski)
-  library(imager)
+  #library(imager)
   library(roll)
   library(googlesheets4)
   library(scales)
+  library(stringr)
   
   
   # Source required files
@@ -91,6 +92,10 @@ set_up_environment <- function(){
   # Load item photo URL data frame
   load("Data/item_photo_URLs.Rda")
   item_photo_URLs <<- item_photo_URLs
+  
+  # Set Google Firebase public photo files path
+  firebase_img_path <<- "https://firebasestorage.googleapis.com/v0/b/threddit-297417.appspot.com/o/"
+  
 }
 
 

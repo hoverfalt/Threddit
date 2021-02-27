@@ -43,26 +43,39 @@ calculate_plot_data <- function(totaluse){
 ### Input: plotuse, masterdata, item_photoURLs
 ### Output: saves the Threddit-item_listings variable into a file for the CMS to read
 
-library(stringr)
-
-calculate_category_data_tables <- function(plotuse, masterdata, item_photo_URLs){
+calculate_category_data_tables <- function(plotuse, masterdata){
 
   # Extract and format item listings as a publishing-ready data frame
   
+  # Original Dropbox version
+  #item_listings <- plotuse %>% filter(date == max(plotuse$date)) %>%
+    #select(Category = category, Item = item, 'Times worn' = cumuse, cost_per_use, days_active, use_per_month, active, photo) %>%
+    #mutate('Cost per wear' = round(cost_per_use, 2), 'Months active' = round(days_active / 30.5, 0), 'Wears per month' = round(use_per_month, 1)) %>%
+    #select(-cost_per_use, -days_active, -use_per_month) %>%
+    #merge(masterdata %>% select(Item, Price)) %>%
+    #mutate(Status = ifelse(active == TRUE, "Active", "Divested")) %>%
+    #merge(item_photo_URLs %>% select(photo = item, Img = photo_url) %>% mutate(photo = paste0("Photos/", photo, sep="")), by = "photo", all.x = TRUE) %>% 
+    #mutate(Img = paste0("<img class='item_image' src='", Img ,"'></img>"), collapse="") %>%
+    #select(Img, Category, Item, Price, 'Times worn', 'Cost per wear', 'Wears per month', 'Months active', Status, -active, -photo) %>%
+    #arrange(Category, Status, desc(`Times worn`))
+
+  # Google Firebase version
   item_listings <- plotuse %>% filter(date == max(plotuse$date)) %>%
     select(Category = category, Item = item, 'Times worn' = cumuse, cost_per_use, days_active, use_per_month, active, photo) %>%
     mutate('Cost per wear' = round(cost_per_use, 2), 'Months active' = round(days_active / 30.5, 0), 'Wears per month' = round(use_per_month, 1)) %>%
     select(-cost_per_use, -days_active, -use_per_month) %>%
     merge(masterdata %>% select(Item, Price)) %>%
     mutate(Status = ifelse(active == TRUE, "Active", "Divested")) %>%
-    merge(item_photo_URLs %>% select(photo = item, Img = photo_url) %>% mutate(photo = paste0("Photos/", photo, sep="")), by = "photo", all.x = TRUE) %>% 
-    mutate(Img = paste0("<img class='item_image' src='", Img ,"'></img>"), collapse="") %>%
+    mutate(photo = str_remove(photo, 'Photos/')) %>%
+    mutate(photo = paste0(firebase_img_path, photo, "?alt=media", sep="")) %>%
+    mutate(Img = paste0("<img class='item_image' src='", photo,"'></img>", sep="")) %>%
     select(Img, Category, Item, Price, 'Times worn', 'Cost per wear', 'Wears per month', 'Months active', Status, -active, -photo) %>%
-    arrange(Category, Status, desc('Times worn'))
+    arrange(Category, Status, desc(`Times worn`))
   
-  # Save item listings to a file for access by the Website builder
-  save(item_listings,file="Website/Threddit-item_listings.Rda")
-  item_listings <<- item_listings
+    
+    # Save item listings to a file for access by the Website builder
+    save(item_listings,file="Website/Threddit-item_listings.Rda")
+    item_listings <<- item_listings
 
   
   
@@ -78,11 +91,17 @@ calculate_category_data_tables <- function(plotuse, masterdata, item_photo_URLs)
     select(category, itemcount, categoryvalue) %>%
     merge(category_listing, by = "category")
   
-  # Add tag and local url for images
-  category_listing <- category_listing %>%
-    merge(item_photo_URLs %>% select(photo = item, Img = photo_url) %>% mutate(photo = paste0("Photos/", photo, sep="")), by = "photo", all.x = TRUE) %>% 
-    mutate(Img = paste0("<img class='item_image' src='", Img ,"'></img>"), collapse="")
+  # Add tag and local url for images (Original Dropbox version)
+  #category_listing <- category_listing %>%
+    #merge(item_photo_URLs %>% select(photo = item, Img = photo_url) %>% mutate(photo = paste0("Photos/", photo, sep="")), by = "photo", all.x = TRUE) %>% 
+    #mutate(Img = paste0("<img class='item_image' src='", Img ,"'></img>"), collapse="")
   
+  # Add tag and local url for images (Google Firebase version)
+  category_listing <- category_listing %>%
+    mutate(photo = str_remove(photo, 'Photos/')) %>%
+    mutate(photo = paste0(firebase_img_path, photo, "?alt=media", sep="")) %>%
+    mutate(Img = paste0("<img class='item_image' src='", photo ,"'></img>"), collapse="")
+
   # Add row with totals
   category_listing <- category_listing %>%
     summarise(itemcount = sum(itemcount),

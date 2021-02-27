@@ -120,7 +120,8 @@ refresh_share_links <- function (){
     
     # Auth, needed if local token expired
     dtoken <- drop_auth() 
-    #drop_acc()
+    dtoken <- drop_auth(new_user = TRUE) 
+    ## drop_acc()
 
     ## Retrieve shared links
     
@@ -132,6 +133,42 @@ refresh_share_links <- function (){
     
     # Initiate URL list data frame
     item_photo_URLs <- rbindlist(raw$links, fill = TRUE) # Convert JSON to data.frame
+
+    
+    # QUICK AND DIRTY
+    temp <- data.frame(name = raw$links[[1]]$name, path = raw$links[[1]]$path_lower, photo_url = raw$links[[1]]$url)
+    for (i in  2:length(raw$links)) {
+        temp <- rbind(temp, data.frame(name = raw$links[[i]]$name, path = raw$links[[i]]$path_lower, photo_url = raw$links[[i]]$url))
+    }
+    # Add rest of listings using cursor froim initial request (200 retreival limit per API call)
+    while(raw$has_more) {
+        # Retrieve next lsting with cursor
+        raw <- httr::POST(url = "https://api.dropboxapi.com/2/sharing/list_shared_links",
+                          body = list(cursor=raw$cursor),
+                          httr::config(token = dtoken),
+                          encode = "json") %>% content("parsed")
+        
+        for (i in  1:length(raw$links)) {
+            temp <- rbind(temp, data.frame(name = raw$links[[i]]$name, path = raw$links[[i]]$path_lower, photo_url = raw$links[[i]]$url))
+        }
+    }
+    
+    item_photo_URLs <- temp
+    
+    # Filter listing into global variable
+    item_photo_URLs <<- item_photo_URLs %>%
+        select(item = name, path, photo_url) %>%
+        filter(grepl(Threddit_Dropbox_path_identifier, path, fixed = TRUE) == TRUE) %>% # Filter out non-Threddit links using identifier set in environment
+        mutate(photo_url = gsub("?dl=0", "?raw=1", photo_url, fixed = TRUE))
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     # Add rest of listings using cursor froim initial request (200 retreival limit per API call)
     while(raw$has_more) {
@@ -159,7 +196,7 @@ refresh_share_links <- function (){
     ## Check if there are items for which there is no sharing link
     
     # List files in /Photos folder
-    item_photo_listing <- drop_dir(path = "Threddit/ThredditR/Threddit/Photos", include_media_info = TRUE, include_has_explicit_shared_members = TRUE) %>%
+    item_photo_listing <- drop_dir(path = "thredditr/Photos", include_media_info = TRUE, include_has_explicit_shared_members = TRUE) %>%
         select(item = name, path = path_display) %>% as.data.frame()
     
     # List items for which there is not a Dropbox share link

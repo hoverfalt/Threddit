@@ -94,8 +94,8 @@ build_standard_plots <- function(){
   # Portfolio plot: daily cost and rolling average
   p <- setup_daily_cost_plot(daily_cost, ymax = 40, ybreaks = 5, seasons = TRUE)
   ggsave(filename = "Plots/Portfolio-Daily_cost-plot.png", p, width = 10, height = 10, dpi = 300, units = "in")
-  file.copy("Plots/Portfolio-Daily_cost-plot.png", "Website/Plots/Portfolio-Daily_cost-plot.png", overwrite = TRUE)
-  file.remove("Plots/Portfolio-Daily_cost-plot.png")
+  file.copy("Plots/Portfolio-Daily_cost.png", "Website/Plots/Portfolio-Daily_cost.png", overwrite = TRUE)
+  file.remove("Plots/Portfolio-Daily_cost.png")
 
   
 

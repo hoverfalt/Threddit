@@ -700,8 +700,8 @@ setup_category_cumulative_plot_image <- function(plot_data, categories, xmax = N
     p <- p +
       #geom_point(data = plot_data[plot_data$date == max(plot_data$date) & plot_data$active == FALSE,], size = marker_size, color = "mediumseagreen", alpha = 0.6) + # Mark divested items with green circle
         geom_point(data = plot_data %>% filter(date == max(plot_data$date), active == FALSE), size = marker_size, color = "mediumseagreen", alpha = 0.6) + # Mark divested items with green circle
-        geom_image(data = plot_data %>% filter(date == max(plot_data$date), active = FALSE), aes(image = photo), size = 0.08) + # Render divested items first
-        geom_image(data = plot_data %>% filter(date == max(plot_data$date), active = TRUE), aes(image = photo), size = 0.08) + # Render active items in top
+        geom_image(data = plot_data %>% filter(date == max(plot_data$date), active == FALSE), aes(image = photo), size = 0.08) + # Render divested items first
+        geom_image(data = plot_data %>% filter(date == max(plot_data$date), active == TRUE), aes(image = photo), size = 0.08) + # Render active items in top
         #geom_image(data = plot_data[plot_data$date == max(plot_data$date),], aes(image = photo), size = 0.08) + # Render divested items first
         #geom_image(data = plot_data[plot_data$date == max(plot_data$date),], aes(image = photo), size = 0.08) + # Render active items in top
         scale_x_continuous(limits=c(0,xmax)) +

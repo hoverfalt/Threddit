@@ -22,11 +22,11 @@ set_up_environment <- function(){
   library(ggimage)
   library(transformr)
   library(gifski)
-  #library(imager)
   library(roll)
   library(googlesheets4)
   library(scales)
   library(stringr)
+  library(googleCloudStorageR)
   
   
   # Source required files
@@ -94,7 +94,22 @@ set_up_environment <- function(){
   item_photo_URLs <<- item_photo_URLs
   
   # Set Google Firebase public photo files path
-  firebase_img_path <<- "https://firebasestorage.googleapis.com/v0/b/threddit-297417.appspot.com/o/"
+  firebase_img_path <<- "https://firebasestorage.googleapis.com/v0/b/threddit-plots/o/"
+  
+  # Set Firebase Threddit project id
+  Firebase_project_id <- "threddit-297417"
+  
+  # List Firebase buckets
+  gcs_list_buckets(Firebase_project_id)
+  
+  # Set default plot bucket name
+  gcs_global_bucket("threddit-plots") # Plots
+  #gcs_global_bucket("threddit-297417.appspot.com") # Project default
+  
+  # Set upload filesize limit to 100MB
+  gcs_upload_set_limit(upload_limit = 100000000L)
+  
+  
   
 }
 

@@ -64,39 +64,33 @@ build_standard_plots <- function(){
   # Portfolio plot: Active inventory item count by category
   p <- inventory %>% filter(category != "Sportswear") %>% setup_inventory_item_count_plot()
   ggsave(filename = "Plots/Portfolio-Inventory-Item_count.png", p, width = 12, height = 10, dpi = 300, units = "in")
-  file.copy("Plots/Portfolio-Inventory-Item_count.png", "Website/Plots/Portfolio-Inventory-Item_count.png", overwrite = TRUE)
-  file.remove("Plots/Portfolio-Inventory-Item_count.png")
-
+  gcs_upload("Plots/Portfolio-Inventory-Item_count.png", name="Portfolio-Inventory-Item_count.png")
+  
   # Portfolio plot: Active inventory value by category (line plot)
   p <- inventory %>% filter(category != "Sportswear") %>% setup_inventory_value_by_category_plot()
   ggsave(filename = "Plots/Portfolio-Inventory-Value_by_category.png", p, width = 12, height = 10, dpi = 300, units = "in")
-  file.copy("Plots/Portfolio-Inventory-Value_by_category.png", "Website/Plots/Portfolio-Inventory-Value_by_category.png", overwrite = TRUE)
-  file.remove("Plots/Portfolio-Inventory-Value_by_category.png")
-
+  gcs_upload("Plots/Portfolio-Inventory-Value_by_category.png", name="Portfolio-Inventory-Value_by_category.png")
+  
   # Portfolio plot: Active inventory value by category (stacked area plot)
   p <- inventory %>% filter(category != "Sportswear") %>% setup_inventory_value_stacked_plot()
   ggsave(filename = "Plots/Portfolio-Inventory-Value_stacked.png", p, width = 12, height = 10, dpi = 300, units = "in")
-  file.copy("Plots/Portfolio-Inventory-Value_stacked.png", "Website/Plots/Portfolio-Inventory-Value_stacked.png", overwrite = TRUE)
-  file.remove("Plots/Portfolio-Inventory-Value_stacked.png")
-
+  gcs_upload("Plots/Portfolio-Inventory-Value_stacked.png", name="Portfolio-Inventory-Value_stacked.png")
+  
   # Portfolio plot: Average DAILY cost vs category use
   p <- usetodate_anim %>% setup_daily_cost_and_category_use_plot(ybreaks = 2, animate = FALSE)
   ggsave(filename = "Plots/Portfolio-Daily_cost_and_Category_use.png", p, width = 12, height = 10, dpi = 300, units = "in")
-  file.copy("Plots/Portfolio-Daily_cost_and_Category_use.png", "Website/Plots/Portfolio-Daily_cost_and_Category_use.png", overwrite = TRUE)
-  file.remove("Plots/Portfolio-Daily_cost_and_Category_use.png")
-
+  gcs_upload("Plots/Portfolio-Daily_cost_and_Category_use.png", name="Portfolio-Daily_cost_and_Category_use.png")
+  
   # Portfolio plot: Average YEARLY cost vs category use
   p <- usetodate_anim %>% setup_yearly_cost_and_category_use_plot(ybreaks = 100, animate = FALSE)
   ggsave(filename = "Plots/Portfolio-Yearly_cost_and_Category_use.png", p, width = 12, height = 10, dpi = 300, units = "in")
-  file.copy("Plots/Portfolio-Yearly_cost_and_Category_use.png", "Website/Plots/Portfolio-Yearly_cost_and_Category_use.png", overwrite = TRUE)
-  file.remove("Plots/Portfolio-Yearly_cost_and_Category_use.png")
-
+  gcs_upload("Plots/Portfolio-Yearly_cost_and_Category_use.png", name="Portfolio-Yearly_cost_and_Category_use.png")
+  
   # Portfolio plot: daily cost and rolling average
   p <- setup_daily_cost_plot(daily_cost, ymax = 40, ybreaks = 5, seasons = TRUE)
-  ggsave(filename = "Plots/Portfolio-Daily_cost-plot.png", p, width = 10, height = 10, dpi = 300, units = "in")
-  file.copy("Plots/Portfolio-Daily_cost.png", "Website/Plots/Portfolio-Daily_cost.png", overwrite = TRUE)
-  file.remove("Plots/Portfolio-Daily_cost.png")
-
+  ggsave(filename = "Plots/Portfolio-Daily_cost.png", p, width = 10, height = 10, dpi = 300, units = "in")
+  gcs_upload("Plots/Portfolio-Daily_cost.png", name="Portfolio-Daily_cost.png")
+  
   
 
   ## CATEGORY PLOTS
@@ -295,6 +289,7 @@ build_standard_plots <- function(){
   ggsave(filename = "Plots/Category-Underwear_boxers-Daily_cost.png", p, width = 10, height = 10, dpi = 300, units = "in")
   file.copy("Plots/Category-Underwear_boxers-Daily_cost.png", "Website/Plots/Category-Underwear_boxers-Daily_cost.png", overwrite = TRUE)
   file.remove("Plots/Category-Underwear_boxers-Daily_cost.png")
+
 
   # Sportswear
   # Doesn't make sense

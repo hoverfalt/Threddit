@@ -67,7 +67,7 @@ calculate_category_data_tables <- function(plotuse, masterdata){
     merge(masterdata %>% select(Item, Price)) %>%
     mutate(Status = ifelse(active == TRUE, "Active", "Divested")) %>%
     mutate(photo = str_remove(photo, 'Photos/')) %>%
-    mutate(photo = paste0(firebase_img_path, photo, "?alt=media", sep="")) %>%
+    mutate(photo = paste0(firebase_img_path_items, photo, "?alt=media", sep="")) %>%
     mutate(Img = paste0("<img class='item_image' src='", photo,"'></img>", sep="")) %>%
     select(Img, Category, Item, Price, 'Times worn', 'Cost per wear', 'Wears per month', 'Months active', Status, -active, -photo) %>%
     arrange(Category, Status, desc(`Times worn`))
@@ -99,7 +99,7 @@ calculate_category_data_tables <- function(plotuse, masterdata){
   # Add tag and local url for images (Google Firebase version)
   category_listing <- category_listing %>%
     mutate(photo = str_remove(photo, 'Photos/')) %>%
-    mutate(photo = paste0(firebase_img_path, photo, "?alt=media", sep="")) %>%
+    mutate(photo = paste0(firebase_img_path_items, photo, "?alt=media", sep="")) %>%
     mutate(Img = paste0("<img class='item_image' src='", photo ,"'></img>"), collapse="")
 
   # Add row with totals

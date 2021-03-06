@@ -108,8 +108,8 @@ set_up_environment <- function(){
   gcs_global_bucket("threddit-plots") # Plots
   #gcs_global_bucket("threddit-297417.appspot.com") # Project default
   
-  # Set upload limit to resumable upload to 10MB
-  gcs_upload_set_limit(upload_limit = 10000000L)
+  # Set upload limit to resumable upload to 100MB
+  gcs_upload_set_limit(upload_limit = 100000000L)
 }
 
 

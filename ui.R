@@ -1,11 +1,10 @@
-#
-# This is the user-interface definition of a Shiny web application. You can
-# run the application by clicking 'Run App' above.
-#
-# Find out more about building applications with Shiny here:
-#
-#    http://shiny.rstudio.com/
-#
+### Threddit.R - Olof Hoverfält - 2018-2021 - hoverfalt.github.io
+
+# For data and insights: https://hoverfalt.github.io/
+# For context and background: https://www.reaktor.com/blog/why-ive-tracked-every-single-piece-of-clothing-ive-worn-for-three-years/
+
+# Shiny web app
+# Input: Threddit normal computing environment and data
 
 library(shiny)
 

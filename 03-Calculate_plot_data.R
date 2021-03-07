@@ -547,39 +547,46 @@ setup_yearly_cost_and_category_use_plot <- function(usetodate_anim, ymax = NA, y
 ### CATEGORY PLOT - COST PER USE vs MONTHLY USE ###
 
 # Function to setup (multi) category point plot y = cost per use, x = monthly use
-setup_category_plot_point <- function(plot_data, categories, xmax, ymax, log_trans=TRUE, avg_lines=TRUE, animate=FALSE) {
+setup_category_plot_point <- function(plot_data, categories, xmax, ymax, ybreaks = plot_log_breaks, log_trans=TRUE, avg_lines=TRUE, animate=FALSE) {
     
-    # Filter categories
+    # Filter data by category
     plot_data <- plot_data %>% filter(category %in% categories)
+  
+    # Filter by last date only for non-animated plots
+    if (!animate) { plot_data <- plot_data %>% filter(date == max(plot_data$date)) }
 
-    # Filter date
-    if (animate) {
-        plot_data <- plot_data %>% group_by(date) # Group by frame (date)
-    } else {
-        plot_data <- plot_data %>% filter(date == max(plot_data$date)) # Include only latest date
-    }
-    
+    # Set author label coordinates (upper right corner)
+    if(!is.na(xmax)) { author_label_x <- xmax } else { author_label_x <- max(plot_data$use_per_month) }
+    if(!is.na(ymax)) { author_label_y <- ymax } else { author_label_y <- max(plot_data$cost_per_use) }
+      
     # Set up plot
     p <- ggplot(
         plot_data, 
         aes(x = use_per_month, y = cost_per_use, colour = category)) +
+        annotate("text", x = author_label_x, y = author_label_y, label = author_label, color = "gray", hjust = 1) +
         geom_point(show.legend = TRUE, aes(alpha = plot_size, size = plot_size)) +
         scale_x_continuous(limits=c(NA,xmax)) +
-        scale_color_manual(name = "Category", values = category_colors) +
+        scale_color_manual(name = "Category", values = category_colors[match(categories, category_order)]) +
         scale_alpha(range = c(0.5, 1.0)) +
         scale_size(range = c(2, 3)) +
         guides(alpha = FALSE, size = FALSE) +
         labs(x = "Average times worn per month", y = "Cost per wear (€)")
 
-    if (log_trans) { p <- p + scale_y_continuous(limits=c(NA,ymax), trans="log10") }
+    if (log_trans) { p <- p + scale_y_continuous(trans="log10", limits=c(NA,ymax), breaks=ybreaks) }
     else { p <- p + scale_y_continuous(limits=c(NA,ymax)) }
     
     # Add vertical and horizonal line for variable averages in corresponding category color
     if(avg_lines) {
         for (cat in categories) {
             p <- p + 
-                geom_vline(data = plot_data[plot_data$category == cat,], aes(xintercept = avg_use_per_month_divested), size = 0.8, colour = category_colors[cat], linetype = "dotted") +
-                geom_hline(data = plot_data[plot_data$category == cat,], aes(yintercept = avg_cost_per_use_divested), size = 0.8, colour = category_colors[cat], linetype = "dotted")
+                geom_vline(data = plot_data[plot_data$category == cat,], aes(xintercept = avg_use_per_month_divested), size = 0.8,
+                           colour = category_colors[match(cat, category_order)], linetype = "dotted") +
+                geom_hline(data = plot_data[plot_data$category == cat,], aes(yintercept = avg_cost_per_use_divested), size = 0.8,
+                           colour = category_colors[match(cat, category_order)], linetype = "dotted") +
+                geom_label(data = plot_data[plot_data$category == cat,], aes(x = avg_use_per_month_divested, y = min(cost_per_use), label=round(avg_use_per_month_divested, digits = 1)),
+                           color =  category_colors[match(cat, category_order)]) +
+                geom_label(data = plot_data[plot_data$category == cat,], aes(x = min(use_per_month), y = avg_cost_per_use_divested, label=paste(round(avg_cost_per_use_divested, digits = 2)," €", sep="")),
+                           color  = category_colors[match(cat, category_order)])
         }
     }
 
@@ -595,7 +602,7 @@ setup_category_plot_point <- function(plot_data, categories, xmax, ymax, log_tra
 
 
 # Function to setup (multi) category image plot y = cost per use, x = monthly use
-setup_category_plot_image <- function(plot_data, categories, xmax, ymax, ybreaks = plot_log_breaks, log_trans=TRUE, animate=FALSE) {
+setup_category_plot_image <- function(plot_data, categories, xmax, ymax, ybreaks = plot_log_breaks, log_trans=TRUE, animate=FALSE, fixed_marker_size) {
 
     # Filter data by category
     plot_data <- plot_data %>% filter(category %in% categories)
@@ -615,6 +622,9 @@ setup_category_plot_image <- function(plot_data, categories, xmax, ymax, ybreaks
       usetodate_anim <- usetodate_anim %>% filter(date == max(usetodate_anim$date))
       marker_size <- 28 # Set still marker size
     }
+    
+    # Override marker size if defined in the funciton call
+    if (!(fixed_marker_size == "")) { marker_size = fixed_marker_size }
             
     # Set up plot
     p <- ggplot(

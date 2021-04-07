@@ -70,7 +70,7 @@ transform_data <- function (masterdata){
     ### Transform masterdata into tidy data with variables: category, item, date, used
     # select: select only relevant columns (Category, Item, and all dates)
     # gather: key = date = column name, value = used = data, Category and Item unchanged
-    itemuse <- masterdata %>% select(-Photo, -Price, -'Date purchased', -'Date divested', -'Times used init',
+    itemuse <- masterdata %>% dplyr::select(-Photo, -Price, -'Date purchased', -'Date divested', -'Times used init',
                                      -'Materials', -'Weight', -'Times used', -'Cost per wear') %>%
         gather(key = "date", value = "used", -Category, -Item, na.rm = TRUE) %>%
         rename(category = "Category", item = "Item") %>%

@@ -602,7 +602,7 @@ setup_category_plot_point <- function(plot_data, categories, xmax, ymax, ybreaks
 
 
 # Function to setup (multi) category image plot y = cost per use, x = monthly use
-setup_category_plot_image <- function(plot_data, categories, xmax, ymax, ybreaks = plot_log_breaks, log_trans=TRUE, animate=FALSE, fixed_marker_size) {
+setup_category_plot_image <- function(plot_data, categories, xmax, ymax, ybreaks = plot_log_breaks, log_trans=TRUE, animate=FALSE, fixed_marker_size=NA) {
 
     # Filter data by category
     plot_data <- plot_data %>% filter(category %in% categories)
@@ -624,7 +624,7 @@ setup_category_plot_image <- function(plot_data, categories, xmax, ymax, ybreaks
     }
     
     # Override marker size if defined in the funciton call
-    if (!(fixed_marker_size == "")) { marker_size = fixed_marker_size }
+    if (!is.na(fixed_marker_size)) { marker_size = fixed_marker_size }
             
     # Set up plot
     p <- ggplot(

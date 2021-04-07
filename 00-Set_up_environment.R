@@ -7,9 +7,6 @@
 # Set up computing and plotting environment in global variables
 set_up_environment <- function(){
   
-  # Remove all objects from workspace
-  rm(list = ls())
-  
   # Load required packages
   library(readxl)
   library(lubridate)
@@ -28,7 +25,9 @@ set_up_environment <- function(){
   library(stringr)
   library(googleCloudStorageR)
   library(curl)
-  
+  library(openssl) # Used in changing MD5 encoding
+  library(digest) # Used in reading MD5 encoding 
+  library(httr) # Get GCS file metadata through http request
   
   # Source required files
   source("01-Read_and_preprocess_data.R")

@@ -23,7 +23,7 @@ calculate_active_use_data <- function(itemuse){
     # Retrieve initial cumulative use by item into temporary df
     tempuse_init <- masterdata %>% dplyr::select(Item,'Times used init') %>%
         dplyr::rename(item = Item, used_init = 'Times used init') %>%
-        mutate(used_init = as.numeric(used_init))
+        dplyr::mutate(used_init = as.numeric(used_init))
     
     # Merge into cumulativeuse
     cumulativeuse <- merge(cumulativeuse, as.data.frame(tempuse_init), by="item")

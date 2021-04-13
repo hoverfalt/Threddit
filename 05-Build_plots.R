@@ -116,6 +116,9 @@ build_standard_plots <- function(){
 
   ## CATEGORY PLOTS
 
+  # Reset bucket and upload (prevents upload from jamming)
+  gcs_list_buckets(Firebase_project_id)
+
   # Standard category plots
   for (i in category_order[]){
     p <- plot_data %>% setup_category_plot_image(categories = c(i), xmax = NA, ymax = NA, ybreaks = plot_log_breaks, log_trans=TRUE)
@@ -123,7 +126,6 @@ build_standard_plots <- function(){
            p, width = 10, height = 10, dpi = 300, units = "in")
     save_to_cloud(paste("Category-", gsub(" ", "_", i), ".png", sep=""))
   }
-
 
   
   ## Category plot - Cost per use vs Cumulative use
@@ -194,6 +196,9 @@ build_standard_plots <- function(){
   save_to_cloud("Category-Sportswear-Cost_and_Cumulative_use.png")
   
 
+  # Reset bucket and upload (prevents upload from jamming)
+  gcs_global_bucket("threddit-plots") # Plots
+  gcs_upload_set_limit(upload_limit = 100000000L)
   
   ## Category plot - Times used
   for (i in category_order[]){

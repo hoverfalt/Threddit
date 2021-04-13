@@ -31,7 +31,7 @@ plotuse <- transform_data(masterdata) %>% # 1) Transform raw data into tidy data
   calculate_total_use_data() %>% # 3) Calculate total use data, including divested items 
   calculate_plot_data() # 4) Calculate plot data for the standard plots
 
-# Save tidy data data.frame to file for easier retrieval (2021-04-05)
+# Save tidy data data.frame to file for easier retrieval (2021-04-10)
 save(masterdata,file="Data/Threddit-masterdata.Rda")
 save(plotuse,file="Data/Threddit-plotuse.Rda")
 save(daterange,file="Data/Threddit-daterange.Rda")
@@ -80,7 +80,7 @@ daily_cost_anim_plot <- daily_cost_anim %>% filter(day >= daterange[rolling_aver
 # Reduce frames by removing every second day (note: not date!)
 daily_cost_anim_plot_reduced <- daily_cost_anim_plot[daily_cost_anim_plot$day %in% unique(daily_cost_anim_plot$day)[c(TRUE, FALSE)],]
 
-# Set up animation, animate, and save (HEAVY COMPUTING) - Latest: 2020-12-31
+# Set up animation, animate, and save (HEAVY COMPUTING) - Latest: 2021-04-10
 setup_daily_cost_animation(daily_cost_anim_plot_reduced, ymax = 40) %>%
 animate(height = 1000, width = 1000, nframes = length(unique(daily_cost_anim_plot_reduced$day)) + 72, fps = 24, end_pause = 72)
 anim_save("Plots/Portfolio-Daily_cost-animation.gif")
@@ -94,13 +94,13 @@ gcs_upload("Plots/Portfolio-Daily_cost-animation.gif", name="Portfolio-Daily_cos
 # Reduce frames by removing every second date
 usetodate_anim_reduced <- usetodate_anim[usetodate_anim$date %in% unique(usetodate_anim$date)[c(TRUE, FALSE)],] # Reduce frames
 
-# Animation: Average DAILY cost vs category use (HEAVY COMPUTING) - Latest: 2020-12-24
+# Animation: Average DAILY cost vs category use (HEAVY COMPUTING) - Latest: 2021-04-10
 animation <- usetodate_anim_reduced %>% setup_daily_cost_and_category_use_plot(ymax = 15, ybreaks = 2, animate = TRUE)
 animate(animation, height = 1000, width = 1150, nframes = length(unique(usetodate_anim_reduced$date)) + 72, fps = 24, end_pause = 72)
 anim_save("Plots/Portfolio-Daily_cost_and_Category_use-animation.gif")
 gcs_upload("Plots/Portfolio-Daily_cost_and_Category_use-animation.gif", name="Portfolio-Daily_cost_and_Category_use-animation.gif")
 
-# Animation: Average YEARLY cost vs category use (HEAVY COMPUTING) - Latest: 2020-12-24
+# Animation: Average YEARLY cost vs category use (HEAVY COMPUTING) - Latest: 2021-04-10
 animation <- usetodate_anim_reduced %>% setup_yearly_cost_and_category_use_plot(ymax = 1000, ybreaks = 200, animate = TRUE)
 animate(animation, height = 1000, width = 1150, nframes = length(unique(usetodate_anim_reduced$date)) + 72, fps = 24, end_pause = 72)
 anim_save("Plots/Portfolio-Yearly_cost_and_Category_use-animation.gif")
@@ -128,7 +128,7 @@ plot_data_reduced %>% setup_category_plot_image("Knits", xmax = 1.0, ymax = 32, 
 anim_save("Plots/Category-Knits-animation.gif")
 
 # Shirts
-plot_data_reduced %>% setup_category_plot_image("Shirts", xmax = 3, ymax = 70, log_trans=TRUE, animate=TRUE) %>% 
+plot_data_reduced %>% setup_category_plot_image("Shirts", xmax = 3.5, ymax = 70, log_trans=TRUE, animate=TRUE) %>% 
   animate(height = 1000, width = 1000, nframes = length(unique(plot_data_reduced$date)) + 72, fps = 24, end_pause = 72)
 anim_save("Plots/Category-Shirts-animation.gif")
 
@@ -159,7 +159,7 @@ plot_data_reduced %>% setup_category_plot_image("Socks", xmax = 3, ymax = 10, lo
 anim_save("Plots/Category-Socks-animation.gif")
 
 # Shoes
-plot_data_reduced %>% setup_category_plot_image("Shoes", xmax = 9, ymax = 100, log_trans=TRUE, animate=TRUE) %>% 
+plot_data_reduced %>% setup_category_plot_image("Shoes", xmax = 11, ymax = 100, log_trans=TRUE, animate=TRUE) %>% 
   animate(height = 1000, width = 1000, nframes = length(unique(plot_data_reduced$date)) + 72, fps = 24, end_pause = 72)
 anim_save("Plots/Category-Shoes-animation.gif")
 
@@ -215,9 +215,9 @@ for (i in category_order){
   setup_category_times_used_plot(plot_data_reduced, categories = c(i), animate = TRUE) %>%
     animate(height = 1000, width = 1000, nframes = length(unique(plot_data_reduced$date)) + 72, fps = 24, end_pause = 72) # Frames = states + end pause
   anim_save(paste("Plots/Category-", gsub(" ", "_", i), "-Times_used-animation.gif", sep=""))
-  file.copy(paste("Plots/Category-", gsub(" ", "_", i), "-Times_used-animation.gif", sep=""),
-            paste("Website/", paste("Plots/Category-", gsub(" ", "_", i), "-Times_used-animation.gif", sep=""), sep=""),
-            overwrite = TRUE)
+#  file.copy(paste("Plots/Category-", gsub(" ", "_", i), "-Times_used-animation.gif", sep=""),
+#            paste("Website/", paste("Plots/Category-", gsub(" ", "_", i), "-Times_used-animation.gif", sep=""), sep=""),
+#            overwrite = TRUE)
   #file.remove("Plots/Portfolio-Yearly_cost_and_Category_use-animation.gif")
 }
 
@@ -550,7 +550,7 @@ FITBIT_CALLBACK <- "http://localhost:1410/"
 token <- fitbitr::oauth_token()
 
 # Set date of latest data
-date <- "2021-01-11"
+date <- "2021-04-13"
 
 # Get daily step data for entire item data period and remove duplicates
 steps_2021 <- get_activity_time_series(token, "steps", date=date, period="1y")
@@ -643,6 +643,5 @@ shoe_use %>% group_by(item) %>%
 # Build and save plot
 p <- shoe_use %>% filter(date == max(date)) %>% arrange(desc(active), cumsteps) %>% setup_shoes_steps_plot()
 ggsave(filename = "Plots/Category-Shoes-Total_steps.png", p, width = 10, height = 10, dpi = 300, units = "in")
-file.copy("Plots/Category-Shoes-Total_steps.png", "Website/Plots/Category-Shoes-Total_steps.png", overwrite = TRUE)
-file.remove("Plots/Category-Shoes-Total_steps.png")
+save_to_cloud("Category-Shoes-Total_steps.png")
 

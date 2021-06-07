@@ -127,6 +127,8 @@ build_standard_plots <- function(){
     save_to_cloud(paste("Category-", gsub(" ", "_", i), ".png", sep=""))
   }
 
+  # Reset bucket and upload (prevents upload from jamming)
+  gcs_list_buckets(Firebase_project_id)
   
   ## Category plot - Cost per use vs Cumulative use
   
@@ -197,8 +199,7 @@ build_standard_plots <- function(){
   
 
   # Reset bucket and upload (prevents upload from jamming)
-  gcs_global_bucket("threddit-plots") # Plots
-  gcs_upload_set_limit(upload_limit = 100000000L)
+  gcs_list_buckets(Firebase_project_id)
   
   ## Category plot - Times used
   for (i in category_order[]){
@@ -208,7 +209,9 @@ build_standard_plots <- function(){
     save_to_cloud(paste(paste("Category-", gsub(" ", "_", i), "-Times_used.png", sep="")))
   }
 
-    
+  # Reset bucket and upload (prevents upload from jamming)
+  gcs_list_buckets(Firebase_project_id)
+  
   
   ## Category plot: daily cost with rolling average
   
@@ -224,7 +227,7 @@ build_standard_plots <- function(){
   ggsave(filename = "Plots/Category-Blazers_and_vests-Daily_cost.png", p, width = 10, height = 10, dpi = 300, units = "in")
   save_to_cloud("Category-Blazers_and_vests-Daily_cost.png")
   
-  # Knits (BUGS!)
+  # Knits
   daily_cost_category <- calculate_daily_cost(plotuse, rolling_average_window, categories_include = "Knits")
   p <- setup_daily_cost_plot(daily_cost_category, ymax = 20, ybreaks = 2, seasons = TRUE, legend = FALSE)
   ggsave(filename = "Plots/Category-Knits-Daily_cost.png", p, width = 10, height = 10, dpi = 300, units = "in")
@@ -284,6 +287,9 @@ build_standard_plots <- function(){
   ggsave(filename = "Plots/Category-Underwear_boxers-Daily_cost.png", p, width = 10, height = 10, dpi = 300, units = "in")
   save_to_cloud("Category-Underwear_boxers-Daily_cost.png")
 
+  # Reset bucket and upload (prevents upload from jamming)
+  gcs_list_buckets(Firebase_project_id)
+  
   # Sportswear
   # Doesn't make sense
 }

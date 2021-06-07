@@ -31,7 +31,7 @@ plotuse <- transform_data(masterdata) %>% # 1) Transform raw data into tidy data
   calculate_total_use_data() %>% # 3) Calculate total use data, including divested items 
   calculate_plot_data() # 4) Calculate plot data for the standard plots
 
-# Save tidy data data.frame to file for easier retrieval (2021-04-10)
+# Save tidy data data.frame to file for easier retrieval (2021-05-27)
 save(masterdata,file="Data/Threddit-masterdata.Rda")
 save(plotuse,file="Data/Threddit-plotuse.Rda")
 save(daterange,file="Data/Threddit-daterange.Rda")
@@ -550,7 +550,7 @@ FITBIT_CALLBACK <- "http://localhost:1410/"
 token <- fitbitr::oauth_token()
 
 # Set date of latest data
-date <- "2021-04-13"
+date <- "2021-05-23"
 
 # Get daily step data for entire item data period and remove duplicates
 steps_2021 <- get_activity_time_series(token, "steps", date=date, period="1y")
@@ -574,7 +574,7 @@ steps <- steps %>%
   arrange(date)
 # Alt: mutate(date = as.POSIXct(strptime(steps$dateTime, "%Y-%m-%d"))) %>%
 
-# Save steps data.frame to file for easier retrieval (refreshed until 2021-01-11)
+# Save steps data.frame to file for easier retrieval (refreshed until 2021-05-23)
 save(steps,file="Data/Threddit-steps.Rda")
 
 # Load 'steps' variable from file

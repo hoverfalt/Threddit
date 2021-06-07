@@ -13,9 +13,11 @@ I publish my continously updated wardrobe performance on <a href="https://hoverf
 For context and background, please see my blog post <a href="https://www.reaktor.com/blog/why-ive-tracked-every-single-piece-of-clothing-ive-worn-for-three-years/" target="_blank">Why I’ve tracked every single piece of clothing I’ve worn for three years</a>.
 
 ### Tech and data pipeline
-Thie project is built entirely in R. It uses the Google Sheets API to read use data, and the Dropbox API to host plots and animations for publishing.
+Thie project is built entirely in R. It uses the Google Sheets API to read use data, and the Google Firebase API to host plots and animations for publishing.
 
 The data collection UI and data storage is in Google Sheets. Data processing and computing is done locally, wich plots and animations being stored in Dropbox. The final results are published using R Markdown Websties on GitHub Pages, with the static content hosted on Dropbox.
+
+![system architecture](https://firebasestorage.googleapis.com/v0/b/threddit-297417.appspot.com/o/Threddit-system_architecture.png?alt=media)
 
 ### Contribute
 I'm not a professional developer. I built this to be a tool for myself.

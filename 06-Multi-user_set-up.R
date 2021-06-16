@@ -1,3 +1,10 @@
+### Threddit.R - Olof Hoverfält - 2018-2021 - hoverfalt.github.io
+
+# Functions to prepare and plot multi-user data
+
+#################################################################################################
+###################################### SET UP ENRIVONENT ########################################
+#################################################################################################
 
 # Load required packages
 library(plyr)
@@ -56,6 +63,9 @@ firebase_img_path_plots <<- "https://firebasestorage.googleapis.com/v0/b/threddi
 # Set Firebase Threddit project id
 Firebase_project_id <<- "threddit-297417"
 
+# Authenticate  
+gcs_auth("threddit-297417-GCS-access-key.json")
+
 # List Firebase buckets
 gcs_list_buckets(Firebase_project_id)
 
@@ -68,8 +78,9 @@ gcs_upload_set_limit(upload_limit = 100000000L)
 
 
 
-
-
+#################################################################################################
+######################################### READ DATA #############################################
+#################################################################################################
 
 # Read Google Sheets wardrobe and use data
 data_file = get_Google_sheet_ID_Z()
@@ -93,9 +104,29 @@ load("Data/Threddit-Z-user_data.Rda")
 
 
 
-##### PLOTTING #####
-##### PLOTTING #####
-##### PLOTTING #####
+#################################################################################################
+######################################## SET UP PLOTS ###########################################
+#################################################################################################
+
+
+## Average wardrobe size and value by user
+
+plot_data <- raw_data %>%
+  mutate(worn = as.logical(wears)) %>%
+  rowwise() %>%
+  group_by(user) %>%
+  summarise(items = n(), share_worn = sum(worn)/n(), value = sum(price, na.rm = TRUE)) %>%
+  as.data.frame()
+
+total_data <- merge(plot_data, user_data, by = c("user"))
+
+p <- total_data %>% setup_user_distribution_plot(xmax = NA, ymax = NA)
+ggsave(filename = "Plots/Z/Z-Average_wardrobe_size_and_value_by_user.png", p, width = 9, height = 7, dpi = 150, units = "in")
+save_to_cloud_Z("Z-Average_wardrobe_size_and_value_by_user.png")
+
+# Avoid GCS timeout
+gcs_list_buckets(Firebase_project_id)
+
 
 
 
@@ -121,28 +152,11 @@ sum(plot_data$value)
 
 
 
-## Average wardrobe size and value by user
-
-plot_data <- raw_data %>%
-  mutate(worn = as.logical(wears)) %>%
-  rowwise() %>%
-  group_by(user) %>%
-  summarise(items = n(), share_worn = sum(worn)/n(), value = sum(price, na.rm = TRUE)) %>%
-  as.data.frame()
-
-total_data <- merge(plot_data, user_data, by = c("user"))
-
-p <- total_data %>% setup_user_distribution_plot(xmax = NA, ymax = NA)
-ggsave(filename = "Plots/Z/Z-Average_wardrobe_size_and_value_by_user.png", p, width = 9, height = 7, dpi = 150, units = "in")
-save_to_cloud_Z("Z-Average_wardrobe_size_and_value_by_user.png")
-
-
-
 ## Item price distribution by category
 
 p <- raw_data %>% setup_price_distribution_plot(categories = c("Jackets and coats"), xmax = 360, ymax = 40, binwidth = 10)
-ggsave(filename = "Plots/Z/Z-Item_price_distribution_by_category-Jackets _and_coats.png", p, width = 9, height = 7, dpi = 150, units = "in")
-save_to_cloud_Z("Z-Item_price_distribution_by_category-Jackets _and_coats.png")
+ggsave(filename = "Plots/Z/Z-Item_price_distribution_by_category-Jackets_and_coats.png", p, width = 9, height = 7, dpi = 150, units = "in")
+save_to_cloud_Z("Z-Item_price_distribution_by_category-Jackets_and_coats.png")
 
 p <- raw_data %>% setup_price_distribution_plot(categories = c("Blazers and vests"), xmax = 620, ymax = 30, binwidth = 10, x_break = 25)
 ggsave(filename = "Plots/Z/Z-Item_price_distribution_by_category-Blazers_and_vests.png", p, width = 9, height = 7, dpi = 150, units = "in")
@@ -196,12 +210,11 @@ p <- raw_data %>% setup_price_distribution_plot(categories = c("Sportswear"), xm
 ggsave(filename = "Plots/Z/Z-Item_price_distribution_by_category-Sportswear.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Item_price_distribution_by_category-Sportswear.png")
 
-gcs_list_buckets(Firebase_project_id)
-category_order
 
 
 
 ## Number of wardrobe items and share of items worn
+
 plot_data <- raw_data %>%
   mutate(worn = as.logical(wears)) %>%
   group_by(user, category) %>%
@@ -218,43 +231,67 @@ ggsave(filename = "Plots/Z/Z-Wardrobe_items_and_share_worn-Jumpers_and_hoodies-a
 save_to_cloud_Z("Z-Wardrobe_items_and_share_worn-Jumpers_and_hoodies-and-Cardigans_and_knits.png")
 
 p <- plot_data %>% setup_share_worn_plot(categories = c("Shirts and blouses", "T-shirts and tops"))
-p + geom_smooth(method = "lm")
+p <- p + geom_smooth(method = "lm")
+ggsave(filename = "Plots/Z/Z-Wardrobe_items_and_share_worn-Shirts_and_blouses-and-T-shirts_and_tops.png", p, width = 9, height = 7, dpi = 150, units = "in")
+save_to_cloud_Z("Z-Wardrobe_items_and_share_worn-Shirts_and_blouses-and-T-shirts_and_tops.png")
 
 p <- plot_data %>% setup_share_worn_plot(categories = c("Dresses and jumpsuits"))
-p + geom_smooth(method = "lm")
+p <- p + geom_smooth(method = "lm")
+ggsave(filename = "Plots/Z/Z-Wardrobe_items_and_share_worn-Dresses_and_jumpsuits.png", p, width = 9, height = 7, dpi = 150, units = "in")
+save_to_cloud_Z("Z-Wardrobe_items_and_share_worn-Dresses_and_jumpsuits.png")
 
 p <- plot_data %>% setup_share_worn_plot(categories = c("Shorts and skirts", "Trousers and jeans"))
-p + geom_smooth(method = "lm")
+p <- p + geom_smooth(method = "lm")
+ggsave(filename = "Plots/Z/Z-Wardrobe_items_and_share_worn-Shorts_and_skirts-and-Trousers_and_jeans.png", p, width = 9, height = 7, dpi = 150, units = "in")
+save_to_cloud_Z("Z-Wardrobe_items_and_share_worn-Shorts_and_skirts-and-Trousers_and_jeans.png")
 
 p <- plot_data %>% setup_share_worn_plot(categories = c("Shoes and footwear"))
-p + geom_smooth(method = "lm")
+p <- p + geom_smooth(method = "lm")
+ggsave(filename = "Plots/Z/Z-Wardrobe_items_and_share_worn-Shoes_and_footwear.png", p, width = 9, height = 7, dpi = 150, units = "in")
+save_to_cloud_Z("Z-Wardrobe_items_and_share_worn-Shoes_and_footwear.png")
 
 p <- plot_data %>% setup_share_worn_plot(categories = c("Underwear and socks", "Nightwear and homewear"), xmax = 80)
-p + geom_smooth(method = "lm")
+p <- p + geom_smooth(method = "lm")
+ggsave(filename = "Plots/Z/Z-Wardrobe_items_and_share_worn-Underwear_and_socks-and-Nightwear_and_homewear.png", p, width = 9, height = 7, dpi = 150, units = "in")
+save_to_cloud_Z("Z-Wardrobe_items_and_share_worn-Underwear_and_socks-and-Nightwear_and_homewear.png")
 
 p <- plot_data %>% setup_share_worn_plot(categories = c("Accessories"))
-p + geom_smooth(method = "lm")
+p <- p + geom_smooth(method = "lm")
+ggsave(filename = "Plots/Z/Z-Wardrobe_items_and_share_worn-Accessories.png", p, width = 9, height = 7, dpi = 150, units = "in")
+save_to_cloud_Z("Z-Wardrobe_items_and_share_worn-Accessories.png")
 
 p <- plot_data %>% setup_share_worn_plot(categories = c("Sportswear"))
-p + geom_smooth(method = "lm")
-
-category_order
-
-
+p <- p + geom_smooth(method = "lm")
+ggsave(filename = "Plots/Z/Z-Wardrobe_items_and_share_worn-Sportswear.png", p, width = 9, height = 7, dpi = 150, units = "in")
+save_to_cloud_Z("Z-Wardrobe_items_and_share_worn-Sportswear.png")
 
 
+
+
+######################################## DEVELOPMENT WIP ###########################################
+
+
+## Do users wear expensive clothes more often than affordable ones?
+## Purchase price and diary wears 
 
 p <- raw_data %>% filter(wears > 0 & price > 0) %>%
   filter(user == "Sophy") %>%
+#  filter(category == "Shoes and footwear") %>%
   setup_category_plot(categories = category_order)
 p + geom_smooth(method = "lm", se = FALSE)
 
 
 
+raw_data
 
 
 
-## Item price distribution by category
+###################################################################################################
+######################################## PLOT FUNCTIONS ###########################################
+###################################################################################################
+
+
+## Function: Item price distribution by category
 setup_price_distribution_plot <- function(plot_data, categories, xmax = NA, ymax = NA, binwidth = 10, legend = TRUE, x_break = 10) {
   
   # Filter data by category
@@ -271,6 +308,10 @@ setup_price_distribution_plot <- function(plot_data, categories, xmax = NA, ymax
     aes(x = price, fill = category)) +
     annotate("text", x = author_label_x, y = author_label_y, label = author_label, color = "gray", hjust = 1) +
     geom_histogram(binwidth = binwidth) +
+    geom_vline(xintercept = mean(plot_data$price, na.rm=TRUE), color="darkgrey", linetype="dashed") +
+    geom_label(aes(x = mean(plot_data$price, na.rm=TRUE), y = 0, label=paste("Mean\n", round(mean(plot_data$price, na.rm=TRUE), digits = 0))), color =  "darkgrey", fill = "white") +
+    geom_vline(xintercept = median(plot_data$price, na.rm=TRUE), color="darkgrey", linetype="dashed") +
+    geom_label(aes(x = median(plot_data$price, na.rm=TRUE), y = 0, label=paste("Median\n", round(median(plot_data$price, na.rm=TRUE), digits = 0))), color =  "darkgrey", fill = "white") +
     scale_x_continuous(limits=c(0,xmax), breaks = seq(from = 0, to = xmax, by = x_break)) +
     scale_fill_manual(name = "Category", values = category_colors[match(categories, category_order)]) +
     labs(x = "Price", y = "Total number of items by price tier") +
@@ -278,50 +319,13 @@ setup_price_distribution_plot <- function(plot_data, categories, xmax = NA, ymax
  
   if (!legend){ theme(legend.position = "none") }
   
-  
   return(p)
 }
 
 
 
 
-
-## Amount of items and share of items worn during diary study
-setup_share_worn_plot <- function(plot_data, categories, xmax = NA, ymax = 1) {
-  
-  # Filter data by category
-  plot_data <- plot_data %>% filter(category %in% categories)
-  
-  # Set author label coordinates (upper right corner)
-  if(is.na(xmax)) { xmax <- max(plot_data$items) }
-  if(is.na(ymax)) { ymax <- max(plot_data$share_worn) }
-  
-  author_label_x <- xmax
-  author_label_y <- ymax
-  
-  # Set plot_size
-  plot_size <- 0.5
-  
-  # Set up plot
-  p <- ggplot(
-    plot_data, 
-    aes(x = items, y = share_worn, colour = category)) +
-    annotate("text", x = author_label_x, y = author_label_y, label = author_label, color = "gray", hjust = 1) +
-    geom_point(show.legend = TRUE, aes(alpha = plot_size, size = plot_size)) +
-    scale_x_continuous(limits=c(0,xmax), breaks = seq(from = 0, to = xmax, by = 2)) +
-    scale_y_continuous(limits=c(0,ymax), breaks = seq(from = 0, to = ymax, by = 0.1), labels = scales::percent_format(accuracy = 1L)) +
-    scale_color_manual(name = "Category", values = category_colors[match(categories, category_order)]) +
-    scale_alpha(range = c(0.5, 1.0)) +
-    #scale_size(range = c(2, 3)) +
-    guides(alpha = FALSE, size = FALSE) +
-    labs(x = "Amount of items in wardrobe", y = "Share of wardrobe items worn at least once during the diary period") +
-    ggtitle("Number of wardrobe items vs share of items worn (each dot is one user's wardrobe)")
-  
-  return(p)
-}
-
-
-# Amount of items and share of items worn
+## Function: Number of wardrobe items vs share of items worn
 setup_share_worn_plot <- function(plot_data, categories, xmax = NA, ymax = 1) {
   
   # Filter data by category
@@ -358,8 +362,7 @@ setup_share_worn_plot <- function(plot_data, categories, xmax = NA, ymax = 1) {
 
 
 
-
-# Function to setup category point plot y = purchase price, x = times worn
+# Function: to setup category point plot y = purchase price, x = times worn
 setup_category_plot <- function(plot_data, categories, xmax = NA, ymax = NA, ybreaks = plot_log_breaks, log_trans=TRUE, avg_lines=TRUE) {
   
   # Filter data by category
@@ -395,7 +398,7 @@ setup_category_plot <- function(plot_data, categories, xmax = NA, ymax = NA, ybr
 }
 
 
-plot_data
+
 
 # Function: Average item value and number of items by category (across all users)
 setup_category_distribution_plot <- function(plot_data, categories, xmax = NA, ymax = NA) {
@@ -418,6 +421,10 @@ setup_category_distribution_plot <- function(plot_data, categories, xmax = NA, y
     plot_data, 
     aes(x = average_items, y = average_value, colour = category)) +
     annotate("text", x = author_label_x, y = author_label_y, label = author_label, color = "gray", hjust = 1) +
+    geom_vline(xintercept = mean(plot_data$average_items), color="darkgrey", linetype="dashed") +
+    geom_label(aes(x = mean(plot_data$average_items), y = min(plot_data$average_value), label=round(mean(plot_data$average_items), digits = 0)), color =  "darkgrey") +
+    geom_hline(yintercept = mean(plot_data$average_value), color="darkgrey", linetype="dashed") +
+    geom_label(aes(x = 0, y = mean(plot_data$average_value), label=round(mean(plot_data$average_value), digits = 0)), color =  "darkgrey") +
     geom_point(show.legend = TRUE, aes(alpha = plot_size, size = plot_size)) +
     geom_text(aes(label=category), vjust=1.5) +
     scale_x_continuous(limits=c(0,xmax), breaks = seq.int(from = 0, to = xmax, by = 2)) +
@@ -451,8 +458,11 @@ setup_user_distribution_plot <- function(plot_data, xmax = NA, ymax = NA) {
     plot_data, 
     aes(x = items, y = value, colour = gender)) +
     annotate("text", x = author_label_x, y = author_label_y, label = author_label, color = "gray", hjust = 1) +
+    geom_vline(xintercept = mean(plot_data$items), color="darkgrey", linetype="dashed") +
+    geom_label(aes(x = mean(plot_data$items), y = 0, label=round(mean(plot_data$items), digits = 0)), color =  "darkgrey") +
+    geom_hline(yintercept = mean(plot_data$value), color="darkgrey", linetype="dashed") +
+    geom_label(aes(x = 0, y = mean(plot_data$value), label=round(mean(plot_data$value), digits = 0)), color =  "darkgrey") +
     geom_point(show.legend = TRUE, aes(alpha = plot_size, size = plot_size)) +
-    #geom_text(aes(label=category), vjust=1.5) +
     scale_x_continuous(limits=c(0,xmax), breaks = seq.int(from = 0, to = xmax, by = 20)) +
     scale_y_continuous(limits=c(0,ymax), breaks = seq.int(from = 0, to = ymax, by = 500), labels=scales::dollar_format(suffix = "€", prefix = "")) +
     #scale_color_manual(name = "Category", values = category_colors[match(categories, category_order)]) +
@@ -464,8 +474,6 @@ setup_user_distribution_plot <- function(plot_data, xmax = NA, ymax = NA) {
   
   return(p)
 }
-
-
 
 
 

@@ -76,6 +76,24 @@ save_to_cloud <- function(file_name) {
   #gcs_upload("Plots/Portfolio-Inventory-Item_count.png", name="Portfolio-Inventory-Item_count.png")
 }
 
+# Function to upload plot file to Google Cloud Storage
+save_to_cloud_Z <- function(file_name) {
+  
+  md5_local <- openssl::base64_encode(digest(paste("Plots/Z/", file_name, sep=""), file=TRUE, algo="md5", serialize=FALSE, raw=TRUE))
+  md5_cloud <- httr::GET(paste(firebase_img_path_plots, file_name, sep="")) %>% content() %>% { .[["md5Hash"]][1] }
+  if (!identical(md5_cloud, md5_local)) {
+    gcs_upload(paste("Plots/Z/", file_name, sep=""), name=file_name)
+    print(paste(file_name, "uploaded"))
+  } else {
+    print(paste(file_name, "not uploaded, identical file exists"))
+  }
+  
+  #openssl::base64_encode(digest("Plots/Portfolio-Inventory-Item_count.png", file=TRUE, algo="md5", serialize=FALSE, raw=TRUE))
+  #httr::GET("https://firebasestorage.googleapis.com/v0/b/threddit-plots/o/Portfolio-Inventory-Item_count.png") %>% content() %>% { .[["md5Hash"]][1] }
+  #gcs_upload("Plots/Portfolio-Inventory-Item_count.png", name="Portfolio-Inventory-Item_count.png")
+}
+
+
 
 # Script function to build all standard plots
 build_standard_plots <- function(){

@@ -99,6 +99,9 @@ set_up_environment <- function(){
   
   # Set Firebase Threddit project id
   Firebase_project_id <<- "threddit-297417"
+
+  # Authenticate  
+  gcs_auth("threddit-297417-GCS-access-key.json")
   
   # List Firebase buckets
   gcs_list_buckets(Firebase_project_id)

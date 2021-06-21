@@ -90,7 +90,7 @@ colnames(raw_data) <- c("user", "category", "item", "wears", "cpw", "price", "da
 raw_data <- raw_data %>% mutate_at(c("wears"), ~replace(., is.na(.), 0))
 raw_data$category <- factor(raw_data$category, levels = category_order)
 
-# Save raw_data data.frame to file for easier retrieval (2021-06-14)
+# Save raw_data data.frame to file for easier retrieval (2021-06-21)
 save(masterdata,file="Data/Threddit-Z-raw_data.Rda")
 # Load data from file
 load("Data/Threddit-Z-raw_data.Rda")
@@ -99,7 +99,7 @@ load("Data/Threddit-Z-raw_data.Rda")
 data_file = get_Google_sheet_ID_Z2()
 user_data <- read_sheet(data_file, sheet='User profiles')
 user_data <- user_data %>% as.data.frame()
-save(masterdata,file="Data/Threddit-Z-user_data.Rda")
+save(user_data,file="Data/Threddit-Z-user_data.Rda")
 load("Data/Threddit-Z-user_data.Rda")
 
 
@@ -282,6 +282,17 @@ p + geom_smooth(method = "lm", se = FALSE)
 
 
 
+# Show one user's dot
+p <- total_data %>% mutate(you = ifelse(user == "Kirsten", "You", "Others")) %>%
+  setup_user_distribution_plot(xmax = NA, ymax = NA)
+
+# Show question 4
+p <- total_data %>% mutate(q4 = `I have a good idea of how many times I have used my clothes before they wear out or are resold or recycled.`) %>%
+  setup_user_distribution_plot(xmax = NA, ymax = NA)
+
+
+
+
 raw_data
 
 
@@ -439,7 +450,6 @@ setup_category_distribution_plot <- function(plot_data, categories, xmax = NA, y
   return(p)
 }
 
-
 # Function: Wardrobe size and value by user (all categories)
 setup_user_distribution_plot <- function(plot_data, xmax = NA, ymax = NA) {
   
@@ -461,7 +471,7 @@ setup_user_distribution_plot <- function(plot_data, xmax = NA, ymax = NA) {
     geom_vline(xintercept = mean(plot_data$items), color="darkgrey", linetype="dashed") +
     geom_label(aes(x = mean(plot_data$items), y = 0, label=round(mean(plot_data$items), digits = 0)), color =  "darkgrey") +
     geom_hline(yintercept = mean(plot_data$value), color="darkgrey", linetype="dashed") +
-    geom_label(aes(x = 0, y = mean(plot_data$value), label=round(mean(plot_data$value), digits = 0)), color =  "darkgrey") +
+    geom_label(aes(x = 0, y = mean(plot_data$value), label = paste(round(mean(plot_data$value), digits = 0), "€")), color =  "darkgrey") +
     geom_point(show.legend = TRUE, aes(alpha = plot_size, size = plot_size)) +
     scale_x_continuous(limits=c(0,xmax), breaks = seq.int(from = 0, to = xmax, by = 20)) +
     scale_y_continuous(limits=c(0,ymax), breaks = seq.int(from = 0, to = ymax, by = 500), labels=scales::dollar_format(suffix = "€", prefix = "")) +

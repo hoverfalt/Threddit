@@ -99,7 +99,7 @@ raw_data$reason_not_repaired <- factor(raw_data$reason_not_repaired, levels = un
 raw_data$repair_willing_to_pay <- factor(raw_data$repair_willing_to_pay, levels = unique(raw_data$repair_willing_to_pay))
 raw_data$special_care_kind <- factor(raw_data$special_care_kind, levels = unique(raw_data$special_care_kind))
 
-# Save raw_data data.frame to file for easier retrieval (2021-07-01)
+# Save raw_data data.frame to file for easier retrieval (2021-07-09)
 save(raw_data, file="Data/Threddit-Z-raw_data.Rda")
 # Load data from file
 load("Data/Threddit-Z-raw_data.Rda")
@@ -164,6 +164,11 @@ gcs_list_buckets(Firebase_project_id)
 
 
 ## Item price distribution by category
+
+# Item price distribution 
+p <- raw_data %>% setup_price_distribution_plot(categories = category_order, xmax = 200, ymax = 600, binwidth = 10, x_break = 20, repel_gap = 5)
+ggsave(filename = "Plots/Z/Z-Item_price_distribution.png", p, width = 9, height = 7, dpi = 150, units = "in")
+save_to_cloud_Z("Z-Item_price_distribution.png")
 
 p <- raw_data %>% setup_price_distribution_plot(categories = c("Jackets and coats"), xmax = 360, ymax = 40, binwidth = 10, x_break = 20, repel_gap = 5)
 ggsave(filename = "Plots/Z/Z-Item_price_distribution_by_category-Jackets_and_coats.png", p, width = 9, height = 7, dpi = 150, units = "in")
@@ -434,11 +439,14 @@ raw_data %>% select(user, category, item, wears, total_wears, months_available) 
 ######################################## PLOT FUNCTIONS ###########################################
 ###################################################################################################
 
+
 ## Function: Item price distribution by category
 setup_price_distribution_plot <- function(plot_data, categories, xmax = NA, ymax = NA, binwidth = 10, legend = TRUE, x_break = 10, repel_gap = 0) {
   
   # Filter data by category
-  plot_data <- plot_data %>% filter(category %in% categories)
+  if (!is.na(categories)) {
+    plot_data <- plot_data %>% filter(category %in% categories)
+  } 
   
   # Set author label coordinates (upper right corner)
   if(is.na(xmax)) { xmax <- max(plot_data$price) }

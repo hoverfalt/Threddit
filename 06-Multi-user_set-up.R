@@ -397,7 +397,6 @@ raw_data %>% filter(!is.na(item) & needs_repair > 0) %>%
 
 str(raw_data)
 
-str(raw_data)
 
 
 ### Months available
@@ -424,6 +423,16 @@ raw_data %>% select(category, item, months_available, wears_real = wears, wears_
   mutate(WPM_est = round(wears_est / months_available, digits = 1), WPM_real = round(wears_real / 1.25, digits = 1)) %>%
   arrange(desc(WPM_est)) %>%
   head(20)
+
+# List wears_per_month for specific user and category
+raw_data %>% select(user, category, item, months_available, wears_real = wears, wears_est = total_wears) %>%
+  filter(months_available > 0) %>%
+  filter(category == "Shoes and footwear", user == "Quirine") %>%
+  mutate(WPM_est = round(wears_est / months_available, digits = 1), WPM_real = round(wears_real / 1.25, digits = 1)) %>%
+  arrange(desc(WPM_est)) %>%
+  head(20)
+
+
 
 "T-shirts and tops"
 category_order
@@ -625,4 +634,69 @@ setup_user_distribution_plot <- function(plot_data, xmax = NA, ymax = NA) {
 }
 
 
+
+
+
+# Summarise wears_per_month by user and category
+WPM_max = 30.5
+WPM_delta <-
+  raw_data %>% select(user, category, item, months_available, wears_real = wears, wears_est = total_wears) %>%
+  filter(months_available > 0) %>%
+  mutate(WPM_est = round(wears_est / months_available, digits = 1), WPM_real = round(wears_real / 1.25, digits = 1)) %>%
+  # filter(!(category %in% c("Underwear and socks", "Nightwear and homewear", "Accessories", "Sportswear", "Other"))) %>%
+  #  filter(category %in% c("Shoes and footwear")) %>%
+  group_by(user, category) %>%
+  summarise(est = sum(WPM_est), real = sum(WPM_real)) %>%
+  mutate(delta_to_real = round((est - real)/real, digits = 2), delta_to_max = round((est - WPM_max)/WPM_max, digits = 2)) %>%
+  arrange(desc(delta_to_max)) %>%
+  as.data.frame()
+
+# Clear infinite values resulting from zero real uses
+WPM_delta$delta_to_real[is.infinite(WPM_delta$delta_to_real)] <- NA
+
+
+
+p <- WPM_delta %>% 
+  filter(!(category %in% c("Underwear and socks", "Nightwear and homewear", "Accessories", "Sportswear", "Other"))) %>%
+#  filter(category == "Trousers and jeans") %>%
+  filter(user == "Lies") %>%
+  setup_WPM_delta_plot_categories(xmax = NA)
+p
+
+# Function: WPM delta by category
+setup_WPM_delta_plot_categories <- function(plot_data,  xmax = NA, ymax = NA, legend = TRUE) {
+  
+  # Set author label coordinates (upper right corner)
+  if(is.na(xmax)) { xmax <- max(plot_data$delta_to_real, na.rm = TRUE) }
+  if(is.na(ymax)) { ymax <- max(plot_data$delta_to_max, na.rm = TRUE) }
+  
+  author_label_x <- xmax
+  author_label_y <- ymax
+  
+  # Set plot_size
+  plot_size <- 0.5
+  
+  # Set up plot
+  p <- ggplot(
+    plot_data, 
+    aes(x = delta_to_real, y = delta_to_max, colour = category)) +
+    annotate("text", x = author_label_x, y = author_label_y, label = author_label, color = "gray", hjust = 1) +
+    geom_point(show.legend = TRUE, aes(alpha = plot_size, size = plot_size)) +
+    geom_vline(xintercept = mean(plot_data$delta_to_real, na.rm = TRUE), color="darkgrey", linetype="dashed") +
+    geom_label(aes(x = mean(plot_data$delta_to_real, na.rm = TRUE), y = -1, label=paste("Mean", round(mean(plot_data$delta_to_real, na.rm = TRUE), digits = 1))), color =  "darkgrey") +
+    geom_hline(yintercept = mean(plot_data$delta_to_max, na.rm = TRUE), color="darkgrey", linetype="dashed") +
+    geom_label(aes(x = 0, y = mean(plot_data$delta_to_max, na.rm = TRUE), label = paste("Mean", round(mean(plot_data$delta_to_max, na.rm = TRUE), digits = 1))), color =  "darkgrey") +
+    scale_x_continuous(limits=c(-1,xmax)) +
+    scale_y_continuous(limits=c(-1,ymax)) +
+    scale_color_manual(name = "Category", values = category_colors[match(unique(plot_data$category), category_order)]) +
+    scale_alpha(range = c(0.5, 1.0)) +
+    scale_size(range = c(2, 3)) +
+    guides(alpha = FALSE, size = FALSE) +
+    labs(x = "Delta to real use during diary period", y = "Delta to sensible max (item used every day of the month)") +
+    ggtitle("Times worn - User-estimated delta to max (y) and to real (x)")
+  
+  if (!legend){ theme(legend.position = "none") }
+  
+  return(p)
+}
 

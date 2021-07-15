@@ -310,6 +310,9 @@ save_to_cloud_Z("Z-Wardrobe_items_and_share_worn-Sportswear.png")
 
 
 ######################################## DEVELOPMENT WIP ###########################################
+######################################## DEVELOPMENT WIP ###########################################
+######################################## DEVELOPMENT WIP ###########################################
+######################################## DEVELOPMENT WIP ###########################################
 
 
 ## Do users wear expensive clothes more often than affordable ones?
@@ -434,14 +437,48 @@ raw_data %>% select(user, category, item, months_available, wears_real = wears, 
 
 
 
-"T-shirts and tops"
-category_order
-
 # List top wears_per_month during diary period
 raw_data %>% select(user, category, item, wears, total_wears, months_available) %>%
   filter(months_available > 0) %>%
   mutate(wears_per_month = wears / 1.25) %>% # 5 weeks diary period = 1.25 months
   arrange(desc(wears_per_month))
+
+
+## Summarise wears_per_month by user and category
+
+# Set max WPM to every day (avg 30.5 days per month)
+WPM_max = 30.5
+
+# Calculate deltas
+WPM_delta <-
+  raw_data %>% select(user, category, item, months_available, wears_real = wears, wears_est = total_wears) %>%
+  filter(months_available > 0) %>%
+  mutate(WPM_est = round(wears_est / months_available, digits = 1), WPM_real = round(wears_real / 1.25, digits = 1)) %>%
+  group_by(user, category) %>%
+  summarise(est = sum(WPM_est), real = sum(WPM_real)) %>%
+  mutate(delta_to_real = round(est/real, digits = 2), delta_to_max = round(est/WPM_max, digits = 2)) %>%
+  arrange(desc(delta_to_max)) %>%
+  as.data.frame()
+
+# Clear infinite values resulting from zero real uses
+WPM_delta$delta_to_real[is.infinite(WPM_delta$delta_to_real)] <- NA
+
+
+# Show top users or categories
+WPM_delta %>% 
+  filter(!(category %in% c("Underwear and socks", "Nightwear and homewear", "Accessories", "Sportswear", "Other"))) %>%
+  filter(category %in% category_order[8:9]) %>%
+  arrange(desc(real)) %>%
+  head(15)
+
+
+# Plot WPM
+p <- WPM_delta %>% 
+  filter(!(category %in% c("Underwear and socks", "Nightwear and homewear", "Accessories", "Sportswear", "Other"))) %>%
+  filter(category %in% category_order[8:9]) %>%
+  setup_WPM_delta_plot_categories(xmax = 10, wpm_max = 1.0)
+p
+
 
 
 ###################################################################################################
@@ -634,47 +671,8 @@ setup_user_distribution_plot <- function(plot_data, xmax = NA, ymax = NA) {
 }
 
 
-
-###  DEVELOPMENT ###
-
-
-# Summarise wears_per_month by user and category
-WPM_max = 30.5
-WPM_delta <-
-  raw_data %>% select(user, category, item, months_available, wears_real = wears, wears_est = total_wears) %>%
-  filter(months_available > 0) %>%
-  mutate(WPM_est = round(wears_est / months_available, digits = 1), WPM_real = round(wears_real / 1.25, digits = 1)) %>%
-  # filter(!(category %in% c("Underwear and socks", "Nightwear and homewear", "Accessories", "Sportswear", "Other"))) %>%
-  #  filter(category %in% c("Shoes and footwear")) %>%
-  group_by(user, category) %>%
-  summarise(est = sum(WPM_est), real = sum(WPM_real)) %>%
-  mutate(delta_to_real = round(est/real, digits = 2), delta_to_max = round(est/WPM_max, digits = 2)) %>%
-  arrange(desc(delta_to_max)) %>%
-  as.data.frame()
-
-# Clear infinite values resulting from zero real uses
-WPM_delta$delta_to_real[is.infinite(WPM_delta$delta_to_real)] <- NA
-
-# Show top users or categories
-WPM_delta %>% 
-  filter(!(category %in% c("Underwear and socks", "Nightwear and homewear", "Accessories", "Sportswear", "Other"))) %>%
-  filter(category %in% c("Trousers and jeans")) %>%
-  #  filter(user %in% c("Judith")) %>%
-  arrange(desc(real)) %>%
-  head(20)
-
-
-# Plot WPM
-p <- WPM_delta %>% 
-  filter(!(category %in% c("Underwear and socks", "Nightwear and homewear", "Accessories", "Sportswear", "Other"))) %>%
-  #  filter(category %in% c("Trousers and jeans", "Dresses and jumpsuits")) %>%
-  filter(category %in% c("Shoes and footwear")) %>%
-  #  filter(user == "Lies") %>%
-  setup_WPM_delta_plot_categories(xmax = NA, wpm_max = 1.8)
-p
-
 # Function: WPM delta by category
-setup_WPM_delta_plot_categories <- function(plot_data,  xmax = NA, ymax = NA, legend = TRUE, overlays = TRUE, wpm_max = 1) {
+setup_WPM_delta_plot_categories <- function(plot_data,  xmax = NA, ymax = NA, legend = TRUE, overlays = TRUE, wpm_max = 1.0) {
   
   # Set author label coordinates (upper right corner)
   if(is.na(xmax)) { xmax <- max(plot_data$delta_to_real, na.rm = TRUE) }
@@ -694,18 +692,25 @@ setup_WPM_delta_plot_categories <- function(plot_data,  xmax = NA, ymax = NA, le
   # Add WPM max overlay
   if (overlays) {
     p <- p +
-      annotate("rect", xmin = 0, xmax = xmax, ymin = wpm_max, ymax = ymax, alpha = 0.1, fill = "red", size = 0)
+      annotate("rect", xmin = 1, xmax = xmax, ymin = wpm_max, ymax = ymax, alpha = 0.1, fill = "red", size = 0)
   }
   
   p <- p +
     annotate("text", x = author_label_x, y = author_label_y, label = author_label, color = "gray", hjust = 1) +
     geom_point(show.legend = TRUE, aes(alpha = plot_size, size = plot_size)) +
+    # 1x lines
+    geom_vline(xintercept = 1, color="darkgrey") +
+    #geom_label(aes(x = 1, y = ymax, label="1x"), color =  "darkgrey") +
+    geom_hline(yintercept = 1, color="darkgrey") +
+    #geom_label(aes(x = xmax*0.93, y = 1, label = "1x"), color =  "darkgrey") +
+    # Mean lines
     geom_vline(xintercept = mean(plot_data$delta_to_real, na.rm = TRUE), color="darkgrey", linetype="dashed") +
     geom_label(aes(x = mean(plot_data$delta_to_real, na.rm = TRUE), y = ymax, label=paste("Mean", round(mean(plot_data$delta_to_real, na.rm = TRUE), digits = 1))), color =  "darkgrey") +
     geom_hline(yintercept = mean(plot_data$delta_to_max, na.rm = TRUE), color="darkgrey", linetype="dashed") +
     geom_label(aes(x = xmax*0.93, y = mean(plot_data$delta_to_max, na.rm = TRUE), label = paste("Mean", round(mean(plot_data$delta_to_max, na.rm = TRUE), digits = 1))), color =  "darkgrey") +
-    scale_x_continuous(limits=c(0,xmax), breaks = seq.int(from = 0, to = xmax+1, by = 1), labels = multiplier_format) +
-    scale_y_continuous(limits=c(0,ymax), labels = multiplier_format) +
+    # Scales
+    scale_x_continuous(limits=c(0,xmax), breaks = seq.int(from = 0, to = xmax+1, by = 1), labels = multiplier_format_x) +
+    scale_y_continuous(limits=c(0,ymax), breaks = seq.int(from = 0, to = round_any(ymax, 0.5, ceiling), by = 0.5), labels = multiplier_format_y) +
     scale_color_manual(name = "Category", values = category_colors[match(unique(plot_data$category), category_order)]) +
     scale_alpha(range = c(0.5, 1.0)) +
     scale_size(range = c(2, 3)) +
@@ -718,9 +723,17 @@ setup_WPM_delta_plot_categories <- function(plot_data,  xmax = NA, ymax = NA, le
   return(p)
 }
 
-# Function for multiplier axis number formatting in plot (e.g. "5x") 
-multiplier_format <- function (x) {
+# Functions for multiplier axis number formatting in plot (e.g. "5x") 
+
+multiplier_format_x <- function (x) {
   number_format(accuracy = 1,
+                scale = 1,
+                suffix = "x",
+                big.mark = ",")(x)
+}
+
+multiplier_format_y <- function (x) {
+  number_format(accuracy = 0.1,
                 scale = 1,
                 suffix = "x",
                 big.mark = ",")(x)

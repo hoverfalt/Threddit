@@ -11,6 +11,7 @@ library(plyr)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
+library(gplots)
 library(plotly)
 library(transformr)
 library(roll)
@@ -478,6 +479,82 @@ p <- WPM_delta %>%
   filter(category %in% category_order[8:9]) %>%
   setup_WPM_delta_plot_categories(xmax = 10, wpm_max = 1.0)
 p
+
+
+
+
+
+### Heatmaps
+
+# Remove unfit categories and users with incomplete data
+WPM_delta_hm <- WPM_delta %>%
+  filter(!(category %in% c("Underwear and socks", "Nightwear and homewear", "Accessories", "Sportswear", "Other"))) %>%
+  filter(!user == "Melanie")
+  
+
+## Heatmap of WPM delta to max by user and category
+
+# Setup heatmap breaks and color scales
+breaks = seq(0, max(WPM_delta_hm$delta_to_max, na.rm = TRUE), length.out=100)
+gradient1 = colorpanel( sum( breaks[-1]<=1 ), "green", "white" )
+gradient2 = colorpanel( sum( breaks[-1]>1 & breaks[-1]<=1.2 ), "white", "yellow" )
+gradient3 = colorpanel( sum( breaks[-1]>1.2 & breaks[-1]<=2 ), "yellow", "red" )
+gradient4 = colorpanel( sum( breaks[-1]>2), "red", "darkred" )
+hm.colors = c(gradient1, gradient2, gradient3, gradient4)
+
+# Build heatmap
+WPM_delta_hm %>% 
+  select(user, category, delta_to_max) %>%
+  spread("category", delta_to_max) %>%
+  tibble::column_to_rownames(var = "user") %>%
+  data.matrix(rownames.force = TRUE) %>%
+  heatmap.2(scale = "none", trace = "none", density.info = "none",
+            breaks = breaks, col = hm.colors,
+            srtCol = 30, cexRow = 0.9, cexCol = 0.9, keysize = 1)
+
+
+## Heatmap of WPM delta to real by user and category
+
+# Setup heatmap breaks and color scales
+breaks = seq(0, max(WPM_delta_hm$delta_to_real, na.rm = TRUE), length.out=100)
+gradient1 = colorpanel( sum( breaks[-1]<=1 ), "green", "white" )
+gradient2 = colorpanel( sum( breaks[-1]>1 & breaks[-1]<=2 ), "white", "yellow" )
+gradient3 = colorpanel( sum( breaks[-1]>2 & breaks[-1]<=15 ), "yellow", "red" )
+gradient4 = colorpanel( sum( breaks[-1]>15), "red", "darkred" )
+hm.colors = c(gradient1, gradient2, gradient3, gradient4)
+
+# Build heatmap
+WPM_delta_hm %>% 
+  select(user, category, delta_to_real) %>%
+  spread("category", delta_to_real) %>%
+  tibble::column_to_rownames(var = "user") %>%
+  data.matrix(rownames.force = TRUE) %>%
+  heatmap.2(scale = "none", trace = "none", density.info = "none",
+            breaks = breaks, col = hm.colors,
+            srtCol = 30, cexRow = 0.9, cexCol = 0.9, keysize = 1)
+
+
+
+## Heatmap of WPM real by user and category
+
+# Setup heatmap breaks and color scales
+breaks = seq(0, max(WPM_delta_hm$real, na.rm = TRUE), length.out=100)
+gradient1 = colorpanel( sum( breaks[-1]<=15 ), "green", "white" )
+gradient2 = colorpanel( sum( breaks[-1]>15 & breaks[-1]<=30.5 ), "white", "yellow" )
+gradient3 = colorpanel( sum( breaks[-1]>30.5 & breaks[-1]<=61 ), "yellow", "red" )
+gradient4 = colorpanel( sum( breaks[-1]>61), "red", "darkred" )
+hm.colors = c(gradient1, gradient2, gradient3, gradient4)
+
+# Build heatmap
+WPM_delta_hm %>% 
+  select(user, category, real) %>%
+  spread("category", real) %>%
+  tibble::column_to_rownames(var = "user") %>%
+  data.matrix(rownames.force = TRUE) %>%
+  heatmap.2(scale = "none", trace = "none", density.info = "none",
+            breaks = breaks, col = hm.colors,
+            srtCol = 30, cexRow = 0.9, cexCol = 0.9, keysize = 1)
+
 
 
 

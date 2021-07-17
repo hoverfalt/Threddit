@@ -510,7 +510,10 @@ WPM_delta_hm %>%
   data.matrix(rownames.force = TRUE) %>%
   heatmap.2(scale = "none", trace = "none", density.info = "none",
             breaks = breaks, col = hm.colors,
-            srtCol = 30, cexRow = 0.9, cexCol = 0.9, keysize = 1)
+            srtCol = 30, cexRow = 0.9, cexCol = 0.9, keysize = 1,
+            main = "User-estimated WPM compared to max (1x)",
+            key.title = FALSE, key.xlab = "Multiplier of max")
+
 
 
 ## Heatmap of WPM delta to real by user and category
@@ -531,7 +534,9 @@ WPM_delta_hm %>%
   data.matrix(rownames.force = TRUE) %>%
   heatmap.2(scale = "none", trace = "none", density.info = "none",
             breaks = breaks, col = hm.colors,
-            srtCol = 30, cexRow = 0.9, cexCol = 0.9, keysize = 1)
+            srtCol = 30, cexRow = 0.9, cexCol = 0.9, keysize = 1,
+            main = "User-estimated WPM compared to real (1x)",
+            key.title = FALSE, key.xlab = "Multiplier of real")
 
 
 
@@ -553,7 +558,22 @@ WPM_delta_hm %>%
   data.matrix(rownames.force = TRUE) %>%
   heatmap.2(scale = "none", trace = "none", density.info = "none",
             breaks = breaks, col = hm.colors,
-            srtCol = 30, cexRow = 0.9, cexCol = 0.9, keysize = 1)
+            srtCol = 30, cexRow = 0.9, cexCol = 0.9, keysize = 1,
+            main = "Real WPM during diary period",
+            key.title = FALSE, key.xlab = "Category WPM")
+
+
+# Real WPM with color scaling
+WPM_delta_hm %>% 
+  select(user, category, real) %>%
+  spread("category", real) %>%
+  tibble::column_to_rownames(var = "user") %>%
+  data.matrix(rownames.force = TRUE) %>%
+  heatmap.2(scale = "row", trace = "none", density.info = "none",
+            srtCol = 30, cexRow = 0.9, cexCol = 0.9, keysize = 1,
+            main = "Real WPM during diary period",
+            key.title = FALSE, key.xlab = "Category WPM")
+
 
 
 

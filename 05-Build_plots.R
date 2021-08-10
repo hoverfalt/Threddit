@@ -181,7 +181,7 @@ build_standard_plots <- function(){
   save_to_cloud("Category-Pants-Cost_and_Cumulative_use.png")
   
   # Shorts
-  p <- plot_data %>% setup_category_cumulative_plot_image("Shorts", xmax = 160, ymax = 100, log_trans=TRUE, trails=TRUE, guides=TRUE)
+  p <- plot_data %>% setup_category_cumulative_plot_image("Shorts", xmax = 180, ymax = 100, log_trans=TRUE, trails=TRUE, guides=TRUE)
   ggsave(filename = "Plots/Category-Shorts-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in")
   save_to_cloud("Category-Shorts-Cost_and_Cumulative_use.png")
   

@@ -107,8 +107,8 @@ load("Data/Threddit-Z-raw_data.Rda")
 
 # Read Google Sheets user data
 data_file = get_Google_sheet_ID_Z2()
-user_data <- read_sheet(data_file, sheet='User profiles')
-user_data <- user_data %>% as.data.frame()
+user_data <- read_sheet(data_file, sheet='User profiles - Outset')
+user_data <- user_data %>% as.data.frame() %>% filter(!is.na(User))
 save(user_data,file="Data/Threddit-Z-user_data.Rda")
 load("Data/Threddit-Z-user_data.Rda")
 
@@ -476,9 +476,11 @@ WPM_delta %>%
 # Plot WPM
 p <- WPM_delta %>% 
   filter(!(category %in% c("Underwear and socks", "Nightwear and homewear", "Accessories", "Sportswear", "Other"))) %>%
-  filter(category %in% category_order[8:9]) %>%
+  filter(category %in% category_order[9]) %>%
   setup_WPM_delta_plot_categories(xmax = 10, wpm_max = 1.0)
 p
+ggsave(filename = "Plots/Z/WPM-Estimate_vs_max_and_real-example.png", p, width = 9, height = 7, dpi = 150, units = "in")
+save_to_cloud_Z("WPM-Estimate_vs_max_and_real-example.png")
 
 
 

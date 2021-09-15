@@ -100,7 +100,7 @@ raw_data$reason_not_repaired <- factor(raw_data$reason_not_repaired, levels = un
 raw_data$repair_willing_to_pay <- factor(raw_data$repair_willing_to_pay, levels = unique(raw_data$repair_willing_to_pay))
 raw_data$special_care_kind <- factor(raw_data$special_care_kind, levels = unique(raw_data$special_care_kind))
 
-# Save raw_data data.frame to file for easier retrieval (2021-07-09)
+# Save raw_data data.frame to file for easier retrieval (2021-09-15)
 save(raw_data, file="Data/Threddit-Z-raw_data.Rda")
 # Load data from file
 load("Data/Threddit-Z-raw_data.Rda")
@@ -109,6 +109,7 @@ load("Data/Threddit-Z-raw_data.Rda")
 data_file = get_Google_sheet_ID_Z2()
 user_data <- read_sheet(data_file, sheet='User profiles - Outset')
 user_data <- user_data %>% as.data.frame() %>% filter(!is.na(User))
+#names(user_data)[names(user_data) == 'User'] <- 'user'
 save(user_data,file="Data/Threddit-Z-user_data.Rda")
 load("Data/Threddit-Z-user_data.Rda")
 
@@ -130,7 +131,7 @@ plot_data <- raw_data %>%
 
 total_data <- merge(plot_data, user_data, by = c("user"))
 
-p <- total_data %>% setup_user_distribution_plot(xmax = 400, ymax = 14000)
+p <- total_data %>% setup_user_distribution_plot(xmax = 400, ymax = 15000)
 ggsave(filename = "Plots/Z/Z-Average_wardrobe_size_and_value_by_user.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Average_wardrobe_size_and_value_by_user.png")
 
@@ -154,7 +155,7 @@ plot_data <- raw_data %>%
   summarise(items = n(), share_worn = sum(worn)/n(), value = sum(price, na.rm = TRUE)) %>%
   mutate(average_items = items/length(unique(raw_data$user)), average_value = value / items)
 
-p <- plot_data %>% setup_category_distribution_plot(categories = category_order, xmax = 31, ymax = 80)
+p <- plot_data %>% setup_category_distribution_plot(categories = category_order, xmax = 32, ymax = 80)
 ggsave(filename = "Plots/Z/Z-Average_wardrobe_size_and_value_by_category.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Average_wardrobe_size_and_value_by_category.png")
 
@@ -167,7 +168,7 @@ gcs_list_buckets(Firebase_project_id)
 ## Item price distribution by category
 
 # Item price distribution 
-p <- raw_data %>% setup_price_distribution_plot(categories = category_order, xmax = 200, ymax = 600, binwidth = 10, x_break = 20, repel_gap = 5)
+p <- raw_data %>% setup_price_distribution_plot(categories = category_order, xmax = 200, ymax = 1200, binwidth = 10, x_break = 20, repel_gap = 5)
 ggsave(filename = "Plots/Z/Z-Item_price_distribution.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Item_price_distribution.png")
 
@@ -584,17 +585,19 @@ WPM_delta_hm %>%
 ######################################## PLOT FUNCTIONS ###########################################
 ###################################################################################################
 
-
 ## Function: Item price distribution by category
 setup_price_distribution_plot <- function(plot_data, categories, xmax = NA, ymax = NA, binwidth = 10, legend = TRUE, x_break = 10, repel_gap = 0) {
   
   # Filter data by category
-  if (!is.na(categories)) {
-    plot_data <- plot_data %>% filter(category %in% categories)
-  } 
+  if(!is.na(categories)) {
+    plot_data <- plot_data %>% filter(category %in% categories)  
+  }
   
+  # Remove items with no price data
+  plot_data <- plot_data %>% filter(!is.na(price))
+    
   # Set author label coordinates (upper right corner)
-  if(is.na(xmax)) { xmax <- max(plot_data$price) }
+  if(is.na(xmax)) { xmax <- max(plot_data$price, na.rm = TRUE) }
 #  if(is.na(ymax)) { ymax <- max(plot_data$average_value) }
   author_label_x <- xmax
   author_label_y <- ymax
@@ -716,10 +719,10 @@ setup_category_distribution_plot <- function(plot_data, categories, xmax = NA, y
     plot_data, 
     aes(x = average_items, y = average_value, colour = category)) +
     annotate("text", x = author_label_x, y = author_label_y, label = author_label, color = "gray", hjust = 1) +
-    geom_vline(xintercept = mean(plot_data$average_items), color="darkgrey", linetype="dashed") +
-    geom_label(aes(x = mean(plot_data$average_items), y = min(plot_data$average_value), label=round(mean(plot_data$average_items), digits = 0)), color =  "darkgrey") +
-    geom_hline(yintercept = mean(plot_data$average_value), color="darkgrey", linetype="dashed") +
-    geom_label(aes(x = 0, y = mean(plot_data$average_value), label=paste(round(mean(plot_data$average_value), digits = 0), "€")), color =  "darkgrey") +
+#    geom_vline(xintercept = mean(plot_data$average_items), color="darkgrey", linetype="dashed") +
+#    geom_label(aes(x = mean(plot_data$average_items), y = min(plot_data$average_value), label=round(mean(plot_data$average_items), digits = 0)), color =  "darkgrey") +
+#    geom_hline(yintercept = mean(plot_data$average_value), color="darkgrey", linetype="dashed") +
+#    geom_label(aes(x = 0, y = mean(plot_data$average_value), label=paste(round(mean(plot_data$average_value), digits = 0), "€")), color =  "darkgrey") +
     geom_point(show.legend = TRUE, aes(alpha = plot_size, size = plot_size)) +
     geom_label_repel(aes(label=category)) +
     scale_x_continuous(limits=c(0,xmax), breaks = seq.int(from = 0, to = xmax, by = 2)) +

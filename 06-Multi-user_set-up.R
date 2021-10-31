@@ -407,7 +407,9 @@ str(raw_data)
 
 
 
-### Months available
+### WEARS PER MONTHS
+
+## Months available
 
 # Functions for calculating the difference in months between two dates
 monnb <- function(d) {
@@ -419,6 +421,11 @@ mondf <- function(d1, d2) { monnb(d2) - monnb(d1) }
 # Set diary period starting date to use in filtering
 diary_starting_date <- as.Date("2021-05-23")
 
+
+# Set the total active tracking time in months
+months_tracked <- 3
+
+
 # Calculate months available for all items
 raw_data <- raw_data %>% mutate(months_available = mondf(date_purchased, diary_starting_date))
 
@@ -428,7 +435,7 @@ raw_data$months_available[is.na(raw_data$date_purchased)]
 raw_data %>% select(category, item, months_available, wears_real = wears, wears_est = total_wears) %>%
   filter(months_available > 0) %>%
   filter(category == "Shoes and footwear") %>%
-  mutate(WPM_est = round(wears_est / months_available, digits = 1), WPM_real = round(wears_real / 1.25, digits = 1)) %>%
+  mutate(WPM_est = round(wears_est / months_available, digits = 1), WPM_real = round(wears_real / months_tracked, digits = 1)) %>%
   arrange(desc(WPM_est)) %>%
   head(20)
 
@@ -436,7 +443,7 @@ raw_data %>% select(category, item, months_available, wears_real = wears, wears_
 raw_data %>% select(user, category, item, months_available, wears_real = wears, wears_est = total_wears) %>%
   filter(months_available > 0) %>%
   filter(category == "Shoes and footwear", user == "Quirine") %>%
-  mutate(WPM_est = round(wears_est / months_available, digits = 1), WPM_real = round(wears_real / 1.25, digits = 1)) %>%
+  mutate(WPM_est = round(wears_est / months_available, digits = 1), WPM_real = round(wears_real / months_tracked, digits = 1)) %>%
   arrange(desc(WPM_est)) %>%
   head(20)
 
@@ -445,7 +452,7 @@ raw_data %>% select(user, category, item, months_available, wears_real = wears, 
 # List top wears_per_month during diary period
 raw_data %>% select(user, category, item, wears, total_wears, months_available) %>%
   filter(months_available > 0) %>%
-  mutate(wears_per_month = wears / 1.25) %>% # 5 weeks diary period = 1.25 months
+  mutate(wears_per_month = wears / months_tracked) %>% # 5 weeks diary period = 1.25 months
   arrange(desc(wears_per_month))
 
 
@@ -458,7 +465,7 @@ WPM_max = 30.5
 WPM_delta <-
   raw_data %>% select(user, category, item, months_available, wears_real = wears, wears_est = total_wears) %>%
   filter(months_available > 0) %>%
-  mutate(WPM_est = round(wears_est / months_available, digits = 1), WPM_real = round(wears_real / 1.25, digits = 1)) %>%
+  mutate(WPM_est = round(wears_est / months_available, digits = 1), WPM_real = round(wears_real / months_tracked, digits = 1)) %>%
   group_by(user, category) %>%
   summarise(est = sum(WPM_est), real = sum(WPM_real)) %>%
   mutate(delta_to_real = round(est/real, digits = 2), delta_to_max = round(est/WPM_max, digits = 2)) %>%
@@ -481,11 +488,13 @@ WPM_delta %>%
 p <- WPM_delta %>% 
   filter(!(category %in% c("Underwear and socks", "Nightwear and homewear", "Accessories", "Sportswear", "Other"))) %>%
   filter(category %in% category_order[9]) %>%
-  setup_WPM_delta_plot_categories(xmax = 10, wpm_max = 1.0)
+  setup_WPM_delta_plot_categories(xmax = 7, ymax = 4, wpm_max = 1.0)
 p
 ggsave(filename = "Plots/Z/WPM-Estimate_vs_max_and_real-example.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("WPM-Estimate_vs_max_and_real-example.png")
 
+# Avoid GCS timeout
+gcs_list_buckets(Firebase_project_id)
 
 
 
@@ -519,8 +528,6 @@ WPM_delta_hm %>%
             srtCol = 30, cexRow = 0.9, cexCol = 0.9, keysize = 1,
             main = "User-estimated WPM compared to max (1x)",
             key.title = FALSE, key.xlab = "Multiplier of max")
-
-
 
 ## Heatmap of WPM delta to real by user and category
 
@@ -582,9 +589,48 @@ WPM_delta_hm %>%
 
 
 
+### DIVESTEMENTS
+
+# Number of divested items
+sum(!is.na(raw_data$date_divested))
+
+# List of divested items
+raw_data[!is.na(raw_data$date_divested),]
+
+# List divestment way
+raw_data %>%
+  filter(!is.na(date_divested)) %>%
+  group_by(divestment_way) %>%
+  summarise(items_divested = n()) %>%
+  mutate(share_of_total = round(items_divested / sum(items_divested), digits = 2)) %>%
+  arrange(desc(items_divested)) %>%
+  as.data.frame()
+
+# List item condition when divested
+raw_data %>%
+  filter(!is.na(date_divested)) %>%
+  group_by(condition) %>%
+  summarise(items_divested = n()) %>%
+  mutate(share_of_total = round(items_divested / sum(items_divested), digits = 2)) %>%
+  arrange(desc(items_divested)) %>%
+  as.data.frame()
+
+# Create matrix of the two above
+raw_data %>%
+  filter(!is.na(date_divested)) %>%
+  group_by(divestment_way, condition) %>%
+  summarise(items_divested = n()) %>%
+  #mutate(share_of_total = round(items_divested / sum(!is.na(raw_data$date_divested)), digits = 2)) %>%
+  pivot_wider(id_cols = names_from)
+  
+
 
 
 ###################################################################################################
+######################################## PLOT FUNCTIONS ###########################################
+######################################## PLOT FUNCTIONS ###########################################
+######################################## PLOT FUNCTIONS ###########################################
+######################################## PLOT FUNCTIONS ###########################################
 ######################################## PLOT FUNCTIONS ###########################################
 ###################################################################################################
 

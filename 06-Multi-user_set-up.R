@@ -100,7 +100,7 @@ raw_data$reason_not_repaired <- factor(raw_data$reason_not_repaired, levels = un
 raw_data$repair_willing_to_pay <- factor(raw_data$repair_willing_to_pay, levels = unique(raw_data$repair_willing_to_pay))
 raw_data$special_care_kind <- factor(raw_data$special_care_kind, levels = unique(raw_data$special_care_kind))
 
-# Save raw_data data.frame to file for easier retrieval (2021-09-15)
+# Save raw_data data.frame to file for easier retrieval (2021-10-31)
 save(raw_data, file="Data/Threddit-Z-raw_data.Rda")
 # Load data from file
 load("Data/Threddit-Z-raw_data.Rda")
@@ -112,8 +112,6 @@ user_data <- user_data %>% as.data.frame() %>% filter(!is.na(User))
 #names(user_data)[names(user_data) == 'User'] <- 'user'
 save(user_data,file="Data/Threddit-Z-user_data.Rda")
 load("Data/Threddit-Z-user_data.Rda")
-
-
 
 #################################################################################################
 ######################################## SET UP PLOTS ###########################################
@@ -146,6 +144,7 @@ sum(raw_data$price, na.rm = TRUE)
 
 
 
+
 ## Average wardrobe size and value by category
 
 plot_data <- raw_data %>%
@@ -155,7 +154,7 @@ plot_data <- raw_data %>%
   summarise(items = n(), share_worn = sum(worn)/n(), value = sum(price, na.rm = TRUE)) %>%
   mutate(average_items = items/length(unique(raw_data$user)), average_value = value / items)
 
-p <- plot_data %>% setup_category_distribution_plot(categories = category_order, xmax = 32, ymax = 80)
+p <- plot_data %>% setup_category_distribution_plot(categories = category_order, xmax = 34, ymax = 80)
 ggsave(filename = "Plots/Z/Z-Average_wardrobe_size_and_value_by_category.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Average_wardrobe_size_and_value_by_category.png")
 
@@ -168,11 +167,11 @@ gcs_list_buckets(Firebase_project_id)
 ## Item price distribution by category
 
 # Item price distribution 
-p <- raw_data %>% setup_price_distribution_plot(categories = category_order, xmax = 200, ymax = 1200, binwidth = 10, x_break = 20, repel_gap = 5)
+p <- raw_data %>% setup_price_distribution_plot(categories = category_order, xmax = 200, ymax = 1250, binwidth = 10, x_break = 20, repel_gap = 5)
 ggsave(filename = "Plots/Z/Z-Item_price_distribution.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Item_price_distribution.png")
 
-p <- raw_data %>% setup_price_distribution_plot(categories = c("Jackets and coats"), xmax = 360, ymax = 40, binwidth = 10, x_break = 20, repel_gap = 5)
+p <- raw_data %>% setup_price_distribution_plot(categories = c("Jackets and coats"), xmax = 360, ymax = 42, binwidth = 10, x_break = 20, repel_gap = 5)
 ggsave(filename = "Plots/Z/Z-Item_price_distribution_by_category-Jackets_and_coats.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Item_price_distribution_by_category-Jackets_and_coats.png")
 
@@ -188,11 +187,11 @@ p <- raw_data %>% setup_price_distribution_plot(categories = c("Cardigans and kn
 ggsave(filename = "Plots/Z/Z-Item_price_distribution_by_category-Cardigans_and_knits.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Item_price_distribution_by_category-Cardigans_and_knits.png")
 
-p <- raw_data %>% setup_price_distribution_plot(categories = c("Shirts and blouses"), xmax = 260, ymax = 90, binwidth = 10, x_break = 20, repel_gap = 10)
+p <- raw_data %>% setup_price_distribution_plot(categories = c("Shirts and blouses"), xmax = 260, ymax = 100, binwidth = 10, x_break = 20, repel_gap = 10)
 ggsave(filename = "Plots/Z/Z-Item_price_distribution_by_category-Shirts_and_blouses.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Item_price_distribution_by_category-Shirts_and_blouses.png")
 
-p <- raw_data %>% setup_price_distribution_plot(categories = c("T-shirts and tops"), xmax = 150, ymax = 300, binwidth = 10, repel_gap = 5)
+p <- raw_data %>% setup_price_distribution_plot(categories = c("T-shirts and tops"), xmax = 150, ymax = 320, binwidth = 10, repel_gap = 5)
 ggsave(filename = "Plots/Z/Z-Item_price_distribution_by_category-T-shirts_and_tops.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Item_price_distribution_by_category-T-shirts_and_tops.png")
 
@@ -200,7 +199,7 @@ p <- raw_data %>% setup_price_distribution_plot(categories = c("Dresses and jump
 ggsave(filename = "Plots/Z/Z-Item_price_distribution_by_category-Dresses_and_jumpsuits.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Item_price_distribution_by_category-Dresses_and_jumpsuits.png")
 
-p <- raw_data %>% setup_price_distribution_plot(categories = c("Shorts and skirts"), xmax = 240, ymax = 65, binwidth = 10, x_break = 20, repel_gap = 9)
+p <- raw_data %>% setup_price_distribution_plot(categories = c("Shorts and skirts"), xmax = 240, ymax = 70, binwidth = 10, x_break = 20, repel_gap = 9)
 ggsave(filename = "Plots/Z/Z-Item_price_distribution_by_category-Shorts_and_skirts.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Item_price_distribution_by_category-Shorts_and_skirts.png")
 
@@ -224,7 +223,7 @@ p <- raw_data %>% setup_price_distribution_plot(categories = c("Accessories"), x
 ggsave(filename = "Plots/Z/Z-Item_price_distribution_by_category-Accessories.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Item_price_distribution_by_category-Accessories.png")
 
-p <- raw_data %>% setup_price_distribution_plot(categories = c("Sportswear"), xmax = 220, ymax = 110, binwidth = 10, repel_gap = 7)
+p <- raw_data %>% setup_price_distribution_plot(categories = c("Sportswear"), xmax = 220, ymax = 110, binwidth = 10, repel_gap = 4)
 ggsave(filename = "Plots/Z/Z-Item_price_distribution_by_category-Sportswear.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Item_price_distribution_by_category-Sportswear.png")
 
@@ -338,14 +337,14 @@ p <- total_data %>% mutate(you = ifelse(user == "Kirsten", "You", "Others")) %>%
 p <- total_data %>% mutate(q4 = `I have a good idea of how many times I have used my clothes before they wear out or are resold or recycled.`) %>%
   setup_user_distribution_plot(xmax = NA, ymax = NA)
 
-
-
+# Total number of NAs in price
+sum(is.na(raw_data$price))
 
 str(raw_data)
 
 # List which users repaired 1+ item(s)
 raw_data %>% filter(repaired > 0 & !is.na(repaired)) %>%
-  group_by(user) %>% summarise(repaired_items = n(), repaired_value = sum(price))
+  group_by(user) %>% summarise(repaired_items = n(), repaired_value = sum(price, na.rm = TRUE))
 
 # List categories of repaired items
 raw_data %>% filter(repaired > 0 & !is.na(repaired)) %>%
@@ -355,11 +354,13 @@ raw_data %>% filter(repaired > 0 & !is.na(repaired)) %>%
 # List number of items by user
 raw_data %>% filter(!is.na(item)) %>%
   group_by(user) %>% summarise(total_items = n()) %>%
+  arrange(desc(total_items)) %>%
   as.data.frame()
 
 # List total value of items by user
 raw_data %>% filter(!is.na(item)) %>%
-  group_by(user) %>% summarise(total_items = sum(price, na.rm = TRUE)) %>%
+  group_by(user) %>% summarise(total_value = sum(price, na.rm = TRUE)) %>%
+  arrange(desc(total_value)) %>%
   as.data.frame()
 
 # List number of items that need repair by user
@@ -369,7 +370,7 @@ raw_data %>% filter(!is.na(item) & needs_repair > 0) %>%
 
 # List value of items that need repair by user
 raw_data %>% filter(!is.na(item) & needs_repair > 0) %>%
-  group_by(user) %>% summarise(total_items = sum(price, na.rm = TRUE)) %>%
+  group_by(user) %>% summarise(total_value = sum(price, na.rm = TRUE)) %>%
   as.data.frame()
 
 # Reason not repaired

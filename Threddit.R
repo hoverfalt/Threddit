@@ -539,6 +539,7 @@ view_follow(fixed_y = TRUE)
 ### Fetch step data ###
 
 # Load required packages
+#install.packages("fitbitr")
 library(fitbitr)
 
 # Source required files
@@ -550,10 +551,13 @@ FITBIT_SECRET <- get_fitbit_secret()
 FITBIT_CALLBACK <- "http://localhost:1410/" 
 
 # Authenticate and get token
-token <- fitbitr::oauth_token()
+#token <- fitbitr::oauth_token()
+token <- generate_token(FITBIT_KEY, FITBIT_SECRET, FITBIT_CALLBACK)
 
 # Set date of latest data
-date <- "2021-05-23"
+date <- "2021-11-15"
+
+steps_2021 <- fitbitr::steps(start_date=as.Date("2018-01-01"), end_date = date)
 
 # Get daily step data for entire item data period and remove duplicates
 steps_2021 <- get_activity_time_series(token, "steps", date=date, period="1y")

@@ -43,6 +43,12 @@ category_colors <<- c('#960001', '#fc3334', '#ff9a02', '#ffdb05', '#4cda00', '#3
 # Set color names by category name for consistent category colors in plots
 names(category_colors) <- category_order
 
+
+# Set plot palette for 3 genders
+gender_colors <<- c('#FF6060', '#7578ff', '#57c257')
+names(gender_colors) <- c('Female', 'Male', 'Other')
+
+
 # Set guides for daily cost vs cumulative use plots
 guides_prices <<- c(5, 10, 20, 50, 100, 200, 400, 800)
 
@@ -100,7 +106,7 @@ raw_data$reason_not_repaired <- factor(raw_data$reason_not_repaired, levels = un
 raw_data$repair_willing_to_pay <- factor(raw_data$repair_willing_to_pay, levels = unique(raw_data$repair_willing_to_pay))
 raw_data$special_care_kind <- factor(raw_data$special_care_kind, levels = unique(raw_data$special_care_kind))
 
-# Save raw_data data.frame to file for easier retrieval (2021-10-31)
+# Save raw_data data.frame to file for easier retrieval (2021-11-21)
 save(raw_data, file="Data/Threddit-Z-raw_data.Rda")
 # Load data from file
 load("Data/Threddit-Z-raw_data.Rda")
@@ -203,7 +209,7 @@ p <- raw_data %>% setup_price_distribution_plot(categories = c("Shorts and skirt
 ggsave(filename = "Plots/Z/Z-Item_price_distribution_by_category-Shorts_and_skirts.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Item_price_distribution_by_category-Shorts_and_skirts.png")
 
-p <- raw_data %>% setup_price_distribution_plot(categories = c("Trousers and jeans"), xmax = 275, ymax = 75, binwidth = 10, x_break = 20, repel_gap = 9)
+p <- raw_data %>% setup_price_distribution_plot(categories = c("Trousers and jeans"), xmax = 275, ymax = 85, binwidth = 10, x_break = 20, repel_gap = 9)
 ggsave(filename = "Plots/Z/Z-Item_price_distribution_by_category-Trousers_and_jeans.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Item_price_distribution_by_category-Trousers_and_jeans.png")
 
@@ -211,7 +217,7 @@ p <- raw_data %>% setup_price_distribution_plot(categories = c("Shoes and footwe
 ggsave(filename = "Plots/Z/Z-Item_price_distribution_by_category-Shoes_and_footwear.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Item_price_distribution_by_category-Shoes_and_footwear.png")
 
-p <- raw_data %>% setup_price_distribution_plot(categories = c("Underwear and socks"), xmax = 160, ymax = 330, binwidth = 10, repel_gap = 5)
+p <- raw_data %>% setup_price_distribution_plot(categories = c("Underwear and socks"), xmax = 160, ymax = 350, binwidth = 10, repel_gap = 5)
 ggsave(filename = "Plots/Z/Z-Item_price_distribution_by_category-Underwear_and_socks.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Item_price_distribution_by_category-Underwear_and_socks.png")
 
@@ -223,7 +229,7 @@ p <- raw_data %>% setup_price_distribution_plot(categories = c("Accessories"), x
 ggsave(filename = "Plots/Z/Z-Item_price_distribution_by_category-Accessories.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Item_price_distribution_by_category-Accessories.png")
 
-p <- raw_data %>% setup_price_distribution_plot(categories = c("Sportswear"), xmax = 220, ymax = 110, binwidth = 10, repel_gap = 4)
+p <- raw_data %>% setup_price_distribution_plot(categories = c("Sportswear"), xmax = 220, ymax = 120, binwidth = 10, repel_gap = 7)
 ggsave(filename = "Plots/Z/Z-Item_price_distribution_by_category-Sportswear.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Item_price_distribution_by_category-Sportswear.png")
 
@@ -812,6 +818,7 @@ setup_user_distribution_plot <- function(plot_data, xmax = NA, ymax = NA) {
     scale_x_continuous(limits=c(0,xmax), breaks = seq.int(from = 0, to = xmax, by = 20)) +
     scale_y_continuous(limits=c(0,ymax), breaks = seq.int(from = 0, to = ymax, by = 500), labels=scales::dollar_format(suffix = "€", prefix = "")) +
     #scale_color_manual(name = "Category", values = category_colors[match(categories, category_order)]) +
+    scale_color_manual(name = "Users", values = gender_colors) +
     scale_alpha(range = c(0.5, 1.0)) +
     scale_size(range = c(2, 3)) +
     guides(alpha = FALSE, size = FALSE) +

@@ -339,8 +339,9 @@ setup_daily_cost_plot <- function(daily_cost, ymax = 40, ybreaks = 2, seasons = 
         p <- p +
             annotate("rect", xmin = as.Date("2018-06-22"), xmax = as.Date("2018-08-15"), ymin = 0, ymax = ymax, alpha = 0.3, fill = "lightyellow", size = 0) +
             annotate("rect", xmin = as.Date("2019-06-22"), xmax = as.Date("2019-08-15"), ymin = 0, ymax = ymax, alpha = 0.3, fill = "lightyellow", size = 0) +
-            annotate("rect", xmin = as.Date("2020-06-22"), xmax = as.Date("2020-08-15"), ymin = 0, ymax = ymax, alpha = 0.3, fill = "lightyellow", size = 0)
-#            annotate("rect", xmin = as.Date("2020-03-18"), xmax = as.Date("2020-06-21"), ymin = 0, ymax = ymax, alpha = 0.1, fill = "lightpink", size = 0) + # Corona
+            annotate("rect", xmin = as.Date("2020-06-22"), xmax = as.Date("2020-08-15"), ymin = 0, ymax = ymax, alpha = 0.3, fill = "lightyellow", size = 0) +
+            annotate("rect", xmin = as.Date("2021-06-22"), xmax = as.Date("2021-08-15"), ymin = 0, ymax = ymax, alpha = 0.3, fill = "lightyellow", size = 0)
+        #            annotate("rect", xmin = as.Date("2020-03-18"), xmax = as.Date("2020-06-21"), ymin = 0, ymax = ymax, alpha = 0.1, fill = "lightpink", size = 0) + # Corona
 #            annotate("rect", xmin = as.Date("2020-08-16"), xmax = as.Date("2020-12-21"), ymin = 0, ymax = ymax, alpha = 0.1, fill = "lightpink", size = 0) # Corona
     }
 

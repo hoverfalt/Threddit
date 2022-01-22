@@ -151,7 +151,7 @@ build_standard_plots <- function(){
   ## Category plot - Cost per use vs Cumulative use
   
   # Jackets and hoodies
-  p <- plot_data %>% setup_category_cumulative_plot_image("Jackets and hoodies", xmax = 400, ymax = 10, ybreaks = plot_log_breaks, log_trans=TRUE, trails=TRUE, guides=TRUE)
+  p <- plot_data %>% setup_category_cumulative_plot_image("Jackets and hoodies", xmax = 500, ymax = 10, ybreaks = plot_log_breaks, log_trans=TRUE, trails=TRUE, guides=TRUE)
   ggsave(filename = "Plots/Category-Jackets_and_hoodies-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in")
   save_to_cloud("Category-Jackets_and_hoodies-Cost_and_Cumulative_use.png")
 
@@ -166,7 +166,7 @@ build_standard_plots <- function(){
   save_to_cloud("Category-Knits-Cost_and_Cumulative_use.png")
   
   # Shirts
-  p <- plot_data %>% setup_category_cumulative_plot_image("Shirts", xmax = 60, ymax = 45, log_trans=TRUE, trails=TRUE, guides=TRUE)
+  p <- plot_data %>% setup_category_cumulative_plot_image("Shirts", xmax = 80, ymax = 45, log_trans=TRUE, trails=TRUE, guides=TRUE)
   ggsave(filename = "Plots/Category-Shirts-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in")
   save_to_cloud("Category-Shirts-Cost_and_Cumulative_use.png")
   
@@ -176,7 +176,7 @@ build_standard_plots <- function(){
   save_to_cloud("Category-T-shirts_and_tanks-Cost_and_Cumulative_use.png")
   
   # Pants
-  p <- plot_data %>% setup_category_cumulative_plot_image("Pants", xmax = 120, ymax = 35, log_trans=TRUE, trails=TRUE, guides=TRUE)
+  p <- plot_data %>% setup_category_cumulative_plot_image("Pants", xmax = 180, ymax = 35, log_trans=TRUE, trails=TRUE, guides=TRUE)
   ggsave(filename = "Plots/Category-Pants-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in")
   save_to_cloud("Category-Pants-Cost_and_Cumulative_use.png")
   
@@ -186,7 +186,7 @@ build_standard_plots <- function(){
   save_to_cloud("Category-Shorts-Cost_and_Cumulative_use.png")
   
   # Belts
-  p <- plot_data %>% setup_category_cumulative_plot_image("Belts", xmax = 220, ymax = 100, log_trans=TRUE, trails=TRUE, guides=TRUE)
+  p <- plot_data %>% setup_category_cumulative_plot_image("Belts", xmax = 600, ymax = 100, log_trans=TRUE, trails=TRUE, guides=TRUE)
   ggsave(filename = "Plots/Category-Belts-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in")
   save_to_cloud("Category-Belts-Cost_and_Cumulative_use.png")
   
@@ -196,17 +196,17 @@ build_standard_plots <- function(){
   save_to_cloud("Category-Socks-Cost_and_Cumulative_use.png")
   
   # Shoes
-  p <- plot_data %>% setup_category_cumulative_plot_image("Shoes", xmax = 340, ymax = 30, log_trans=TRUE, trails=TRUE, guides=TRUE)
+  p <- plot_data %>% setup_category_cumulative_plot_image("Shoes", xmax = 400, ymax = 30, log_trans=TRUE, trails=TRUE, guides=TRUE)
   ggsave(filename = "Plots/Category-Shoes-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in")
   save_to_cloud("Category-Shoes-Cost_and_Cumulative_use.png")
   
   # Underwear shirts
-  p <- plot_data %>% setup_category_cumulative_plot_image("Underwear shirts", xmax = 55, ymax = 42, log_trans=TRUE, trails=TRUE, guides=TRUE)
+  p <- plot_data %>% setup_category_cumulative_plot_image("Underwear shirts", xmax = 80, ymax = 42, log_trans=TRUE, trails=TRUE, guides=TRUE)
   ggsave(filename = "Plots/Category-Underwear_shirts-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in")
   save_to_cloud("Category-Underwear_shirts-Cost_and_Cumulative_use.png")
   
   # Underwear boxers
-  p <- plot_data %>% setup_category_cumulative_plot_image("Underwear boxers", xmax = 35, ymax = 16, log_trans=TRUE, trails=TRUE, guides=TRUE)
+  p <- plot_data %>% setup_category_cumulative_plot_image("Underwear boxers", xmax = 60, ymax = 16, log_trans=TRUE, trails=TRUE, guides=TRUE)
   ggsave(filename = "Plots/Category-Underwear_boxers-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in")
   save_to_cloud("Category-Underwear_boxers-Cost_and_Cumulative_use.png")
   

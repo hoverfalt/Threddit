@@ -1,4 +1,4 @@
-### Threddit.R - Olof Hoverfält - 2018-2021 - hoverfalt.github.io
+### Threddit.R - Olof Hoverfält - 2018-2022 - hoverfalt.github.io
 
 # Functions to prepare and plot multi-user data
 
@@ -84,6 +84,19 @@ gcs_global_bucket("threddit-plots") # Plots
 # Set upload limit to resumable upload to 100MB
 gcs_upload_set_limit(upload_limit = 100000000L)
 
+# Function to upload plot file to Google Cloud Storage
+save_to_cloud_O <- function(file_name) {
+  
+  md5_local <- openssl::base64_encode(digest(paste("Plots/O/", file_name, sep=""), file=TRUE, algo="md5", serialize=FALSE, raw=TRUE))
+  md5_cloud <- httr::GET(paste(firebase_img_path_plots, file_name, sep="")) %>% content() %>% { .[["md5Hash"]][1] }
+  if (!identical(md5_cloud, md5_local)) {
+    gcs_upload(paste("Plots/O/", file_name, sep=""), name=file_name)
+    print(paste(file_name, "uploaded"))
+  } else {
+    print(paste(file_name, "not uploaded, identical file exists"))
+  }
+}
+
 
 
 #################################################################################################
@@ -91,7 +104,7 @@ gcs_upload_set_limit(upload_limit = 100000000L)
 #################################################################################################
 
 # Read Google Sheets wardrobe and use data
-data_file = get_Google_sheet_ID_Z()
+data_file = get_Google_sheet_ID_O()
 raw_data <- read_sheet(data_file, sheet='Use data filtered - Machine readable')
 
 # Pre-process and clean data
@@ -101,22 +114,18 @@ raw_data <- raw_data %>% mutate_at(c("wears"), ~replace(., is.na(.), 0)) %>% sel
 # Turn factor variables into factors
 raw_data$user <- factor(raw_data$user, levels = unique(raw_data$user))
 raw_data$category <- factor(raw_data$category, levels = category_order)
-raw_data$repair_kind <- factor(raw_data$repair_kind, levels = unique(raw_data$repair_kind))
-raw_data$reason_not_repaired <- factor(raw_data$reason_not_repaired, levels = unique(raw_data$reason_not_repaired))
-raw_data$repair_willing_to_pay <- factor(raw_data$repair_willing_to_pay, levels = unique(raw_data$repair_willing_to_pay))
-raw_data$special_care_kind <- factor(raw_data$special_care_kind, levels = unique(raw_data$special_care_kind))
 
-# Save raw_data data.frame to file for easier retrieval (2021-11-21)
-save(raw_data, file="Data/Threddit-Z-raw_data.Rda")
+# Save raw_data data.frame to file for easier retrieval (2022-01-30)
+save(raw_data, file="Data/Threddit-O-raw_data.Rda")
 # Load data from file
-load("Data/Threddit-Z-raw_data.Rda")
+load("Data/Threddit-O-raw_data.Rda")
 
 # Read Google Sheets user data
-data_file = get_Google_sheet_ID_Z2()
-user_data <- read_sheet(data_file, sheet='User profiles - Outset')
-user_data <- user_data %>% as.data.frame() %>% filter(!is.na(User))
+data_file = get_Google_sheet_ID_O2()
+user_data <- read_sheet(data_file, sheet='User profiles')
+user_data <- user_data %>% as.data.frame()
 #names(user_data)[names(user_data) == 'User'] <- 'user'
-save(user_data,file="Data/Threddit-Z-user_data.Rda")
+save(user_data,file="Data/Threddit-O-user_data.Rda")
 load("Data/Threddit-Z-user_data.Rda")
 
 #################################################################################################
@@ -124,9 +133,27 @@ load("Data/Threddit-Z-user_data.Rda")
 #################################################################################################
 
 
+count(user_data[user_data$gender == "Male",]) # Males
+count(user_data[user_data$gender == "Female",]) # Females
+count(user_data[user_data$gender == "Female",]) / count(user_data) # Share female
+
+sum(plot_data$items) # Total number of items tracked
+sum(plot_data$value) # Total value of items tracked
+
+max(total_data$items) # Largest wardrobe in terms of item count
+max(total_data$value) # Largest wardrobe in terms of item value
+
+# Secondhand 
+raw_data %>% group_by(user) %>% 
+  summarise(items = n(), secondhand = sum(secondhand), share = sum(secondhand) / n()) %>%
+  as.data.frame() %>%
+  arrange(desc(share))
+
+
 ## Average wardrobe size and value by user
 
 plot_data <- raw_data %>%
+  filter(user %in% user_data[user_data$currency == "SEK",]$user) %>% # Inlcude SEK users only
   mutate(worn = as.logical(wears)) %>%
   rowwise() %>%
   group_by(user) %>%
@@ -135,12 +162,16 @@ plot_data <- raw_data %>%
 
 total_data <- merge(plot_data, user_data, by = c("user"))
 
-p <- total_data %>% setup_user_distribution_plot(xmax = 400, ymax = 15000)
-ggsave(filename = "Plots/Z/Z-Average_wardrobe_size_and_value_by_user.png", p, width = 9, height = 7, dpi = 150, units = "in")
-save_to_cloud_Z("Z-Average_wardrobe_size_and_value_by_user.png")
+p <- total_data %>% setup_user_distribution_plot(xmax = 380, ymax = 240000)
+ggsave(filename = "Plots/O/O-Average_wardrobe_size_and_value_by_user.png", p, width = 9, height = 7, dpi = 150, units = "in")
+save_to_cloud_O("O-Average_wardrobe_size_and_value_by_user.png")
+
 
 # Avoid GCS timeout
 gcs_list_buckets(Firebase_project_id)
+
+
+
 
 # Count of items
 nrow(raw_data)
@@ -152,7 +183,7 @@ str(raw_data)
 raw_data %>% filter(!is.na(date_divested)) %>% count()
 raw_data %>% filter(secondhand) %>% count()
 raw_data %>% group_by(user) %>% 
-  summarise(items = n(), repaired = n())
+  summarise(items = n(), secondhand = sum(secondhand), share = sum(secondhand) / n())
 
 
 
@@ -165,9 +196,9 @@ plot_data <- raw_data %>%
   summarise(items = n(), share_worn = sum(worn)/n(), value = sum(price, na.rm = TRUE)) %>%
   mutate(average_items = items/length(unique(raw_data$user)), average_value = value / items)
 
-p <- plot_data %>% setup_category_distribution_plot(categories = category_order, xmax = 34, ymax = 80)
-ggsave(filename = "Plots/Z/Z-Average_wardrobe_size_and_value_by_category.png", p, width = 9, height = 7, dpi = 150, units = "in")
-save_to_cloud_Z("Z-Average_wardrobe_size_and_value_by_category.png")
+p <- plot_data %>% setup_category_distribution_plot(categories = category_order, xmax = 20, ymax = 1100)
+ggsave(filename = "Plots/O/O-Average_wardrobe_size_and_value_by_category.png", p, width = 9, height = 7, dpi = 150, units = "in")
+save_to_cloud_O("O-Average_wardrobe_size_and_value_by_category.png")
 
 # Avoid GCS timeout
 gcs_list_buckets(Firebase_project_id)
@@ -786,11 +817,11 @@ setup_category_distribution_plot <- function(plot_data, categories, xmax = NA, y
 #    geom_vline(xintercept = mean(plot_data$average_items), color="darkgrey", linetype="dashed") +
 #    geom_label(aes(x = mean(plot_data$average_items), y = min(plot_data$average_value), label=round(mean(plot_data$average_items), digits = 0)), color =  "darkgrey") +
 #    geom_hline(yintercept = mean(plot_data$average_value), color="darkgrey", linetype="dashed") +
-#    geom_label(aes(x = 0, y = mean(plot_data$average_value), label=paste(round(mean(plot_data$average_value), digits = 0), "€")), color =  "darkgrey") +
+#    geom_label(aes(x = 0, y = mean(plot_data$average_value), label=paste(round(mean(plot_data$average_value), digits = 0), "kr")), color =  "darkgrey") +
     geom_point(show.legend = TRUE, aes(alpha = plot_size, size = plot_size)) +
     geom_label_repel(aes(label=category)) +
     scale_x_continuous(limits=c(0,xmax), breaks = seq.int(from = 0, to = xmax, by = 2)) +
-    scale_y_continuous(limits=c(NA,ymax), breaks = seq.int(from = 0, to = ymax, by = 10), labels=scales::dollar_format(suffix = "€", prefix = "")) +
+    scale_y_continuous(limits=c(NA,ymax), breaks = seq.int(from = 0, to = ymax, by = 100), labels=scales::dollar_format(suffix = " kr", prefix = "")) +
     scale_color_manual(name = "Category", values = category_colors[match(categories, category_order)]) +
     scale_alpha(range = c(0.5, 1.0)) +
     scale_size(range = c(2, 3)) +
@@ -822,10 +853,10 @@ setup_user_distribution_plot <- function(plot_data, xmax = NA, ymax = NA) {
     geom_vline(xintercept = mean(plot_data$items), color="darkgrey", linetype="dashed") +
     geom_label(aes(x = mean(plot_data$items), y = 0, label=round(mean(plot_data$items), digits = 0)), color =  "darkgrey") +
     geom_hline(yintercept = mean(plot_data$value), color="darkgrey", linetype="dashed") +
-    geom_label(aes(x = 0, y = mean(plot_data$value), label = paste(round(mean(plot_data$value), digits = 0), "€")), color =  "darkgrey") +
+    geom_label(aes(x = 0, y = mean(plot_data$value), label = paste(round(mean(plot_data$value), digits = 0), "kr")), color =  "darkgrey") +
     geom_point(show.legend = TRUE, aes(alpha = plot_size, size = plot_size)) +
     scale_x_continuous(limits=c(0,xmax), breaks = seq.int(from = 0, to = xmax, by = 20)) +
-    scale_y_continuous(limits=c(0,ymax), breaks = seq.int(from = 0, to = ymax, by = 500), labels=scales::dollar_format(suffix = "€", prefix = "")) +
+    scale_y_continuous(limits=c(0,ymax), breaks = seq.int(from = 0, to = ymax, by = 10000), labels=scales::dollar_format(suffix = " kr", prefix = "")) +
     #scale_color_manual(name = "Category", values = category_colors[match(categories, category_order)]) +
     scale_color_manual(name = "Users", values = gender_colors) +
     scale_alpha(range = c(0.5, 1.0)) +

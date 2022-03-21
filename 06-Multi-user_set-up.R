@@ -113,7 +113,7 @@ load("Data/Threddit-Z-raw_data.Rda")
 
 # Read Google Sheets user data
 data_file = get_Google_sheet_ID_Z2()
-user_data <- read_sheet(data_file, sheet='User profiles - Outset')
+user_data <- read_sheet(data_file, sheet='User profiles - MASTER')
 user_data <- user_data %>% as.data.frame() %>% filter(!is.na(User))
 #names(user_data)[names(user_data) == 'User'] <- 'user'
 save(user_data,file="Data/Threddit-Z-user_data.Rda")

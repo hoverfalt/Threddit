@@ -212,7 +212,7 @@ build_standard_plots <- function(){
   save_to_cloud("Category-Underwear_boxers-Cost_and_Cumulative_use.png")
   
   # Sportswear
-  p <- plot_data %>% setup_category_cumulative_plot_image("Sportswear", xmax = 70, ymax = 35, log_trans=TRUE, trails=TRUE, guides=TRUE)
+  p <- plot_data %>% setup_category_cumulative_plot_image("Sportswear", xmax = 140, ymax = 35, log_trans=TRUE, trails=TRUE, guides=TRUE)
   ggsave(filename = "Plots/Category-Sportswear-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in")
   save_to_cloud("Category-Sportswear-Cost_and_Cumulative_use.png")
   

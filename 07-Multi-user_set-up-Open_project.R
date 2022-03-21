@@ -115,7 +115,7 @@ raw_data <- raw_data %>% mutate_at(c("wears"), ~replace(., is.na(.), 0)) %>% sel
 raw_data$user <- factor(raw_data$user, levels = unique(raw_data$user))
 raw_data$category <- factor(raw_data$category, levels = category_order)
 
-# Save raw_data data.frame to file for easier retrieval (2022-01-30)
+# Save raw_data data.frame to file for easier retrieval (2022-02-06)
 save(raw_data, file="Data/Threddit-O-raw_data.Rda")
 # Load data from file
 load("Data/Threddit-O-raw_data.Rda")
@@ -126,11 +126,33 @@ user_data <- read_sheet(data_file, sheet='User profiles')
 user_data <- user_data %>% as.data.frame()
 #names(user_data)[names(user_data) == 'User'] <- 'user'
 save(user_data,file="Data/Threddit-O-user_data.Rda")
-load("Data/Threddit-Z-user_data.Rda")
+load("Data/Threddit-O-user_data.Rda")
 
 #################################################################################################
 ######################################## SET UP PLOTS ###########################################
 #################################################################################################
+
+
+## Average wardrobe size and value by user
+
+plot_data <- raw_data %>%
+  filter(user %in% user_data[user_data$currency == "SEK",]$user) %>% # Inlcude SEK users only
+  mutate(worn = as.logical(wears)) %>%
+  rowwise() %>%
+  group_by(user) %>%
+  summarise(items = n(), share_worn = sum(worn)/n(), value = sum(price, na.rm = TRUE)) %>%
+  as.data.frame()
+
+total_data <- merge(plot_data, user_data, by = c("user"))
+
+p <- total_data %>%
+  filter(exhaustive == TRUE) %>%
+  setup_user_distribution_plot(xmax = 380, ymax = 240000)
+ggsave(filename = "Plots/O/O-Average_wardrobe_size_and_value_by_user.png", p, width = 9, height = 7, dpi = 150, units = "in")
+save_to_cloud_O("O-Average_wardrobe_size_and_value_by_user.png")
+
+# Avoid GCS timeout
+gcs_list_buckets(Firebase_project_id)
 
 
 count(user_data[user_data$gender == "Male",]) # Males
@@ -149,26 +171,11 @@ raw_data %>% group_by(user) %>%
   as.data.frame() %>%
   arrange(desc(share))
 
-
-## Average wardrobe size and value by user
-
-plot_data <- raw_data %>%
-  filter(user %in% user_data[user_data$currency == "SEK",]$user) %>% # Inlcude SEK users only
-  mutate(worn = as.logical(wears)) %>%
-  rowwise() %>%
-  group_by(user) %>%
-  summarise(items = n(), share_worn = sum(worn)/n(), value = sum(price, na.rm = TRUE)) %>%
-  as.data.frame()
-
-total_data <- merge(plot_data, user_data, by = c("user"))
-
-p <- total_data %>% setup_user_distribution_plot(xmax = 380, ymax = 240000)
-ggsave(filename = "Plots/O/O-Average_wardrobe_size_and_value_by_user.png", p, width = 9, height = 7, dpi = 150, units = "in")
-save_to_cloud_O("O-Average_wardrobe_size_and_value_by_user.png")
+# Share of users that have at least one second hand item
 
 
-# Avoid GCS timeout
-gcs_list_buckets(Firebase_project_id)
+
+
 
 
 
@@ -209,7 +216,7 @@ gcs_list_buckets(Firebase_project_id)
 ## Item price distribution by category
 
 # Item price distribution 
-p <- raw_data %>% setup_price_distribution_plot(categories = category_order, xmax = 200, ymax = 1250, binwidth = 10, x_break = 20, repel_gap = 5)
+p <- raw_data %>% setup_price_distribution_plot(categories = category_order, xmax = 2000, ymax = 1250, binwidth = 100, x_break = 200, repel_gap = 5)
 ggsave(filename = "Plots/Z/Z-Item_price_distribution.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Item_price_distribution.png")
 

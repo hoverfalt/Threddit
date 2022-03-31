@@ -1,4 +1,4 @@
-### Threddit.R - Olof Hoverfält - 2018-2021 - hoverfalt.github.io
+### Threddit.R - Olof Hoverfält - 2018-2022 - hoverfalt.github.io
 
 # Functions to prepare and plot multi-user data
 
@@ -106,7 +106,7 @@ raw_data$reason_not_repaired <- factor(raw_data$reason_not_repaired, levels = un
 raw_data$repair_willing_to_pay <- factor(raw_data$repair_willing_to_pay, levels = unique(raw_data$repair_willing_to_pay))
 raw_data$special_care_kind <- factor(raw_data$special_care_kind, levels = unique(raw_data$special_care_kind))
 
-# Save raw_data data.frame to file for easier retrieval (2021-11-21)
+# Save raw_data data.frame to file for easier retrieval (2022-03-31)
 save(raw_data, file="Data/Threddit-Z-raw_data.Rda")
 # Load data from file
 load("Data/Threddit-Z-raw_data.Rda")
@@ -243,9 +243,11 @@ save_to_cloud_Z("Z-Item_price_distribution_by_category-Sportswear.png")
 gcs_list_buckets(Firebase_project_id)
 
 
-## Number of wardrobe items and share of items worn
+
+## Number of wardrobe items and share of items worn (include only active items)
 
 plot_data <- raw_data %>%
+  filter(is.na(date_divested)) %>%
   mutate(worn = as.logical(wears)) %>%
   group_by(user, category) %>%
   summarise(items = n(), share_worn = sum(worn)/n())
@@ -321,12 +323,29 @@ ggsave(filename = "Plots/Z/Z-Wardrobe_items_and_share_worn-Sportswear.png", p, w
 save_to_cloud_Z("Z-Wardrobe_items_and_share_worn-Sportswear.png")
 
 
+## List number of items by category by user
+
+plot_data <- raw_data %>%
+  filter(is.na(date_divested)) %>%
+  mutate(worn = as.logical(wears)) %>%
+  group_by(user, category) %>%
+  summarise(items = n()) %>%
+  spread(category, items) %>%
+  as.data.frame()
+
+write.csv(plot_data,"Plots/Z/Z-Amount_of_active_items_by_categoty_and_user.csv", row.names = FALSE)
+
+str(plot_data)
+
+######################################## DEVELOPMENT WIP ###########################################
+######################################## DEVELOPMENT WIP ###########################################
+######################################## DEVELOPMENT WIP ###########################################
+######################################## DEVELOPMENT WIP ###########################################
 
 
-######################################## DEVELOPMENT WIP ###########################################
-######################################## DEVELOPMENT WIP ###########################################
-######################################## DEVELOPMENT WIP ###########################################
-######################################## DEVELOPMENT WIP ###########################################
+
+
+
 
 
 ## Do users wear expensive clothes more often than affordable ones?

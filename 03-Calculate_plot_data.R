@@ -1,4 +1,4 @@
-### Threddit.R - Olof Hoverfält - 2018-2021 - hoverfalt.github.io
+### Threddit.R - Olof Hoverfält - 2018-2022 - hoverfalt.github.io
 
 # Functions to prepare data for various standard plots
 

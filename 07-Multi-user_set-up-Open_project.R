@@ -132,11 +132,13 @@ load("Data/Threddit-O-user_data.Rda")
 ######################################## SET UP PLOTS ###########################################
 #################################################################################################
 
+exchange_rate_SEK_to_EUR <- 1 / 10.4 # Set SEK to EUR exchange rate
 
 ## Average wardrobe size and value by user
 
 plot_data <- raw_data %>%
-  filter(user %in% user_data[user_data$currency == "SEK",]$user) %>% # Inlcude SEK users only
+  filter(user %in% user_data[user_data$currency == "SEK",]$user) %>% # Include SEK users only
+  mutate(price = price * exchange_rate_SEK_to_EUR) %>% # Convert SEK to EUR
   mutate(worn = as.logical(wears)) %>%
   rowwise() %>%
   group_by(user) %>%
@@ -147,7 +149,7 @@ total_data <- merge(plot_data, user_data, by = c("user"))
 
 p <- total_data %>%
   filter(exhaustive == TRUE) %>%
-  setup_user_distribution_plot(xmax = 380, ymax = 240000)
+  setup_user_distribution_plot(xmax = 380, ymax = 23000)
 ggsave(filename = "Plots/O/O-Average_wardrobe_size_and_value_by_user.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_O("O-Average_wardrobe_size_and_value_by_user.png")
 
@@ -197,13 +199,16 @@ raw_data %>% group_by(user) %>%
 ## Average wardrobe size and value by category
 
 plot_data <- raw_data %>%
+  filter(user %in% user_data[user_data$currency == "SEK",]$user) %>% # Include SEK users only
+  mutate(price = price * exchange_rate_SEK_to_EUR) %>% # Convert SEK to EUR
   mutate(worn = as.logical(wears)) %>%
   rowwise() %>%
   group_by(category) %>%
   summarise(items = n(), share_worn = sum(worn)/n(), value = sum(price, na.rm = TRUE)) %>%
+#  mutate(value = value * exchange_rate_SEK_to_EUR) %>% # Convert SEK to EUR
   mutate(average_items = items/length(unique(raw_data$user)), average_value = value / items)
 
-p <- plot_data %>% setup_category_distribution_plot(categories = category_order, xmax = 20, ymax = 1100)
+p <- plot_data %>% setup_category_distribution_plot(categories = category_order, xmax = 20, ymax = 120)
 ggsave(filename = "Plots/O/O-Average_wardrobe_size_and_value_by_category.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_O("O-Average_wardrobe_size_and_value_by_category.png")
 
@@ -213,68 +218,73 @@ gcs_list_buckets(Firebase_project_id)
 
 
 
+plot_data <- raw_data %>%
+  filter(user %in% user_data[user_data$currency == "SEK",]$user) %>% # Include SEK users only
+  mutate(price = price * exchange_rate_SEK_to_EUR) # Convert SEK to EUR
+str(raw_data)
+
 ## Item price distribution by category
 
 # Item price distribution 
-p <- raw_data %>% setup_price_distribution_plot(categories = category_order, xmax = 2000, ymax = 1250, binwidth = 100, x_break = 200, repel_gap = 5)
-ggsave(filename = "Plots/Z/Z-Item_price_distribution.png", p, width = 9, height = 7, dpi = 150, units = "in")
-save_to_cloud_Z("Z-Item_price_distribution.png")
+#p <- plot_data %>% setup_price_distribution_plot(categories = category_order, xmax = 2000, ymax = 1250, binwidth = 100, x_break = 200, repel_gap = 5)
+#ggsave(filename = "Plots/O/O-Item_price_distribution.png", p, width = 9, height = 7, dpi = 150, units = "in")
+#save_to_cloud_Z("O-Item_price_distribution.png")
 
-p <- raw_data %>% setup_price_distribution_plot(categories = c("Jackets and coats"), xmax = 360, ymax = 42, binwidth = 10, x_break = 20, repel_gap = 5)
-ggsave(filename = "Plots/Z/Z-Item_price_distribution_by_category-Jackets_and_coats.png", p, width = 9, height = 7, dpi = 150, units = "in")
-save_to_cloud_Z("Z-Item_price_distribution_by_category-Jackets_and_coats.png")
+p <- plot_data %>% setup_price_distribution_plot(categories = c("Jackets and coats"), xmax = 360, ymax = 30, binwidth = 10, x_break = 20, repel_gap = 5)
+ggsave(filename = "Plots/O/O-Item_price_distribution_by_category-Jackets_and_coats.png", p, width = 9, height = 7, dpi = 150, units = "in")
+save_to_cloud_Z("O-Item_price_distribution_by_category-Jackets_and_coats.png")
 
-p <- raw_data %>% setup_price_distribution_plot(categories = c("Blazers and vests"), xmax = 620, ymax = 25, binwidth = 10, x_break = 50, repel_gap = 14)
-ggsave(filename = "Plots/Z/Z-Item_price_distribution_by_category-Blazers_and_vests.png", p, width = 9, height = 7, dpi = 150, units = "in")
-save_to_cloud_Z("Z-Item_price_distribution_by_category-Blazers_and_vests.png")
+p <- plot_data %>% setup_price_distribution_plot(categories = c("Blazers and vests"), xmax = 500, ymax = 22, binwidth = 10, x_break = 50, repel_gap = 14)
+ggsave(filename = "Plots/O/O-Item_price_distribution_by_category-Blazers_and_vests.png", p, width = 9, height = 7, dpi = 150, units = "in")
+save_to_cloud_Z("O-Item_price_distribution_by_category-Blazers_and_vests.png")
 
-p <- raw_data %>% setup_price_distribution_plot(categories = c("Jumpers and hoodies"), xmax = 190, ymax = 60, binwidth = 10, repel_gap = 6)
-ggsave(filename = "Plots/Z/Z-Item_price_distribution_by_category-Jumpers_and_hoodies.png", p, width = 9, height = 7, dpi = 150, units = "in")
-save_to_cloud_Z("Z-Item_price_distribution_by_category-Jumpers_and_hoodies.png")
+p <- plot_data %>% setup_price_distribution_plot(categories = c("Jumpers and hoodies"), xmax = 200, ymax = 52, binwidth = 10, x_break = 20, repel_gap = 6)
+ggsave(filename = "Plots/O/O-Item_price_distribution_by_category-Jumpers_and_hoodies.png", p, width = 9, height = 7, dpi = 150, units = "in")
+save_to_cloud_Z("O-Item_price_distribution_by_category-Jumpers_and_hoodies.png")
 
-p <- raw_data %>% setup_price_distribution_plot(categories = c("Cardigans and knits"), xmax = 425, ymax = 90, binwidth = 10, x_break = 25, repel_gap = 12)
-ggsave(filename = "Plots/Z/Z-Item_price_distribution_by_category-Cardigans_and_knits.png", p, width = 9, height = 7, dpi = 150, units = "in")
-save_to_cloud_Z("Z-Item_price_distribution_by_category-Cardigans_and_knits.png")
+p <- plot_data %>% setup_price_distribution_plot(categories = c("Cardigans and knits"), xmax = 200, ymax = 54, binwidth = 10, x_break = 20, repel_gap = 6)
+ggsave(filename = "Plots/O/O-Item_price_distribution_by_category-Cardigans_and_knits.png", p, width = 9, height = 7, dpi = 150, units = "in")
+save_to_cloud_Z("O-Item_price_distribution_by_category-Cardigans_and_knits.png")
 
-p <- raw_data %>% setup_price_distribution_plot(categories = c("Shirts and blouses"), xmax = 260, ymax = 100, binwidth = 10, x_break = 20, repel_gap = 10)
-ggsave(filename = "Plots/Z/Z-Item_price_distribution_by_category-Shirts_and_blouses.png", p, width = 9, height = 7, dpi = 150, units = "in")
-save_to_cloud_Z("Z-Item_price_distribution_by_category-Shirts_and_blouses.png")
+p <- plot_data %>% setup_price_distribution_plot(categories = c("Shirts and blouses"), xmax = 200, ymax = 120, binwidth = 10, x_break = 20, repel_gap = 6)
+ggsave(filename = "Plots/O/O-Item_price_distribution_by_category-Shirts_and_blouses.png", p, width = 9, height = 7, dpi = 150, units = "in")
+save_to_cloud_Z("O-Item_price_distribution_by_category-Shirts_and_blouses.png")
 
-p <- raw_data %>% setup_price_distribution_plot(categories = c("T-shirts and tops"), xmax = 150, ymax = 320, binwidth = 10, repel_gap = 5)
-ggsave(filename = "Plots/Z/Z-Item_price_distribution_by_category-T-shirts_and_tops.png", p, width = 9, height = 7, dpi = 150, units = "in")
-save_to_cloud_Z("Z-Item_price_distribution_by_category-T-shirts_and_tops.png")
+p <- plot_data %>% setup_price_distribution_plot(categories = c("T-shirts and tops"), xmax = 100, ymax = 270, binwidth = 10, repel_gap = 3)
+ggsave(filename = "Plots/O/O-Item_price_distribution_by_category-T-shirts_and_tops.png", p, width = 9, height = 7, dpi = 150, units = "in")
+save_to_cloud_Z("O-Item_price_distribution_by_category-T-shirts_and_tops.png")
 
-p <- raw_data %>% setup_price_distribution_plot(categories = c("Dresses and jumpsuits"), xmax = 250, ymax = 60, binwidth = 10, x_break = 20, repel_gap = 7)
-ggsave(filename = "Plots/Z/Z-Item_price_distribution_by_category-Dresses_and_jumpsuits.png", p, width = 9, height = 7, dpi = 150, units = "in")
-save_to_cloud_Z("Z-Item_price_distribution_by_category-Dresses_and_jumpsuits.png")
+p <- plot_data %>% setup_price_distribution_plot(categories = c("Dresses and jumpsuits"), xmax = 260, ymax = 70, binwidth = 10, x_break = 20, repel_gap = 7)
+ggsave(filename = "Plots/O/O-Item_price_distribution_by_category-Dresses_and_jumpsuits.png", p, width = 9, height = 7, dpi = 150, units = "in")
+save_to_cloud_Z("O-Item_price_distribution_by_category-Dresses_and_jumpsuits.png")
 
-p <- raw_data %>% setup_price_distribution_plot(categories = c("Shorts and skirts"), xmax = 240, ymax = 70, binwidth = 10, x_break = 20, repel_gap = 9)
-ggsave(filename = "Plots/Z/Z-Item_price_distribution_by_category-Shorts_and_skirts.png", p, width = 9, height = 7, dpi = 150, units = "in")
-save_to_cloud_Z("Z-Item_price_distribution_by_category-Shorts_and_skirts.png")
+p <- plot_data %>% setup_price_distribution_plot(categories = c("Shorts and skirts"), xmax = 180, ymax = 55, binwidth = 10, x_break = 20, repel_gap = 6)
+ggsave(filename = "Plots/O/O-Item_price_distribution_by_category-Shorts_and_skirts.png", p, width = 9, height = 7, dpi = 150, units = "in")
+save_to_cloud_Z("O-Item_price_distribution_by_category-Shorts_and_skirts.png")
 
-p <- raw_data %>% setup_price_distribution_plot(categories = c("Trousers and jeans"), xmax = 275, ymax = 85, binwidth = 10, x_break = 20, repel_gap = 9)
-ggsave(filename = "Plots/Z/Z-Item_price_distribution_by_category-Trousers_and_jeans.png", p, width = 9, height = 7, dpi = 150, units = "in")
-save_to_cloud_Z("Z-Item_price_distribution_by_category-Trousers_and_jeans.png")
+p <- plot_data %>% setup_price_distribution_plot(categories = c("Trousers and jeans"), xmax = 260, ymax = 90, binwidth = 10, x_break = 20, repel_gap = 9)
+ggsave(filename = "Plots/O/O-Item_price_distribution_by_category-Trousers_and_jeans.png", p, width = 9, height = 7, dpi = 150, units = "in")
+save_to_cloud_Z("O-Item_price_distribution_by_category-Trousers_and_jeans.png")
 
-p <- raw_data %>% setup_price_distribution_plot(categories = c("Shoes and footwear"), xmax = 475, ymax = 60, binwidth = 10, x_break = 25, repel_gap = 15)
-ggsave(filename = "Plots/Z/Z-Item_price_distribution_by_category-Shoes_and_footwear.png", p, width = 9, height = 7, dpi = 150, units = "in")
-save_to_cloud_Z("Z-Item_price_distribution_by_category-Shoes_and_footwear.png")
+p <- plot_data %>% setup_price_distribution_plot(categories = c("Shoes and footwear"), xmax = 450, ymax = 65, binwidth = 10, x_break = 25, repel_gap = 15)
+ggsave(filename = "Plots/O/O-Item_price_distribution_by_category-Shoes_and_footwear.png", p, width = 9, height = 7, dpi = 150, units = "in")
+save_to_cloud_Z("O-Item_price_distribution_by_category-Shoes_and_footwear.png")
 
-p <- raw_data %>% setup_price_distribution_plot(categories = c("Underwear and socks"), xmax = 160, ymax = 350, binwidth = 10, repel_gap = 5)
-ggsave(filename = "Plots/Z/Z-Item_price_distribution_by_category-Underwear_and_socks.png", p, width = 9, height = 7, dpi = 150, units = "in")
-save_to_cloud_Z("Z-Item_price_distribution_by_category-Underwear_and_socks.png")
+p <- plot_data %>% setup_price_distribution_plot(categories = c("Underwear and socks"), xmax = 100, ymax = 330, binwidth = 10, repel_gap = 4)
+ggsave(filename = "Plots/O/O-Item_price_distribution_by_category-Underwear_and_socks.png", p, width = 9, height = 7, dpi = 150, units = "in")
+save_to_cloud_Z("O-Item_price_distribution_by_category-Underwear_and_socks.png")
 
-p <- raw_data %>% setup_price_distribution_plot(categories = c("Nightwear and homewear"), xmax = 130, ymax = 75, binwidth = 10, repel_gap = 5)
-ggsave(filename = "Plots/Z/Z-Item_price_distribution_by_category-Nightwear_and_homewear.png", p, width = 9, height = 7, dpi = 150, units = "in")
-save_to_cloud_Z("Z-Item_price_distribution_by_category-Nightwear_and_homewear.png")
+p <- plot_data %>% setup_price_distribution_plot(categories = c("Nightwear and homewear"), xmax = 130, ymax = 40, binwidth = 10, repel_gap = 5)
+ggsave(filename = "Plots/O/O-Item_price_distribution_by_category-Nightwear_and_homewear.png", p, width = 9, height = 7, dpi = 150, units = "in")
+save_to_cloud_Z("O-Item_price_distribution_by_category-Nightwear_and_homewear.png")
 
-p <- raw_data %>% setup_price_distribution_plot(categories = c("Accessories"), xmax = 625, ymax = 100, binwidth = 10, x_break = 25, repel_gap = 15)
-ggsave(filename = "Plots/Z/Z-Item_price_distribution_by_category-Accessories.png", p, width = 9, height = 7, dpi = 150, units = "in")
-save_to_cloud_Z("Z-Item_price_distribution_by_category-Accessories.png")
+p <- plot_data %>% setup_price_distribution_plot(categories = c("Accessories"), xmax = 380, ymax = 60, binwidth = 10, x_break = 25, repel_gap = 8)
+ggsave(filename = "Plots/O/O-Item_price_distribution_by_category-Accessories.png", p, width = 9, height = 7, dpi = 150, units = "in")
+save_to_cloud_Z("O-Item_price_distribution_by_category-Accessories.png")
 
-p <- raw_data %>% setup_price_distribution_plot(categories = c("Sportswear"), xmax = 220, ymax = 120, binwidth = 10, repel_gap = 7)
-ggsave(filename = "Plots/Z/Z-Item_price_distribution_by_category-Sportswear.png", p, width = 9, height = 7, dpi = 150, units = "in")
-save_to_cloud_Z("Z-Item_price_distribution_by_category-Sportswear.png")
+p <- plot_data %>% setup_price_distribution_plot(categories = c("Sportswear"), xmax = 220, ymax = 160, binwidth = 10, repel_gap = 7)
+ggsave(filename = "Plots/O/O-Item_price_distribution_by_category-Sportswear.png", p, width = 9, height = 7, dpi = 150, units = "in")
+save_to_cloud_Z("O-Item_price_distribution_by_category-Sportswear.png")
 
 
 # Avoid GCS timeout
@@ -290,73 +300,73 @@ plot_data <- raw_data %>%
 
 p <- plot_data %>% setup_share_worn_plot(categories = c("Jackets and coats"))
 p <- p + geom_smooth(method = "lm")
-ggsave(filename = "Plots/Z/Z-Wardrobe_items_and_share_worn-Jackets_and_coats.png", p, width = 9, height = 7, dpi = 150, units = "in")
-save_to_cloud_Z("Z-Wardrobe_items_and_share_worn-Jackets_and_coats.png")
+ggsave(filename = "Plots/O/O-Wardrobe_items_and_share_worn-Jackets_and_coats.png", p, width = 9, height = 7, dpi = 150, units = "in")
+save_to_cloud_Z("O-Wardrobe_items_and_share_worn-Jackets_and_coats.png")
 
 p <- plot_data %>% setup_share_worn_plot(categories = c("Blazers and vests"))
 p <- p + geom_smooth(method = "lm")
-ggsave(filename = "Plots/Z/Z-Wardrobe_items_and_share_worn-Blazer_and_vests.png", p, width = 9, height = 7, dpi = 150, units = "in")
-save_to_cloud_Z("Z-Wardrobe_items_and_share_worn-Blazer_and_vests.png")
+ggsave(filename = "Plots/O/O-Wardrobe_items_and_share_worn-Blazer_and_vests.png", p, width = 9, height = 7, dpi = 150, units = "in")
+save_to_cloud_Z("O-Wardrobe_items_and_share_worn-Blazer_and_vests.png")
 
 p <- plot_data %>% setup_share_worn_plot(categories = c("Jumpers and hoodies"))
 p <- p + geom_smooth(method = "lm")
-ggsave(filename = "Plots/Z/Z-Wardrobe_items_and_share_worn-Jumpers_and_hoodies.png", p, width = 9, height = 7, dpi = 150, units = "in")
-save_to_cloud_Z("Z-Wardrobe_items_and_share_worn-Jumpers_and_hoodies.png")
+ggsave(filename = "Plots/O/O-Wardrobe_items_and_share_worn-Jumpers_and_hoodies.png", p, width = 9, height = 7, dpi = 150, units = "in")
+save_to_cloud_Z("O-Wardrobe_items_and_share_worn-Jumpers_and_hoodies.png")
 
 p <- plot_data %>% setup_share_worn_plot(categories = c("Cardigans and knits"))
 p <- p + geom_smooth(method = "lm")
-ggsave(filename = "Plots/Z/Z-Wardrobe_items_and_share_worn-Cardigans_and_knits.png", p, width = 9, height = 7, dpi = 150, units = "in")
-save_to_cloud_Z("Z-Wardrobe_items_and_share_worn-Cardigans_and_knits.png")
+ggsave(filename = "Plots/O/O-Wardrobe_items_and_share_worn-Cardigans_and_knits.png", p, width = 9, height = 7, dpi = 150, units = "in")
+save_to_cloud_Z("O-Wardrobe_items_and_share_worn-Cardigans_and_knits.png")
 
 p <- plot_data %>% setup_share_worn_plot(categories = c("Shirts and blouses"))
 p <- p + geom_smooth(method = "lm")
-ggsave(filename = "Plots/Z/Z-Wardrobe_items_and_share_worn-Shirts_and_blouses.png", p, width = 9, height = 7, dpi = 150, units = "in")
-save_to_cloud_Z("Z-Wardrobe_items_and_share_worn-Shirts_and_blouses.png")
+ggsave(filename = "Plots/O/O-Wardrobe_items_and_share_worn-Shirts_and_blouses.png", p, width = 9, height = 7, dpi = 150, units = "in")
+save_to_cloud_Z("O-Wardrobe_items_and_share_worn-Shirts_and_blouses.png")
 
 p <- plot_data %>% setup_share_worn_plot(categories = c("T-shirts and tops"))
 p <- p + geom_smooth(method = "lm")
-ggsave(filename = "Plots/Z/Z-Wardrobe_items_and_share_worn-T-shirts_and_tops.png", p, width = 9, height = 7, dpi = 150, units = "in")
-save_to_cloud_Z("Z-Wardrobe_items_and_share_worn-T-shirts_and_tops.png")
+ggsave(filename = "Plots/O/O-Wardrobe_items_and_share_worn-T-shirts_and_tops.png", p, width = 9, height = 7, dpi = 150, units = "in")
+save_to_cloud_Z("O-Wardrobe_items_and_share_worn-T-shirts_and_tops.png")
 
 p <- plot_data %>% setup_share_worn_plot(categories = c("Dresses and jumpsuits"))
 p <- p + geom_smooth(method = "lm")
-ggsave(filename = "Plots/Z/Z-Wardrobe_items_and_share_worn-Dresses_and_jumpsuits.png", p, width = 9, height = 7, dpi = 150, units = "in")
-save_to_cloud_Z("Z-Wardrobe_items_and_share_worn-Dresses_and_jumpsuits.png")
+ggsave(filename = "Plots/O/O-Wardrobe_items_and_share_worn-Dresses_and_jumpsuits.png", p, width = 9, height = 7, dpi = 150, units = "in")
+save_to_cloud_Z("O-Wardrobe_items_and_share_worn-Dresses_and_jumpsuits.png")
 
 p <- plot_data %>% setup_share_worn_plot(categories = c("Shorts and skirts"))
 p <- p + geom_smooth(method = "lm")
-ggsave(filename = "Plots/Z/Z-Wardrobe_items_and_share_worn-Shorts_and_skirts.png", p, width = 9, height = 7, dpi = 150, units = "in")
-save_to_cloud_Z("Z-Wardrobe_items_and_share_worn-Shorts_and_skirts.png")
+ggsave(filename = "Plots/O/O-Wardrobe_items_and_share_worn-Shorts_and_skirts.png", p, width = 9, height = 7, dpi = 150, units = "in")
+save_to_cloud_Z("O-Wardrobe_items_and_share_worn-Shorts_and_skirts.png")
 
 p <- plot_data %>% setup_share_worn_plot(categories = c("Trousers and jeans"))
 p <- p + geom_smooth(method = "lm")
-ggsave(filename = "Plots/Z/Z-Wardrobe_items_and_share_worn-Trousers_and_jeans.png", p, width = 9, height = 7, dpi = 150, units = "in")
-save_to_cloud_Z("Z-Wardrobe_items_and_share_worn-Trousers_and_jeans.png")
+ggsave(filename = "Plots/O/O-Wardrobe_items_and_share_worn-Trousers_and_jeans.png", p, width = 9, height = 7, dpi = 150, units = "in")
+save_to_cloud_Z("O-Wardrobe_items_and_share_worn-Trousers_and_jeans.png")
 
 p <- plot_data %>% setup_share_worn_plot(categories = c("Shoes and footwear"))
 p <- p + geom_smooth(method = "lm")
-ggsave(filename = "Plots/Z/Z-Wardrobe_items_and_share_worn-Shoes_and_footwear.png", p, width = 9, height = 7, dpi = 150, units = "in")
-save_to_cloud_Z("Z-Wardrobe_items_and_share_worn-Shoes_and_footwear.png")
+ggsave(filename = "Plots/O/O-Wardrobe_items_and_share_worn-Shoes_and_footwear.png", p, width = 9, height = 7, dpi = 150, units = "in")
+save_to_cloud_Z("O-Wardrobe_items_and_share_worn-Shoes_and_footwear.png")
 
 p <- plot_data %>% setup_share_worn_plot(categories = c("Underwear and socks"), xmax = 80)
 p <- p + geom_smooth(method = "lm")
-ggsave(filename = "Plots/Z/Z-Wardrobe_items_and_share_worn-Underwear_and_socks.png", p, width = 9, height = 7, dpi = 150, units = "in")
-save_to_cloud_Z("Z-Wardrobe_items_and_share_worn-Underwear_and_socks.png")
+ggsave(filename = "Plots/O/O-Wardrobe_items_and_share_worn-Underwear_and_socks.png", p, width = 9, height = 7, dpi = 150, units = "in")
+save_to_cloud_Z("O-Wardrobe_items_and_share_worn-Underwear_and_socks.png")
 
 p <- plot_data %>% setup_share_worn_plot(categories = c("Nightwear and homewear"))
 p <- p + geom_smooth(method = "lm")
-ggsave(filename = "Plots/Z/Z-Wardrobe_items_and_share_worn-Nightwear_and_homewear.png", p, width = 9, height = 7, dpi = 150, units = "in")
-save_to_cloud_Z("Z-Wardrobe_items_and_share_worn-Nightwear_and_homewear.png")
+ggsave(filename = "Plots/O/O-Wardrobe_items_and_share_worn-Nightwear_and_homewear.png", p, width = 9, height = 7, dpi = 150, units = "in")
+save_to_cloud_Z("O-Wardrobe_items_and_share_worn-Nightwear_and_homewear.png")
 
 p <- plot_data %>% setup_share_worn_plot(categories = c("Accessories"))
 p <- p + geom_smooth(method = "lm")
-ggsave(filename = "Plots/Z/Z-Wardrobe_items_and_share_worn-Accessories.png", p, width = 9, height = 7, dpi = 150, units = "in")
-save_to_cloud_Z("Z-Wardrobe_items_and_share_worn-Accessories.png")
+ggsave(filename = "Plots/O/O-Wardrobe_items_and_share_worn-Accessories.png", p, width = 9, height = 7, dpi = 150, units = "in")
+save_to_cloud_Z("O-Wardrobe_items_and_share_worn-Accessories.png")
 
 p <- plot_data %>% setup_share_worn_plot(categories = c("Sportswear"))
 p <- p + geom_smooth(method = "lm")
-ggsave(filename = "Plots/Z/Z-Wardrobe_items_and_share_worn-Sportswear.png", p, width = 9, height = 7, dpi = 150, units = "in")
-save_to_cloud_Z("Z-Wardrobe_items_and_share_worn-Sportswear.png")
+ggsave(filename = "Plots/O/O-Wardrobe_items_and_share_worn-Sportswear.png", p, width = 9, height = 7, dpi = 150, units = "in")
+save_to_cloud_Z("O-Wardrobe_items_and_share_worn-Sportswear.png")
 
 
 
@@ -371,8 +381,8 @@ save_to_cloud_Z("Z-Wardrobe_items_and_share_worn-Sportswear.png")
 ## Purchase price and diary wears 
 
 p <- raw_data %>% filter(wears > 0 & price > 0) %>%
-  filter(user == "Sophy") %>%
-#  filter(category == "Shoes and footwear") %>%
+#  filter(user == "Sophy") %>%
+  filter(category == "Shoes and footwear") %>%
   setup_category_plot(categories = category_order)
 p + geom_smooth(method = "lm", se = FALSE)
 
@@ -828,7 +838,8 @@ setup_category_distribution_plot <- function(plot_data, categories, xmax = NA, y
     geom_point(show.legend = TRUE, aes(alpha = plot_size, size = plot_size)) +
     geom_label_repel(aes(label=category)) +
     scale_x_continuous(limits=c(0,xmax), breaks = seq.int(from = 0, to = xmax, by = 2)) +
-    scale_y_continuous(limits=c(NA,ymax), breaks = seq.int(from = 0, to = ymax, by = 100), labels=scales::dollar_format(suffix = " kr", prefix = "")) +
+#    scale_y_continuous(limits=c(NA,ymax), breaks = seq.int(from = 0, to = ymax, by = 100), labels=scales::dollar_format(suffix = " kr", prefix = "")) +
+    scale_y_continuous(limits=c(NA,ymax), breaks = seq.int(from = 0, to = ymax, by = 10), labels=scales::dollar_format(suffix = " €", prefix = "")) +
     scale_color_manual(name = "Category", values = category_colors[match(categories, category_order)]) +
     scale_alpha(range = c(0.5, 1.0)) +
     scale_size(range = c(2, 3)) +
@@ -860,10 +871,12 @@ setup_user_distribution_plot <- function(plot_data, xmax = NA, ymax = NA) {
     geom_vline(xintercept = mean(plot_data$items), color="darkgrey", linetype="dashed") +
     geom_label(aes(x = mean(plot_data$items), y = 0, label=round(mean(plot_data$items), digits = 0)), color =  "darkgrey") +
     geom_hline(yintercept = mean(plot_data$value), color="darkgrey", linetype="dashed") +
-    geom_label(aes(x = 0, y = mean(plot_data$value), label = paste(round(mean(plot_data$value), digits = 0), "kr")), color =  "darkgrey") +
+#    geom_label(aes(x = 0, y = mean(plot_data$value), label = paste(round(mean(plot_data$value), digits = 0), "kr")), color =  "darkgrey") +
+    geom_label(aes(x = 0, y = mean(plot_data$value), label = paste(round(mean(plot_data$value), digits = 0), "€")), color =  "darkgrey") +
     geom_point(show.legend = TRUE, aes(alpha = plot_size, size = plot_size)) +
     scale_x_continuous(limits=c(0,xmax), breaks = seq.int(from = 0, to = xmax, by = 20)) +
-    scale_y_continuous(limits=c(0,ymax), breaks = seq.int(from = 0, to = ymax, by = 10000), labels=scales::dollar_format(suffix = " kr", prefix = "")) +
+#    scale_y_continuous(limits=c(0,ymax), breaks = seq.int(from = 0, to = ymax, by = 10000), labels=scales::dollar_format(suffix = " kr", prefix = "")) +
+    scale_y_continuous(limits=c(0,ymax), breaks = seq.int(from = 0, to = ymax, by = 1000), labels=scales::dollar_format(suffix = " €", prefix = "")) +
     #scale_color_manual(name = "Category", values = category_colors[match(categories, category_order)]) +
     scale_color_manual(name = "Users", values = gender_colors) +
     scale_alpha(range = c(0.5, 1.0)) +

@@ -1,4 +1,4 @@
-### Threddit.R - Olof Hoverfält - 2018-2021 - hoverfalt.github.io
+### Threddit.R - Olof Hoverfält - 2018-2022 - hoverfalt.github.io
 
 # For data and insights: https://hoverfalt.github.io/
 # For context and background: https://www.reaktor.com/blog/why-ive-tracked-every-single-piece-of-clothing-ive-worn-for-three-years/
@@ -31,7 +31,7 @@ plotuse <- transform_data(masterdata) %>% # 1) Transform raw data into tidy data
   calculate_total_use_data() %>% # 3) Calculate total use data, including divested items 
   calculate_plot_data() # 4) Calculate plot data for the standard plots
 
-# Save tidy data data.frame to file for easier retrieval (2022-02-10)
+# Save tidy data data.frame to file for easier retrieval (2022-05-03)
 save(masterdata,file="Data/Threddit-masterdata.Rda")
 save(plotuse,file="Data/Threddit-plotuse.Rda")
 save(daterange,file="Data/Threddit-daterange.Rda")
@@ -80,7 +80,7 @@ daily_cost_anim_plot <- daily_cost_anim %>% filter(day >= daterange[rolling_aver
 # Reduce frames by removing every second day (note: not date!)
 daily_cost_anim_plot_reduced <- daily_cost_anim_plot[daily_cost_anim_plot$day %in% unique(daily_cost_anim_plot$day)[c(TRUE, FALSE)],]
 
-# Set up animation, animate, and save (HEAVY COMPUTING) - Latest: 2021-06-07
+# Set up animation, animate, and save (HEAVY COMPUTING) - Latest: 2022-03-21
 setup_daily_cost_animation(daily_cost_anim_plot_reduced, ymax = 40) %>%
 animate(height = 1000, width = 1000, nframes = length(unique(daily_cost_anim_plot_reduced$day)) + 72, fps = 24, end_pause = 72)
 anim_save("Plots/Portfolio-Daily_cost-animation.gif")
@@ -94,7 +94,7 @@ gcs_upload("Plots/Portfolio-Daily_cost-animation.gif", name="Portfolio-Daily_cos
 # Reduce frames by removing every second date
 usetodate_anim_reduced <- usetodate_anim[usetodate_anim$date %in% unique(usetodate_anim$date)[c(TRUE, FALSE)],] # Reduce frames
 
-# Animation: Average DAILY cost vs category use (HEAVY COMPUTING) - Latest: 2021-06-07
+# Animation: Average DAILY cost vs category use (HEAVY COMPUTING) - Latest: 2022-03-21
 animation <- usetodate_anim_reduced %>% setup_daily_cost_and_category_use_plot(ymax = 15, ybreaks = 2, animate = TRUE)
 animate(animation, height = 1000, width = 1150, nframes = length(unique(usetodate_anim_reduced$date)) + 72, fps = 24, end_pause = 72)
 anim_save("Plots/Portfolio-Daily_cost_and_Category_use-animation.gif")
@@ -261,6 +261,65 @@ file.copy(paste("Plots/Category-", gsub(" ", "_", i), "-Times_used-animation.gif
 ##### ##### ##### ##### ##### ##### ##### DEVELOPMENT ##### ##### ##### ##### ##### ##### #####
 ##### ##### ##### ##### ##### ##### ##### DEVELOPMENT ##### ##### ##### ##### ##### ##### #####
 ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
+
+# Circular combinatorics plotting sandbox
+## https://github.com/jokergoo/circlize
+
+library(circlize)
+
+mat = matrix(sample(100, 25), 5)
+rownames(mat) = letters[1:5]
+colnames(mat) = letters[1:5]
+chordDiagram(mat, directional = FALSE, transparency = 0.5)
+circos.clear()
+
+
+
+
+df = read.table(textConnection("
+ brand_from model_from brand_to model_to
+      VOLVO        s80      BMW  5series
+        BMW    3series      BMW  3series
+      VOLVO        s60    VOLVO      s60
+      VOLVO        s60    VOLVO      s80
+        BMW    3series     AUDI       s4
+       AUDI         a4      BMW  3series
+       AUDI         a5     AUDI       a5
+"), header = TRUE, stringsAsFactors = FALSE)
+
+
+brand = c(structure(df$brand_from, names=df$model_from), structure(df$brand_to,names= df$model_to))
+brand = brand[!duplicated(names(brand))]
+brand = brand[order(brand, names(brand))]
+brand_color = structure(2:4, names = unique(brand))
+model_color = structure(2:8, names = names(brand))
+
+gap.after = do.call("c", lapply(table(brand), function(i) c(rep(2, i-1), 8)))
+circos.par(gap.after = gap.after, cell.padding = c(0, 0, 0, 0))
+
+chordDiagram(df[, c(2, 4)], order = names(brand), grid.col = model_color,
+             directional = 1, annotationTrack = "grid", preAllocateTracks = list(
+               list(track.height = 0.02))
+)
+
+circos.track(track.index = 2, panel.fun = function(x, y) {
+  xlim = get.cell.meta.data("xlim")
+  ylim = get.cell.meta.data("ylim")
+  sector.index = get.cell.meta.data("sector.index")
+  circos.text(mean(xlim), mean(ylim), sector.index, col = "white", cex = 0.6, facing = "inside", niceFacing = TRUE)
+}, bg.border = NA)
+
+for(b in unique(brand)) {
+  model = names(brand[brand == b])
+  highlight.sector(sector.index = model, track.index = 1, col = brand_color[b], 
+                   text = b, text.vjust = -1, niceFacing = TRUE)
+}
+
+circos.clear()
+
+
+
+
 
 
 # Read comparison data (only refresh from Google Sheets if changed) and save

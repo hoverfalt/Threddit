@@ -1,4 +1,4 @@
-### Threddit.R - Olof Hoverfält - 2018-2021 - hoverfalt.github.io
+### Threddit.R - Olof Hoverfält - 2018-2022 - hoverfalt.github.io
 
 # Functions to build plots
 
@@ -152,7 +152,7 @@ build_standard_plots <- function(){
   ## Category plot - Cost per use vs Cumulative use
   
   # Jackets and hoodies
-  p <- plot_data %>% setup_category_cumulative_plot_image("Jackets and hoodies", xmax = 500, ymax = 10, ybreaks = plot_log_breaks, log_trans=TRUE, trails=TRUE, guides=TRUE)
+  p <- plot_data %>% setup_category_cumulative_plot_image("Jackets and hoodies", xmax = 550, ymax = 10, ybreaks = plot_log_breaks, log_trans=TRUE, trails=TRUE, guides=TRUE)
   ggsave(filename = "Plots/Category-Jackets_and_hoodies-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in")
   save_to_cloud("Category-Jackets_and_hoodies-Cost_and_Cumulative_use.png")
 
@@ -172,7 +172,7 @@ build_standard_plots <- function(){
   save_to_cloud("Category-Shirts-Cost_and_Cumulative_use.png")
   
   # T-shirts and tanks
-  p <- plot_data %>% setup_category_cumulative_plot_image("T-shirts and tanks", xmax = 110, ymax = 20, log_trans=TRUE, trails=TRUE, guides=TRUE)
+  p <- plot_data %>% setup_category_cumulative_plot_image("T-shirts and tanks", xmax = 120, ymax = 20, log_trans=TRUE, trails=TRUE, guides=TRUE)
   ggsave(filename = "Plots/Category-T-shirts_and_tanks-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in")
   save_to_cloud("Category-T-shirts_and_tanks-Cost_and_Cumulative_use.png")
   
@@ -187,7 +187,7 @@ build_standard_plots <- function(){
   save_to_cloud("Category-Shorts-Cost_and_Cumulative_use.png")
   
   # Belts
-  p <- plot_data %>% setup_category_cumulative_plot_image("Belts", xmax = 600, ymax = 100, log_trans=TRUE, trails=TRUE, guides=TRUE)
+  p <- plot_data %>% setup_category_cumulative_plot_image("Belts", xmax = 650, ymax = 100, log_trans=TRUE, trails=TRUE, guides=TRUE)
   ggsave(filename = "Plots/Category-Belts-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in")
   save_to_cloud("Category-Belts-Cost_and_Cumulative_use.png")
   

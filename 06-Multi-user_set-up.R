@@ -94,8 +94,12 @@ gcs_upload_set_limit(upload_limit = 100000000L)
 data_file = get_Google_sheet_ID_Z()
 raw_data <- read_sheet(data_file, sheet='Use data filtered - Machine readable')
 
+# Save Sheet data to avoid refreshing from Google Sheets if computation fails
+temp_storage <- raw_data 
+# raw_data <- temp_storage
+
 # Pre-process and clean data
-raw_data <- raw_data %>% as.data.frame() %>% filter(!is.na(category) & !is.na(item))
+raw_data <- raw_data %>% as.data.frame() %>% filter(!is.na(category)) %>% filter(!is.na(item))
 raw_data <- raw_data %>% mutate_at(c("wears"), ~replace(., is.na(.), 0)) %>% select(-listed_date)
 
 # Turn factor variables into factors
@@ -106,7 +110,7 @@ raw_data$reason_not_repaired <- factor(raw_data$reason_not_repaired, levels = un
 raw_data$repair_willing_to_pay <- factor(raw_data$repair_willing_to_pay, levels = unique(raw_data$repair_willing_to_pay))
 raw_data$special_care_kind <- factor(raw_data$special_care_kind, levels = unique(raw_data$special_care_kind))
 
-# Save raw_data data.frame to file for easier retrieval (2022-03-31)
+# Save raw_data data.frame to file for easier retrieval (2022-07-11)
 save(raw_data, file="Data/Threddit-Z-raw_data.Rda")
 # Load data from file
 load("Data/Threddit-Z-raw_data.Rda")
@@ -165,7 +169,7 @@ plot_data <- raw_data %>%
   summarise(items = n(), share_worn = sum(worn)/n(), value = sum(price, na.rm = TRUE)) %>%
   mutate(average_items = items/length(unique(raw_data$user)), average_value = value / items)
 
-p <- plot_data %>% setup_category_distribution_plot(categories = category_order, xmax = 34, ymax = 80)
+p <- plot_data %>% setup_category_distribution_plot(categories = category_order, xmax = 40, ymax = 80)
 ggsave(filename = "Plots/Z/Z-Average_wardrobe_size_and_value_by_category.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Average_wardrobe_size_and_value_by_category.png")
 
@@ -182,7 +186,7 @@ p <- raw_data %>% setup_price_distribution_plot(categories = category_order, xma
 ggsave(filename = "Plots/Z/Z-Item_price_distribution.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Item_price_distribution.png")
 
-p <- raw_data %>% setup_price_distribution_plot(categories = c("Jackets and coats"), xmax = 360, ymax = 42, binwidth = 10, x_break = 20, repel_gap = 5)
+p <- raw_data %>% setup_price_distribution_plot(categories = c("Jackets and coats"), xmax = 360, ymax = 45, binwidth = 10, x_break = 20, repel_gap = 5)
 ggsave(filename = "Plots/Z/Z-Item_price_distribution_by_category-Jackets_and_coats.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Item_price_distribution_by_category-Jackets_and_coats.png")
 
@@ -336,6 +340,23 @@ plot_data <- raw_data %>%
 write.csv(plot_data,"Plots/Z/Z-Amount_of_active_items_by_categoty_and_user.csv", row.names = FALSE)
 
 str(plot_data)
+
+
+## List number of unused items by category by user
+
+plot_data <- raw_data %>%
+  filter(is.na(date_divested)) %>%
+  mutate(worn = as.logical(wears)) %>%
+  filter(worn == 0) %>%
+  group_by(user, category) %>%
+  summarise(items = n()) %>%
+  spread(category, items) %>%
+  as.data.frame()
+
+write.csv(plot_data,"Plots/Z/Z-Amount_of_unused_items_by_categoty_and_user.csv", row.names = FALSE)
+
+str(plot_data)
+
 
 ######################################## DEVELOPMENT WIP ###########################################
 ######################################## DEVELOPMENT WIP ###########################################
@@ -703,7 +724,6 @@ setup_price_distribution_plot <- function(plot_data, categories, xmax = NA, ymax
 
 
 
-
 ## Function: Number of wardrobe items vs share of items worn
 setup_share_worn_plot <- function(plot_data, categories, xmax = NA, ymax = 1) {
   
@@ -924,4 +944,50 @@ multiplier_format_y <- function (x) {
                 suffix = "x",
                 big.mark = ",")(x)
 }
+
+
+# Function: item CPW and wears by category (across all users)
+setup_CPW_and_Toal_wears_plot <- function(plot_data, categories, xmax = NA, ymax = NA) {
+  
+  # Filter data by category
+  plot_data <- plot_data %>% filter(category %in% categories)
+  
+  # Set author label coordinates (upper right corner)
+  if(is.na(xmax)) { xmax <- max(plot_data$total_wears) }
+  if(is.na(ymax)) { ymax <- max(plot_data$cpw) }
+  
+  author_label_x <- xmax
+  author_label_y <- ymax
+  
+  # Set plot_size
+  plot_size <- 0.5
+  
+  # Set up plot
+  p <- ggplot(
+    plot_data, 
+    aes(x = total_wears, y = cpw, colour = category)) +
+    annotate("text", x = author_label_x, y = author_label_y, label = author_label, color = "gray", hjust = 1) +
+    geom_point(show.legend = FALSE, aes(alpha = plot_size, size = plot_size)) +
+    #geom_vline(xintercept = median(plot_data$total_wears), color="darkgrey", linetype="dashed") +
+    # geom_label(aes(x = median(plot_data$total_wears), y = min(plot_data$total_wears), label=round(median(plot_data$total_wears), digits = 0)), color =  "darkgrey") +
+    #geom_hline(yintercept = median(plot_data$cpw), color="darkgrey", linetype="dashed") +
+    # geom_label(aes(x = 0, y = median(plot_data$cpw), label=paste(round(median(plot_data$cpw), digits = 1), "€")), color =  "darkgrey") +
+    # geom_label_repel(aes(label=category)) +
+    scale_x_continuous(limits=c(0,xmax), breaks = seq.int(from = 0, to = xmax, by = 20)) +
+    scale_y_continuous(limits=c(NA,ymax), breaks = seq.int(from = 0, to = ymax, by = 1), labels=scales::dollar_format(suffix = "€", prefix = "")) +
+    scale_color_manual(name = "Category", values = category_colors[match(categories, category_order)]) +
+    scale_alpha(range = c(0.5, 1.0)) +
+    scale_size(range = c(2, 3)) +
+    guides(alpha = FALSE, size = FALSE) +
+    labs(x = "Total number of wears", y = "Cost Per Wear (CPW)") +
+    ggtitle("Cost Per Wear and Total number of wears by category (across all users)")
+  
+  return(p)
+}
+
+plot_data <- raw_data %>% select(category, cpw, total_wears)
+  
+p <- plot_data %>% setup_CPW_and_Toal_wears_plot(categories = "Shoes and footwear", xmax = 400, ymax = 10)
+ggsave(filename = "Plots/Z/Z-CPW_and_Total_wears_by_category.png", p, width = 9, height = 7, dpi = 150, units = "in")
+save_to_cloud_Z("Z-CPW_and_Total_wears_by_category.png")
 

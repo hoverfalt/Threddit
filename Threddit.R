@@ -25,6 +25,8 @@ set_up_environment()
 ## Read and clean master raw data
 masterdata <- read_data_GD(get_Google_sheet_ID()) # Read master data from Google Drive
 
+temp <- masterdata
+
 ## Transform data
 plotuse <- transform_data(masterdata) %>% # 1) Transform raw data into tidy data
   calculate_active_use_data() %>% # 2) Calculate cumulative use data

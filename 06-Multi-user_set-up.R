@@ -579,6 +579,9 @@ ggsave(filename = "Plots/Z/Z-Diary_wears_distribution-Sportswear.png", p, width 
 save_to_cloud_Z("Z-Diary_wears_distribution-Sportswear.png")
 
 
+# Avoid GCS timeout
+gcs_list_buckets(Firebase_project_id)
+
 
 #########################################################
 ## Plot Diary wears (cumulative) histogram by category ##
@@ -616,101 +619,101 @@ plot_data <- plot_data %>%
 write.csv(plot_data,"Plots/Z/Z-Diary_wears_histogram_by_categoty.csv", row.names = FALSE)
 
 
-p <- plot_data %>% setup_Diary_wears_histogram_plot(categories = "Jackets and coats", ymax = 0.25, ybreak = 0.05, legend=FALSE)
+p <- plot_data %>% setup_Diary_wears_histogram_plot(categories = "Jackets and coats", ymax = 0.25, ybreak = 0.05)
 ggsave(filename = "Plots/Z/Z-Diary_wears_histogram-Jackets_and_coats.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Diary_wears_histogram-Jackets_and_coats.png")
-p <- plot_data %>% setup_Diary_wears_histogram_plot(categories = "Jackets and coats", ymax = 1, ybreak = 0.10, cumulative = TRUE, legend = FALSE)
+p <- plot_data %>% setup_Diary_wears_histogram_plot(categories = "Jackets and coats", ymax = 1, ybreak = 0.10, cumulative = TRUE)
 ggsave(filename = "Plots/Z/Z-Diary_wears_histogram-cumulative-Jackets_and_coats.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Diary_wears_histogram-cumulative-Jackets_and_coats.png")
 
-p <- plot_data %>% setup_Diary_wears_histogram_plot(categories = "Blazers and vests", ymax = 0.35, ybreak = 0.05, legend=FALSE)
+p <- plot_data %>% setup_Diary_wears_histogram_plot(categories = "Blazers and vests", ymax = 0.35, ybreak = 0.05)
 ggsave(filename = "Plots/Z/Z-Diary_wears_histogram-Blazers_and_vests.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Diary_wears_histogram-Blazers_and_vests.png")
-p <- plot_data %>% setup_Diary_wears_histogram_plot(categories = "Blazers and vests", ymax = 1, ybreak = 0.1, cumulative = TRUE, legend=FALSE)
+p <- plot_data %>% setup_Diary_wears_histogram_plot(categories = "Blazers and vests", ymax = 1, ybreak = 0.1, cumulative = TRUE)
 ggsave(filename = "Plots/Z/Z-Diary_wears_histogram-cumulative-Blazers_and_vests.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Diary_wears_histogram-cumulative-Blazers_and_vests.png")
 
-p <- plot_data %>% setup_Diary_wears_histogram_plot(categories = "Jumpers and hoodies", ymax = 0.25, ybreak = 0.05, legend=FALSE)
+p <- plot_data %>% setup_Diary_wears_histogram_plot(categories = "Jumpers and hoodies", ymax = 0.25, ybreak = 0.05)
 ggsave(filename = "Plots/Z/Z-Diary_wears_histogram-Jumpers_and_hoodies.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Diary_wears_histogram-Jumpers_and_hoodies.png")
-p <- plot_data %>% setup_Diary_wears_histogram_plot(categories = "Jumpers and hoodies", ymax = 1, ybreak = 0.10, cumulative = TRUE, legend=FALSE)
+p <- plot_data %>% setup_Diary_wears_histogram_plot(categories = "Jumpers and hoodies", ymax = 1, ybreak = 0.10, cumulative = TRUE)
 ggsave(filename = "Plots/Z/Z-Diary_wears_histogram-cumulative-Jumpers_and_hoodies.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Diary_wears_histogram-cumulative-Jumpers_and_hoodies.png")
 
-p <- plot_data %>% setup_Diary_wears_histogram_plot(categories = "Cardigans and knits", ymax = 0.25, ybreak = 0.05, legend=FALSE)
+p <- plot_data %>% setup_Diary_wears_histogram_plot(categories = "Cardigans and knits", ymax = 0.25, ybreak = 0.05)
 ggsave(filename = "Plots/Z/Z-Diary_wears_histogram-Cardigans_and_knits.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Diary_wears_histogram-Cardigans_and_knits.png")
-p <- plot_data %>% setup_Diary_wears_histogram_plot(categories = "Cardigans and knits", ymax = 1, ybreak = 0.10, cumulative = TRUE, legend=FALSE)
+p <- plot_data %>% setup_Diary_wears_histogram_plot(categories = "Cardigans and knits", ymax = 1, ybreak = 0.10, cumulative = TRUE)
 ggsave(filename = "Plots/Z/Z-Diary_wears_histogram-cumulative-Cardigans_and_knits.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Diary_wears_histogram-cumulative-Cardigans_and_knits.png")
 
-p <- plot_data %>% setup_Diary_wears_histogram_plot(categories = "Shirts and blouses", ymax = 0.3, ybreak = 0.05, legend=FALSE)
+p <- plot_data %>% setup_Diary_wears_histogram_plot(categories = "Shirts and blouses", ymax = 0.3, ybreak = 0.05)
 ggsave(filename = "Plots/Z/Z-Diary_wears_histogram-Shirts_and_blouses.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Diary_wears_histogram-Shirts_and_blouses.png")
-p <- plot_data %>% setup_Diary_wears_histogram_plot(categories = "Shirts and blouses", ymax = 1, ybreak = 0.10, cumulative = TRUE, legend=FALSE)
+p <- plot_data %>% setup_Diary_wears_histogram_plot(categories = "Shirts and blouses", ymax = 1, ybreak = 0.10, cumulative = TRUE)
 ggsave(filename = "Plots/Z/Z-Diary_wears_histogram-cumulative-Shirts_and_blouses.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Diary_wears_histogram-cumulative-Shirts_and_blouses.png")
 
-p <- plot_data %>% setup_Diary_wears_histogram_plot(categories = "T-shirts and tops", ymax = 0.25, ybreak = 0.05, legend=FALSE)
+p <- plot_data %>% setup_Diary_wears_histogram_plot(categories = "T-shirts and tops", ymax = 0.25, ybreak = 0.05)
 ggsave(filename = "Plots/Z/Z-Diary_wears_histogram-T-shirts_and_tops.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Diary_wears_histogram-T-shirts_and_tops.png")
-p <- plot_data %>% setup_Diary_wears_histogram_plot(categories = "T-shirts and tops", ymax = 1, ybreak = 0.10, cumulative = TRUE, legend=FALSE)
+p <- plot_data %>% setup_Diary_wears_histogram_plot(categories = "T-shirts and tops", ymax = 1, ybreak = 0.10, cumulative = TRUE)
 ggsave(filename = "Plots/Z/Z-Diary_wears_histogram-cumulative-T-shirts_and_tops.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Diary_wears_histogram-cumulative-T-shirts_and_tops.png")
 
-p <- plot_data %>% setup_Diary_wears_histogram_plot(categories = "Dresses and jumpsuits", ymax = 0.5, ybreak = 0.05, legend=FALSE)
+p <- plot_data %>% setup_Diary_wears_histogram_plot(categories = "Dresses and jumpsuits", ymax = 0.5, ybreak = 0.05)
 ggsave(filename = "Plots/Z/Z-Diary_wears_histogram-Dresses_and_jumpsuits.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Diary_wears_histogram-Dresses_and_jumpsuits.png")
-p <- plot_data %>% setup_Diary_wears_histogram_plot(categories = "Dresses and jumpsuits", ymax = 1, ybreak = 0.10, cumulative = TRUE, legend=FALSE)
+p <- plot_data %>% setup_Diary_wears_histogram_plot(categories = "Dresses and jumpsuits", ymax = 1, ybreak = 0.10, cumulative = TRUE)
 ggsave(filename = "Plots/Z/Z-Diary_wears_histogram-cumulative-Dresses_and_jumpsuits.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Diary_wears_histogram-cumulative-Dresses_and_jumpsuits.png")
 
-p <- plot_data %>% setup_Diary_wears_histogram_plot(categories = "Shorts and skirts", ymax = 0.4, ybreak = 0.05, legend=FALSE)
+p <- plot_data %>% setup_Diary_wears_histogram_plot(categories = "Shorts and skirts", ymax = 0.4, ybreak = 0.05)
 ggsave(filename = "Plots/Z/Z-Diary_wears_histogram-Shorts_and_skirts.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Diary_wears_histogram-Shorts_and_skirts.png")
-p <- plot_data %>% setup_Diary_wears_histogram_plot(categories = "Shorts and skirts", ymax = 1, ybreak = 0.10, cumulative = TRUE, legend=FALSE)
+p <- plot_data %>% setup_Diary_wears_histogram_plot(categories = "Shorts and skirts", ymax = 1, ybreak = 0.10, cumulative = TRUE)
 ggsave(filename = "Plots/Z/Z-Diary_wears_histogram-cumulative-Shorts_and_skirts.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Diary_wears_histogram-cumulative-Shorts_and_skirts.png")
 
-p <- plot_data %>% setup_Diary_wears_histogram_plot(categories = "Trousers and jeans", ymax = 0.25, ybreak = 0.05, legend=FALSE)
+p <- plot_data %>% setup_Diary_wears_histogram_plot(categories = "Trousers and jeans", ymax = 0.25, ybreak = 0.05)
 ggsave(filename = "Plots/Z/Z-Diary_wears_histogram-Trousers_and_jeans.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Diary_wears_histogram-Trousers_and_jeans.png")
-p <- plot_data %>% setup_Diary_wears_histogram_plot(categories = "Trousers and jeans", ymax = 1, ybreak = 0.10, cumulative = TRUE, legend=FALSE)
+p <- plot_data %>% setup_Diary_wears_histogram_plot(categories = "Trousers and jeans", ymax = 1, ybreak = 0.10, cumulative = TRUE)
 ggsave(filename = "Plots/Z/Z-Diary_wears_histogram-cumulative-Trousers_and_jeans.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Diary_wears_histogram-cumulative-Trousers_and_jeans.png")
 
-p <- plot_data %>% setup_Diary_wears_histogram_plot(categories = "Shoes and footwear", ymax = 0.25, ybreak = 0.05, legend=FALSE)
+p <- plot_data %>% setup_Diary_wears_histogram_plot(categories = "Shoes and footwear", ymax = 0.25, ybreak = 0.05)
 ggsave(filename = "Plots/Z/Z-Diary_wears_histogram-Shoes_and_footwear.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Diary_wears_histogram-Shoes_and_footwear.png")
-p <- plot_data %>% setup_Diary_wears_histogram_plot(categories = "Shoes and footwear", ymax = 1, ybreak = 0.10, cumulative = TRUE, legend=FALSE)
+p <- plot_data %>% setup_Diary_wears_histogram_plot(categories = "Shoes and footwear", ymax = 1, ybreak = 0.10, cumulative = TRUE)
 ggsave(filename = "Plots/Z/Z-Diary_wears_histogram-cumulative-Shoes_and_footwear.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Diary_wears_histogram-cumulative-Shoes_and_footwear.png")
 
-p <- plot_data %>% setup_Diary_wears_histogram_plot(categories = "Underwear and socks", ymax = 0.25, ybreak = 0.05, legend=FALSE)
+p <- plot_data %>% setup_Diary_wears_histogram_plot(categories = "Underwear and socks", ymax = 0.25, ybreak = 0.05)
 ggsave(filename = "Plots/Z/Z-Diary_wears_histogram-Underwear_and_socks.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Diary_wears_histogram-Underwear_and_socks.png")
-p <- plot_data %>% setup_Diary_wears_histogram_plot(categories = "Underwear and socks", ymax = 1, ybreak = 0.10, cumulative = TRUE, legend=FALSE)
+p <- plot_data %>% setup_Diary_wears_histogram_plot(categories = "Underwear and socks", ymax = 1, ybreak = 0.10, cumulative = TRUE)
 ggsave(filename = "Plots/Z/Z-Diary_wears_histogram-cumulative-Underwear_and_socks.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Diary_wears_histogram-cumulative-Underwear_and_socks.png")
 
-p <- plot_data %>% setup_Diary_wears_histogram_plot(categories = "Nightwear and homewear", ymax = 0.3, ybreak = 0.05, legend=FALSE)
+p <- plot_data %>% setup_Diary_wears_histogram_plot(categories = "Nightwear and homewear", ymax = 0.3, ybreak = 0.05)
 ggsave(filename = "Plots/Z/Z-Diary_wears_histogram-Nightwear_and_homewear.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Diary_wears_histogram-Nightwear_and_homewear.png")
-p <- plot_data %>% setup_Diary_wears_histogram_plot(categories = "Nightwear and homewear", ymax = 1, ybreak = 0.10, cumulative = TRUE, legend=FALSE)
+p <- plot_data %>% setup_Diary_wears_histogram_plot(categories = "Nightwear and homewear", ymax = 1, ybreak = 0.10, cumulative = TRUE)
 ggsave(filename = "Plots/Z/Z-Diary_wears_histogram-cumulative-Nightwear_and_homewear.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Diary_wears_histogram-cumulative-Nightwear_and_homewear.png")
 
-p <- plot_data %>% setup_Diary_wears_histogram_plot(categories = "Accessories", ymax = 0.25, ybreak = 0.05, legend=FALSE)
+p <- plot_data %>% setup_Diary_wears_histogram_plot(categories = "Accessories", ymax = 0.25, ybreak = 0.05)
 ggsave(filename = "Plots/Z/Z-Diary_wears_histogram-Accessories.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Diary_wears_histogram-Accessories.png")
-p <- plot_data %>% setup_Diary_wears_histogram_plot(categories = "Accessories", ymax = 1, ybreak = 0.10, cumulative = TRUE, legend=FALSE)
+p <- plot_data %>% setup_Diary_wears_histogram_plot(categories = "Accessories", ymax = 1, ybreak = 0.10, cumulative = TRUE)
 ggsave(filename = "Plots/Z/Z-Diary_wears_histogram-cumulative-Accessories.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Diary_wears_histogram-cumulative-Accessories.png")
 
-p <- plot_data %>% setup_Diary_wears_histogram_plot(categories = "Sportswear", ymax = 0.25, ybreak = 0.05, legend=FALSE)
+p <- plot_data %>% setup_Diary_wears_histogram_plot(categories = "Sportswear", ymax = 0.25, ybreak = 0.05)
 ggsave(filename = "Plots/Z/Z-Diary_wears_histogram-Sportswear.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Diary_wears_histogram-Sportswear.png")
-p <- plot_data %>% setup_Diary_wears_histogram_plot(categories = "Sportswear", ymax = 1, ybreak = 0.10, cumulative = TRUE, legend=FALSE)
+p <- plot_data %>% setup_Diary_wears_histogram_plot(categories = "Sportswear", ymax = 1, ybreak = 0.10, cumulative = TRUE)
 ggsave(filename = "Plots/Z/Z-Diary_wears_histogram-cumulative-Sportswear.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Diary_wears_histogram-cumulative-Sportswear.png")
 
@@ -729,10 +732,9 @@ plot_data <- raw_data %>%
   select(category, cpw, plot_wears) %>%
   filter(cpw > 0) # Remove items with purchase price 0 to avoid stretching logarithmic scale
 
-# Plot all categories # CONTINUE HERE >>>
+# Plot all categories # CONTINUE HERE: Figure our why the legend is not showing >>>
 for (category in category_order) {
-  #if (max(plot_data$plot_wears[category == category], na.rm = TRUE) > 500) { xbreak = 50 } else { xbreak = 20 }
-  p <- plot_data %>% setup_CPW_and_Wears_plot(categories = category, plot_total_wears = TRUE, xmax = NA, xbreak = 50, ymax = NA)
+  p <- plot_data %>% setup_CPW_and_Wears_plot(categories = category, plot_total_wears = TRUE, xmax = NA, xbreak = 50, ymax = NA, legend = TRUE)
   filename <- paste("Z-CPW_and_Total_wears-", gsub(" ", "_", category), ".png", sep = "")
   ggsave(paste("Plots/Z/", filename, sep = ""), p, width = 9, height = 7, dpi = 150, units = "in")
   save_to_cloud_Z(filename)
@@ -750,7 +752,7 @@ plot_data <- plot_data %>%
   filter(cpw > 0) # Remove items with purchase price 0 to avoid stretching logarithmic scale
 
 # Plot all categories
-for (category in category_order) {
+for (category in category_order[1]) {
   if (max(plot_data$plot_wears[category == category]) > 150) { xbreak = 10 } else { xbreak = 5 }
   p <- plot_data %>% setup_CPW_and_Wears_plot(categories = category, plot_total_wears = FALSE, xbreak = xbreak, xmax = NA, ymax = NA)
   filename <- paste("Z-CPW_and_Diary_wears-", gsub(" ", "_", category), ".png", sep = "")
@@ -872,11 +874,11 @@ monnb <- function(d) {
 mondf <- function(d1, d2) { monnb(d2) - monnb(d1) }
 
 # Set diary period starting date to use in filtering
-diary_starting_date <- as.Date("2021-05-23")
+diary_starting_date <- as.Date("2021-09-01")
 
 
 # Set the total active tracking time in months
-months_tracked <- 3
+months_tracked <- 12
 
 
 # Calculate months available for all items
@@ -895,7 +897,7 @@ raw_data %>% select(category, item, months_available, wears_real = wears, wears_
 # List wears_per_month for specific user and category
 raw_data %>% select(user, category, item, months_available, wears_real = wears, wears_est = total_wears) %>%
   filter(months_available > 0) %>%
-  filter(category == "Shoes and footwear", user == "Quirine") %>%
+  filter(category == "Shoes and footwear", user == "Sophy") %>%
   mutate(WPM_est = round(wears_est / months_available, digits = 1), WPM_real = round(wears_real / months_tracked, digits = 1)) %>%
   arrange(desc(WPM_est)) %>%
   head(20)
@@ -957,7 +959,7 @@ gcs_list_buckets(Firebase_project_id)
 # Remove unfit categories and users with incomplete data
 WPM_delta_hm <- WPM_delta %>%
   filter(!(category %in% c("Underwear and socks", "Nightwear and homewear", "Accessories", "Sportswear", "Other"))) %>%
-  filter(!user == "Melanie")
+  filter(!user == "Robin")
   
 
 ## Heatmap of WPM delta to max by user and category
@@ -1220,7 +1222,11 @@ setup_Diary_wears_distribution_plot <- function(plot_data, categories = NA, xmax
     labs(x = "Diary wears", y = "Total number of items by Diary wears tier") +
     ggtitle("Item Diary wears distribution by category (all users)")
   
-  if (!legend){ p <- p + theme(legend.position = "none") }
+  if (!legend){
+    p <- p + theme(legend.position = "none")
+  } else {
+    p <- p + theme(legend.position = c(0.85, 0.85))
+  }
   
   return(p)
 }
@@ -1269,7 +1275,11 @@ setup_category_plot <- function(plot_data, categories, xmax = NA, ymax = NA, xbr
     geom_label(aes(x = 0, y = median(plot_data$price, na.rm=TRUE), label=paste(round(median(plot_data$price, na.rm=TRUE), digits = 0), "€")), color =  "darkgrey")
   }
   
-  if (!legend){ p <- p + theme(legend.position = "none") }
+  if (!legend){
+    p <- p + theme(legend.position = "none")
+  } else {
+    p <- p + theme(legend.position = c(0.85, 0.85))
+  }
   
   return(p)
 }
@@ -1508,10 +1518,15 @@ setup_CPW_and_Wears_plot <- function(plot_data, categories, plot_total_wears = T
   # Add guide trajectory labels so as to end up on top of other graphical elements
   if (guides){ p <- p + geom_label(data = guides_labels_data, aes(x = cumuse, y = cpw, label=paste(price, "€")), color = "lightblue") }
 
-  if (!legend){ p <- p + theme(legend.position = "none") }
+  if (!legend){
+    p <- p + theme(legend.position = "none")
+  } else {
+    p <- p + theme(legend.position = c(0.85, 0.85))
+  }
   
   return(p)
 }
+
 
 ## Function: Item Diary wears custom histogram by category
 setup_Diary_wears_histogram_plot <- function(plot_data, categories = NA, ymax = 1, ybreak = 0.1, cumulative = FALSE, legend = TRUE) {
@@ -1550,7 +1565,11 @@ setup_Diary_wears_histogram_plot <- function(plot_data, categories = NA, ymax = 
       geom_label(aes(factor(bin, level = histogram_wear_tiers_bin_label), y = 0.01, label=scales::percent(share, accuracy = 1L)), color =  "white", label.size = NA)
   }
 
-  if (!legend){ p <- p + theme(legend.position = "none") }
+  if (!legend){
+    p <- p + theme(legend.position = "none")
+  } else {
+    p <- p + theme(legend.position = c(0.5, 0.9))
+  }
   
   return(p)
 }

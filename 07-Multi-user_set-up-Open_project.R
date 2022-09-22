@@ -107,6 +107,8 @@ save_to_cloud_O <- function(file_name) {
 data_file = get_Google_sheet_ID_O()
 raw_data <- read_sheet(data_file, sheet='Use data filtered - Machine readable')
 
+temp <- raw_data
+
 # Pre-process and clean data
 raw_data <- raw_data %>% as.data.frame() %>% filter(!is.na(category) & !is.na(item))
 raw_data <- raw_data %>% mutate_at(c("wears"), ~replace(., is.na(.), 0)) %>% select(-listed_date)
@@ -149,7 +151,7 @@ total_data <- merge(plot_data, user_data, by = c("user"))
 
 p <- total_data %>%
   filter(exhaustive == TRUE) %>%
-  setup_user_distribution_plot(xmax = 380, ymax = 23000)
+  setup_user_distribution_plot(xmax = 500, ymax = 30000)
 ggsave(filename = "Plots/O/O-Average_wardrobe_size_and_value_by_user.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_O("O-Average_wardrobe_size_and_value_by_user.png")
 

@@ -198,8 +198,9 @@ calculate_complete_portfolio_plot_data <- function(plotuse){
 
     # Count number of items (active and divested) grouped by category and date
     usetodate <- plotuse %>%
-        group_by(category, date) %>%
-        summarise(cumuse = sum(cumuse, na.rm = TRUE))
+      group_by(category, date) %>%
+      summarise(cumuse = sum(cumuse, na.rm = TRUE)) %>%
+      as.data.frame()
     
     # List item values from master data
     itemvalues <- masterdata %>% select(Category, Item, Price) %>% dplyr::rename(item = Item, price = Price, category = Category)
@@ -210,14 +211,19 @@ calculate_complete_portfolio_plot_data <- function(plotuse){
     usetodate_value <- plotuse %>%
         merge(itemvalues, all = FALSE) %>%
         group_by(category, date) %>%
-        summarise(category_value = sum(price, na.rm = TRUE)) 
+        summarise(category_value = sum(price, na.rm = TRUE)) %>%
+        as.data.frame()
     
     # Merge item counts and item values (FALSE to avoid NA values)
     usetodate <- merge(usetodate, usetodate_value, all = FALSE)
     
     # Calculate dailycost
     usetodate <- usetodate %>%
-        mutate(daily_cost = category_value / max(c(cumuse,1)))
+        mutate(daily_cost = category_value / cumuse)
+
+    # Buggy code below
+    #usetodate <- usetodate %>%
+    #  mutate(daily_cost = category_value / max(c(cumuse,1)))
     
     # Calculate category use %
     category_use <- plotuse %>%

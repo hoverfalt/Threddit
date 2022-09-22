@@ -117,7 +117,7 @@ build_standard_plots <- function(){
   save_to_cloud("Portfolio-Inventory-Value_stacked.png")
 
   # Portfolio plot: Average DAILY cost vs category use
-  p <- usetodate_anim %>% setup_daily_cost_and_category_use_plot(ybreaks = 0.25, animate = FALSE)
+  p <- usetodate_anim %>% setup_daily_cost_and_category_use_plot(ybreaks = 2, animate = FALSE)
   ggsave(filename = "Plots/Portfolio-Daily_cost_and_Category_use.png", p, width = 12, height = 10, dpi = 300, units = "in")
   save_to_cloud("Portfolio-Daily_cost_and_Category_use.png")
 

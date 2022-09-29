@@ -192,6 +192,36 @@ save_to_cloud_Z("Z-Average_wardrobe_size_and_value_by_category.png")
 # Avoid GCS timeout
 gcs_list_buckets(Firebase_project_id)
 
+
+## Wardrobe change: new and divested items
+str(raw_data)
+plot_data <- raw_data %>%
+  filter(!(user %in% excluded_users)) %>%
+  select(user, category, item, date_purchased, date_divested) %>%
+  mutate(new_item = as.logical(as.Date(date_purchased) > as.Date("2021-09-01"))) %>%
+  mutate(divested_item = as.logical(as.Date(date_divested) > as.Date("2021-09-01"))) %>%
+  rowwise() %>%
+  group_by(user) %>%
+  summarise(items_at_start = n() - sum(new_item, na.rm = TRUE),
+            new_items = sum(new_item, na.rm = TRUE),
+            divested_items = sum(divested_item, na.rm = TRUE),
+            items_at_end = n() + sum(new_item, na.rm = TRUE) - sum(divested_item, na.rm = TRUE)) %>%
+  mutate(change = new_items - divested_items,
+         change_percent = round((new_items - divested_items) / items_at_start, digits = 2),
+         share_new = round(new_items / items_at_start, digits = 2),
+         share_divested = round(divested_items / items_at_start, digits = 2)) %>%
+  select(user, items_at_start, items_at_end, new_items, share_new, divested_items, share_divested, change, change_percent) %>%
+  as.data.frame()
+
+write.csv(plot_data,"Plots/Z/Z-Wardrobe_change_by_user.csv", row.names = FALSE)
+
+
+sum(plot_data$items)
+sum(plot_data$new_items)
+sum(plot_data$divested_items)
+
+
+
 # Show price variance by category 
 item_value_by_category <- raw_data %>%
   filter(is.na(date_divested)) %>%
@@ -328,6 +358,13 @@ for (category in category_order) {
   ggsave(paste("Plots/Z/", filename, sep = ""), p, width = 9, height = 7, dpi = 150, units = "in")
   save_to_cloud_Z(filename)
 }
+
+
+# Check for statistical significance
+model_data_sample <- plot_data %>% filter(category == "Jackets and coats")
+wears_model <- lm(share_worn ~ items, data = model_data_sample)
+summary(wears_model)
+summary(wears_model)$coefficient
 
 
 
@@ -1389,6 +1426,9 @@ str(raw_data)
 
 
 
+
+
+
 ### WEARS PER MONTHS
 
 ## Months available
@@ -1446,6 +1486,7 @@ WPM_max = 30.5
 # Calculate deltas
 WPM_delta <-
   raw_data %>% select(user, category, item, months_available, wears_real = wears, wears_est = total_wears) %>%
+  filter(!(user %in% excluded_users)) %>%
   filter(months_available > 0) %>%
   mutate(WPM_est = round(wears_est / months_available, digits = 1), WPM_real = round(wears_real / months_tracked, digits = 1)) %>%
   group_by(user, category) %>%
@@ -1469,7 +1510,7 @@ WPM_delta %>%
 # Plot WPM
 p <- WPM_delta %>% 
   filter(!(category %in% c("Underwear and socks", "Nightwear and homewear", "Accessories", "Sportswear", "Other"))) %>%
-  filter(category %in% category_order[9]) %>%
+  filter(category %in% category_order) %>%
   setup_WPM_delta_plot_categories(xmax = 7, ymax = 4, wpm_max = 1.0)
 p
 ggsave(filename = "Plots/Z/WPM-Estimate_vs_max_and_real-example.png", p, width = 9, height = 7, dpi = 150, units = "in")
@@ -1485,9 +1526,7 @@ gcs_list_buckets(Firebase_project_id)
 
 # Remove unfit categories and users with incomplete data
 WPM_delta_hm <- WPM_delta %>%
-  filter(!(category %in% c("Underwear and socks", "Nightwear and homewear", "Accessories", "Sportswear", "Other"))) %>%
-  filter(!user == "Robin")
-  
+  filter(!(category %in% c("Underwear and socks", "Nightwear and homewear", "Accessories", "Sportswear", "Other")))
 
 ## Heatmap of WPM delta to max by user and category
 
@@ -1522,7 +1561,7 @@ gradient4 = colorpanel( sum( breaks[-1]>15), "red", "darkred" )
 hm.colors = c(gradient1, gradient2, gradient3, gradient4)
 
 # Build heatmap
-WPM_delta_hm %>% 
+WPM_delta_hm %>%
   select(user, category, delta_to_real) %>%
   spread("category", delta_to_real) %>%
   tibble::column_to_rownames(var = "user") %>%
@@ -1568,6 +1607,31 @@ WPM_delta_hm %>%
             srtCol = 30, cexRow = 0.9, cexCol = 0.9, keysize = 1,
             main = "Real WPM during diary period",
             key.title = FALSE, key.xlab = "Category WPM")
+
+
+
+### Regression models for use
+
+
+
+str(raw_data)
+model_data <- raw_data %>% 
+  filter(!(user %in% excluded_users)) %>%
+  mutate(wardrobe_age = (as.numeric(as.Date("2022-09-01") - as.Date(date_purchased))) / 365) %>%
+  select(user, category, item, wears, cpw, price, total_wears, date_purchased, date_divested, wardrobe_age)
+
+# Set negative wardrobe ages to zero
+model_data$wardrobe_age[model_data$wardrobe_age < 0] <- 0
+# Cap wardrobe age at 15 years (180 months)
+model_data$wardrobe_age[model_data$wardrobe_age > 15] <- 15
+
+
+model_data_sample <- model_data %>% filter(category == "Sportswear")
+wears_model <- lm(wears ~ price, data = model_data_sample)
+summary(wears_model)
+summary(wears_model)$coefficient
+
+
 
 
 

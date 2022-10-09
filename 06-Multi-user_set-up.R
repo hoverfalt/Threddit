@@ -105,8 +105,6 @@ raw_data <- read_sheet(data_file, sheet='Use data filtered - Machine readable')
 temp_storage <- raw_data 
 raw_data <- temp_storage
 
-raw_data <- as.data.frame(raw_data)
-
 # raw_data <- temp_storage
 str(raw_data)
 
@@ -135,6 +133,13 @@ user_data <- user_data %>% as.data.frame() %>% filter(!is.na(User))
 save(user_data,file="Data/Threddit-Z-user_data.Rda")
 load("Data/Threddit-Z-user_data.Rda")
 
+# List non-excluded users
+users <- unique(as.character(raw_data$user))
+users <- users[!(users %in% excluded_users)]
+str(users)
+
+
+
 #################################################################################################
 ######################################## SET UP PLOTS ###########################################
 #################################################################################################
@@ -144,6 +149,7 @@ load("Data/Threddit-Z-user_data.Rda")
 
 # Filter data to include all items currently active (not divested)
 plot_data <- raw_data %>%
+  filter(!(user %in% excluded_users)) %>%
   filter(is.na(date_divested)) %>%
   mutate(worn = as.logical(wears)) %>%
   rowwise() %>%
@@ -153,10 +159,14 @@ plot_data <- raw_data %>%
 
 total_data <- merge(plot_data, user_data, by = c("user"))
 
-p <- total_data %>% setup_user_distribution_plot(xmax = 400, xbreak = 20, ymax = 15000, ybreak = 1000)
-p <- p + geom_smooth(method = "lm", se = FALSE)
+p <- total_data %>% setup_user_distribution_plot(xmax = 320, xbreak = 20, ymax = 15000, ybreak = 1000)
+#p <- p + geom_smooth(method = "lm", se = FALSE)
 ggsave(filename = "Plots/Z/Z-Average_wardrobe_size_and_value_by_user.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Average_wardrobe_size_and_value_by_user.png")
+
+# Check statistical significance for correlation between wardrobe value and number of items
+wardrobes_model <- lm(value ~ items, data = total_data[total_data$gender == "Female",])
+summary(wardrobes_model)
 
 
 # Avoid GCS timeout
@@ -168,16 +178,33 @@ nrow(raw_data)
 # Total value of items
 sum(raw_data$price, na.rm = TRUE)
 
-str(raw_data)
-raw_data %>% filter(!is.na(date_divested)) %>% count()
-raw_data %>% filter(secondhand) %>% count()
-raw_data %>% group_by(user) %>% 
-  summarise(items = n(), repaired = sum(repaired, na.rm = TRUE))
 
 
+# List share of secondhand by user
+secondhand_by_user <- raw_data %>%
+  filter(!(user %in% excluded_users)) %>%
+  select(user, category, item, secondhand, divestment_way, date_purchased, date_divested) %>%
+  mutate(acquired_item = as.logical(as.Date(date_purchased) > as.Date("2021-09-01"))) %>%
+  mutate(divested_item = as.logical(as.Date(date_divested) > as.Date("2021-09-01"))) %>%
+  select(user, category, item, secondhand, acquired_item, divested_item, divestment_way) %>%
+  filter(!is.na(acquired_item)) %>%
+  group_by(user, acquired_item) %>%
+  summarise(items = n(), secondhand_items = sum(secondhand), secondhand_share = round(secondhand_items / items, digits = 2)) %>%
+  pivot_wider(names_from = acquired_item, values_from = c(items, secondhand_items, secondhand_share)) %>%
+  as.data.frame() %>%
+  select(user, old_items = items_FALSE, old_SH_items = secondhand_items_FALSE, old_SH_share = secondhand_share_FALSE,
+         new_items = items_TRUE, new_SH_items = secondhand_items_TRUE, new_SH_share = secondhand_share_TRUE) %>%
+  mutate(SH_share_change = new_SH_share - old_SH_share) %>%
+  arrange(desc(old_SH_share))
+
+write.csv(secondhand_by_user,"Plots/Z/Z-Secondhand_share_by_user.csv", row.names = FALSE)
+
+
+  
 ## Average wardrobe size and value by category
 
 plot_data <- raw_data %>%
+  filter(!(user %in% excluded_users)) %>%
   filter(is.na(date_divested)) %>%
   mutate(worn = as.logical(wears)) %>%
   rowwise() %>%
@@ -185,7 +212,7 @@ plot_data <- raw_data %>%
   summarise(items = n(), share_worn = sum(worn)/n(), value = sum(price, na.rm = TRUE)) %>%
   mutate(average_items = items/length(unique(raw_data$user)), average_value = value / items)
 
-p <- plot_data %>% setup_category_distribution_plot(categories = category_order, xmax = 40, xbreak = 5, ymax = 90, legend  = FALSE)
+p <- plot_data %>% setup_category_distribution_plot(categories = category_order, xmax = 30, xbreak = 5, ymax = 90, legend  = FALSE)
 ggsave(filename = "Plots/Z/Z-Average_wardrobe_size_and_value_by_category.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Average_wardrobe_size_and_value_by_category.png")
 
@@ -193,37 +220,70 @@ save_to_cloud_Z("Z-Average_wardrobe_size_and_value_by_category.png")
 gcs_list_buckets(Firebase_project_id)
 
 
-## Wardrobe change: new and divested items
+
+## Average wardrobe size and value by category by user
+
+plot_data <- raw_data %>%
+  filter(!(user %in% excluded_users)) %>%
+  filter(is.na(date_divested)) %>%
+  mutate(worn = as.logical(wears)) %>%
+  rowwise() %>%
+  group_by(user, category) %>%
+  summarise(items = n(), value = sum(price, na.rm = TRUE)) %>%
+  mutate(average_value = value / items)
+
+p <- plot_data %>% setup_category_distribution_plot_by_user(users = "Vanessa", categories = category_order, xmax = NA, xbreak = 5, ymax = NA, legend  = FALSE)
+ggsave(filename = "Plots/Z/Z-Average_wardrobe_size_and_value_by_category.png", p, width = 9, height = 7, dpi = 150, units = "in")
+save_to_cloud_Z("Z-Average_wardrobe_size_and_value_by_category.png")
+
+# Plot all users and all categories except Other
+for (user in users) {
+  p <- plot_data %>% filter(!(category %in% "Other")) %>%
+    setup_category_distribution_plot_by_user(users = user, categories = category_order, xmax = NA, xbreak = 5, ymax = NA, legend  = FALSE)
+  filename <- paste("Z-Wardrobe_size_and_value_by_user-", gsub(" ", "_", user), ".png", sep = "")
+  ggsave(paste("Plots/Z/", filename, sep = ""), p, width = 9, height = 7, dpi = 150, units = "in")
+  save_to_cloud_Z(filename)
+}
+
+
+
+
+
+## Wardrobe change: new and divested items count and value by user
 str(raw_data)
 plot_data <- raw_data %>%
   filter(!(user %in% excluded_users)) %>%
-  select(user, category, item, date_purchased, date_divested) %>%
+  select(user, category, item, price, date_purchased, date_divested) %>%
   mutate(new_item = as.logical(as.Date(date_purchased) > as.Date("2021-09-01"))) %>%
   mutate(divested_item = as.logical(as.Date(date_divested) > as.Date("2021-09-01"))) %>%
+  mutate(new_item_value = new_item * price, divested_item_value = divested_item * price) %>%
   rowwise() %>%
   group_by(user) %>%
   summarise(items_at_start = n() - sum(new_item, na.rm = TRUE),
             new_items = sum(new_item, na.rm = TRUE),
             divested_items = sum(divested_item, na.rm = TRUE),
-            items_at_end = n() + sum(new_item, na.rm = TRUE) - sum(divested_item, na.rm = TRUE)) %>%
+            items_at_end = n() - sum(divested_item, na.rm = TRUE),
+            value_at_start = round(sum(price, na.rm = TRUE) - sum(new_item_value, na.rm = TRUE), digits = 0),
+            value_new_items = round(sum(new_item_value, na.rm = TRUE), digits = 0),
+            value_divested_items = round(sum(divested_item_value, na.rm = TRUE), digits = 0),
+            value_at_end = round(sum(price, na.rm = TRUE) - sum(divested_item_value, na.rm = TRUE), digits = 0)) %>%
   mutate(change = new_items - divested_items,
          change_percent = round((new_items - divested_items) / items_at_start, digits = 2),
          share_new = round(new_items / items_at_start, digits = 2),
-         share_divested = round(divested_items / items_at_start, digits = 2)) %>%
-  select(user, items_at_start, items_at_end, new_items, share_new, divested_items, share_divested, change, change_percent) %>%
+         share_divested = round(divested_items / items_at_start, digits = 2),
+         change_value = value_new_items - value_divested_items,
+         share_new_value = round(value_new_items / value_divested_items), digits = 0) %>%
+  select(user, items_at_start, items_at_end, new_items, share_new, divested_items, share_divested, change, change_percent,
+         value_at_start, value_new_items, value_divested_items, value_at_end) %>%
   as.data.frame()
 
 write.csv(plot_data,"Plots/Z/Z-Wardrobe_change_by_user.csv", row.names = FALSE)
 
 
-sum(plot_data$items)
-sum(plot_data$new_items)
-sum(plot_data$divested_items)
-
-
 
 # Show price variance by category 
 item_value_by_category <- raw_data %>%
+  filter(!(user %in% excluded_users)) %>%
   filter(is.na(date_divested)) %>%
   mutate(worn = as.logical(wears)) %>%
   rowwise() %>%
@@ -243,75 +303,94 @@ write.csv(item_value_by_category,"Plots/Z/Z-Item_value_by_category.csv", row.nam
 #ggsave(filename = "Plots/Z/Z-Item_price_distribution.png", p, width = 9, height = 7, dpi = 150, units = "in")
 #save_to_cloud_Z("Z-Item_price_distribution.png")
 
-p <- raw_data %>% filter(is.na(date_divested)) %>% setup_price_distribution_plot(categories = c("Jackets and coats"), xmax = 360, ymax = 45, binwidth = 10, x_break = 20, repel_gap = 5)
+p <- raw_data %>% filter(!(user %in% excluded_users)) %>% filter(is.na(date_divested)) %>%
+  setup_price_distribution_plot(categories = c("Jackets and coats"), xmax = 360, ymax = 35, binwidth = 10, x_break = 20, repel_gap = 5)
 ggsave(filename = "Plots/Z/Z-Item_price_distribution_by_category-Jackets_and_coats.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Item_price_distribution_by_category-Jackets_and_coats.png")
-raw_data %>% select(category, item, price) %>% filter(category == "Jackets and coats", price > 360)
+raw_data %>% filter(!(user %in% excluded_users), is.na(date_divested)) %>% select(user, category, item, price) %>%
+  filter(category == "Jackets and coats", price > 360)
 
-p <- raw_data %>% filter(is.na(date_divested)) %>% setup_price_distribution_plot(categories = c("Blazers and vests"), xmax = 620, ymax = 30, binwidth = 10, x_break = 50, repel_gap = 14)
+
+p <- raw_data %>% filter(!(user %in% excluded_users)) %>% filter(is.na(date_divested)) %>%
+  setup_price_distribution_plot(categories = c("Blazers and vests"), xmax = 300, ymax = 25, binwidth = 10, x_break = 50, repel_gap = 8)
 ggsave(filename = "Plots/Z/Z-Item_price_distribution_by_category-Blazers_and_vests.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Item_price_distribution_by_category-Blazers_and_vests.png")
-raw_data %>% select(category, item, price) %>% filter(category == "Blazers and vests", price > 500)
+raw_data %>% filter(!(user %in% excluded_users), is.na(date_divested)) %>% select(user, category, item, price) %>%
+  filter(category == "Blazers and vests", price > 300)
 
-p <- raw_data %>% filter(is.na(date_divested)) %>% setup_price_distribution_plot(categories = c("Jumpers and hoodies"), xmax = 190, ymax = 70, binwidth = 10, repel_gap = 6)
+p <- raw_data %>% filter(!(user %in% excluded_users)) %>% filter(is.na(date_divested)) %>%
+  setup_price_distribution_plot(categories = c("Jumpers and hoodies"), xmax = 130, ymax = 60, binwidth = 10, repel_gap = 4)
 ggsave(filename = "Plots/Z/Z-Item_price_distribution_by_category-Jumpers_and_hoodies.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Item_price_distribution_by_category-Jumpers_and_hoodies.png")
-raw_data %>% select(category, item, price) %>% filter(category == "Jumpers and hoodies", price > 190)
+raw_data %>% filter(!(user %in% excluded_users), is.na(date_divested)) %>% select(user, category, item, price) %>%
+  filter(category == "Jumpers and hoodies", price > 130)
 
-p <- raw_data %>% filter(is.na(date_divested)) %>% setup_price_distribution_plot(categories = c("Cardigans and knits"), xmax = 425, ymax = 100, binwidth = 10, x_break = 25, repel_gap = 12)
+p <- raw_data %>% filter(!(user %in% excluded_users)) %>% filter(is.na(date_divested)) %>%
+  setup_price_distribution_plot(categories = c("Cardigans and knits"), xmax = 425, ymax = 65, binwidth = 10, x_break = 25, repel_gap = 12)
 ggsave(filename = "Plots/Z/Z-Item_price_distribution_by_category-Cardigans_and_knits.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Item_price_distribution_by_category-Cardigans_and_knits.png")
-raw_data %>% select(category, item, price) %>% filter(category == "Cardigans and knits", price > 524)
+raw_data %>% filter(!(user %in% excluded_users), is.na(date_divested)) %>% select(user, category, item, price) %>%
+  filter(category == "Cardigans and knits", price > 425)
 
-p <- raw_data %>% filter(is.na(date_divested)) %>% setup_price_distribution_plot(categories = c("Shirts and blouses"), xmax = 260, ymax = 110, binwidth = 10, x_break = 20, repel_gap = 8)
+p <- raw_data %>% filter(is.na(date_divested)) %>% setup_price_distribution_plot(categories = c("Shirts and blouses"), xmax = 230, ymax = 100, binwidth = 10, x_break = 20, repel_gap = 7)
 ggsave(filename = "Plots/Z/Z-Item_price_distribution_by_category-Shirts_and_blouses.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Item_price_distribution_by_category-Shirts_and_blouses.png")
-raw_data %>% select(category, item, price) %>% filter(category == "Shirts and blouses", price > 230)
+raw_data %>% filter(!(user %in% excluded_users), is.na(date_divested)) %>% select(user, category, item, price) %>%
+  filter(category == "Shirts and blouses", price > 230)
 
-p <- raw_data %>% filter(is.na(date_divested)) %>% setup_price_distribution_plot(categories = c("T-shirts and tops"), xmax = 150, ymax = 400, binwidth = 10, repel_gap = 5)
+p <- raw_data %>% filter(is.na(date_divested)) %>% setup_price_distribution_plot(categories = c("T-shirts and tops"), xmax = 150, ymax = 340, binwidth = 10, repel_gap = 5)
 ggsave(filename = "Plots/Z/Z-Item_price_distribution_by_category-T-shirts_and_tops.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Item_price_distribution_by_category-T-shirts_and_tops.png")
-raw_data %>% select(category, item, price) %>% filter(category == "T-shirts and tops", price > 130)
+raw_data %>% filter(!(user %in% excluded_users), is.na(date_divested)) %>% select(user, category, item, price) %>%
+  filter(category == "T-shirts and tops", price > 130)
 
-p <- raw_data %>% filter(is.na(date_divested)) %>% setup_price_distribution_plot(categories = c("Dresses and jumpsuits"), xmax = 250, ymax = 70, binwidth = 10, x_break = 20, repel_gap = 7)
+p <- raw_data %>% filter(is.na(date_divested)) %>% setup_price_distribution_plot(categories = c("Dresses and jumpsuits"), xmax = 250, ymax = 60, binwidth = 10, x_break = 20, repel_gap = 7)
 ggsave(filename = "Plots/Z/Z-Item_price_distribution_by_category-Dresses_and_jumpsuits.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Item_price_distribution_by_category-Dresses_and_jumpsuits.png")
-raw_data %>% select(category, item, price) %>% filter(category == "Dresses and jumpsuits", price > 250)
+raw_data %>% filter(!(user %in% excluded_users), is.na(date_divested)) %>% select(user, category, item, price) %>%
+  filter(category == "Dresses and jumpsuits", price > 250)
 
-p <- raw_data %>% filter(is.na(date_divested)) %>% setup_price_distribution_plot(categories = c("Shorts and skirts"), xmax = 240, ymax = 75, binwidth = 10, x_break = 20, repel_gap = 8)
+p <- raw_data %>% filter(is.na(date_divested)) %>% setup_price_distribution_plot(categories = c("Shorts and skirts"), xmax = 240, ymax = 70, binwidth = 10, x_break = 20, repel_gap = 8)
 ggsave(filename = "Plots/Z/Z-Item_price_distribution_by_category-Shorts_and_skirts.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Item_price_distribution_by_category-Shorts_and_skirts.png")
-raw_data %>% select(category, item, price) %>% filter(category == "Shorts and skirts", price > 220)
+raw_data %>% filter(!(user %in% excluded_users), is.na(date_divested)) %>% select(user, category, item, price) %>%
+  filter(category == "Shorts and skirts", price > 220)
 
-p <- raw_data %>% filter(is.na(date_divested)) %>% setup_price_distribution_plot(categories = c("Trousers and jeans"), xmax = 275, ymax = 100, binwidth = 10, x_break = 20, repel_gap = 8)
+p <- raw_data %>% filter(is.na(date_divested)) %>% setup_price_distribution_plot(categories = c("Trousers and jeans"), xmax = 275, ymax = 85, binwidth = 10, x_break = 20, repel_gap = 8)
 ggsave(filename = "Plots/Z/Z-Item_price_distribution_by_category-Trousers_and_jeans.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Item_price_distribution_by_category-Trousers_and_jeans.png")
-raw_data %>% select(category, item, price) %>% filter(category == "Trousers and jeans", price > 275)
+raw_data %>% filter(!(user %in% excluded_users), is.na(date_divested)) %>% select(user, category, item, price) %>%
+  filter(category == "Trousers and jeans", price > 275)
 
-p <- raw_data %>% filter(is.na(date_divested)) %>% setup_price_distribution_plot(categories = c("Shoes and footwear"), xmax = 475, ymax = 80, binwidth = 10, x_break = 25, repel_gap = 15)
+p <- raw_data %>% filter(is.na(date_divested)) %>% setup_price_distribution_plot(categories = c("Shoes and footwear"), xmax = 475, ymax = 65, binwidth = 10, x_break = 25, repel_gap = 15)
 ggsave(filename = "Plots/Z/Z-Item_price_distribution_by_category-Shoes_and_footwear.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Item_price_distribution_by_category-Shoes_and_footwear.png")
-raw_data %>% select(category, item, price) %>% filter(category == "Shoes and footwear", price > 445)
+raw_data %>% filter(!(user %in% excluded_users), is.na(date_divested)) %>% select(user, category, item, price) %>%
+  filter(category == "Shoes and footwear", price > 475)
 
 p <- raw_data %>% filter(is.na(date_divested)) %>% setup_price_distribution_plot(categories = c("Underwear and socks"), xmax = 160, ymax = 420, binwidth = 10, repel_gap = 5)
 ggsave(filename = "Plots/Z/Z-Item_price_distribution_by_category-Underwear_and_socks.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Item_price_distribution_by_category-Underwear_and_socks.png")
-raw_data %>% select(category, item, price) %>% filter(category == "Underwear and socks", price > 140)
+raw_data %>% filter(!(user %in% excluded_users), is.na(date_divested)) %>% select(user, category, item, price) %>%
+  filter(category == "Underwear and socks", price > 160)
 
 p <- raw_data %>% filter(is.na(date_divested)) %>% setup_price_distribution_plot(categories = c("Nightwear and homewear"), xmax = 130, ymax = 90, binwidth = 10, repel_gap = 4)
 ggsave(filename = "Plots/Z/Z-Item_price_distribution_by_category-Nightwear_and_homewear.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Item_price_distribution_by_category-Nightwear_and_homewear.png")
-raw_data %>% select(category, item, price) %>% filter(category == "Nightwear and homewear", price > 130)
+raw_data %>% filter(!(user %in% excluded_users), is.na(date_divested)) %>% select(user, category, item, price) %>%
+  filter(category == "Nightwear and homewear", price > 130)
 
 p <- raw_data %>% filter(is.na(date_divested)) %>% setup_price_distribution_plot(categories = c("Accessories"), xmax = 360, ymax = 110, binwidth = 10, x_break = 25, repel_gap = 8)
 ggsave(filename = "Plots/Z/Z-Item_price_distribution_by_category-Accessories.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Item_price_distribution_by_category-Accessories.png")
-raw_data %>% select(category, item, price) %>% filter(category == "Accessories", price > 360)
+raw_data %>% filter(!(user %in% excluded_users), is.na(date_divested)) %>% select(user, category, item, price) %>%
+  filter(category == "Accessories", price > 360)
 
-p <- raw_data %>% filter(is.na(date_divested)) %>% setup_price_distribution_plot(categories = c("Sportswear"), xmax = 220, ymax = 120, binwidth = 10, repel_gap = 7)
+p <- raw_data %>% filter(is.na(date_divested)) %>% setup_price_distribution_plot(categories = c("Sportswear"), xmax = 210, ymax = 110, binwidth = 10, repel_gap = 7)
 ggsave(filename = "Plots/Z/Z-Item_price_distribution_by_category-Sportswear.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Item_price_distribution_by_category-Sportswear.png")
-raw_data %>% select(category, item, price) %>% filter(category == "Sportswear", price > 200)
+raw_data %>% filter(!(user %in% excluded_users), is.na(date_divested)) %>% select(user, category, item, price) %>%
+  filter(category == "Sportswear", price > 200)
 
 
 # Avoid GCS timeout
@@ -578,59 +657,59 @@ plot_data <- raw_data %>%
   filter(!(user %in% excluded_users)) %>%
   select(category, wears)
 
-p <- plot_data %>% setup_Diary_wears_distribution_plot(categories = "Jackets and coats", ymax = 110, y_break = 25, xmax = 140, binwidth = 5, x_break = 5, repel_gap = 2)
+p <- plot_data %>% setup_Diary_wears_distribution_plot(categories = "Jackets and coats", ymax = 110, y_break = 25, xmax = NA, binwidth = 5, x_break = 5, repel_gap = 2)
 ggsave(filename = "Plots/Z/Z-Diary_wears_distribution-Jackets_and_coats.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Diary_wears_distribution-Jackets_and_coats.png")
 
-p <- plot_data %>% setup_Diary_wears_distribution_plot(categories = "Blazers and vests", ymax = 100, y_break = 25, xmax = 70, binwidth = 5, x_break = 5, repel_gap = 2)
+p <- plot_data %>% setup_Diary_wears_distribution_plot(categories = "Blazers and vests", ymax = 85, y_break = 25, xmax = NA, binwidth = 5, x_break = 5, repel_gap = 1)
 ggsave(filename = "Plots/Z/Z-Diary_wears_distribution-Blazers_and_vests.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Diary_wears_distribution-Blazers_and_vests.png")
 
-p <- plot_data %>% setup_Diary_wears_distribution_plot(categories = "Jumpers and hoodies", ymax = 110, y_break = 25, xmax = 90, binwidth = 5, x_break = 5, repel_gap = 3)
+p <- plot_data %>% setup_Diary_wears_distribution_plot(categories = "Jumpers and hoodies", ymax = 100, y_break = 25, xmax = NA, binwidth = 5, x_break = 5, repel_gap = 2)
 ggsave(filename = "Plots/Z/Z-Diary_wears_distribution-Jumpers_and_hoodies.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Diary_wears_distribution-Jumpers_and_hoodies.png")
 
-p <- plot_data %>% setup_Diary_wears_distribution_plot(categories = "Cardigans and knits", ymax = 190, y_break = 25, xmax = 100, binwidth = 5, x_break = 5, repel_gap = 3)
+p <- plot_data %>% setup_Diary_wears_distribution_plot(categories = "Cardigans and knits", ymax = 190, y_break = 25, xmax = NA, binwidth = 5, x_break = 5, repel_gap = 2)
 ggsave(filename = "Plots/Z/Z-Diary_wears_distribution-Cardigans_and_knits.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Diary_wears_distribution-Cardigans_and_knits.png")
 
-p <- plot_data %>% setup_Diary_wears_distribution_plot(categories = "Shirts and blouses", ymax = 275, y_break = 25, xmax = 55, binwidth = 5, x_break = 5, repel_gap = 2)
+p <- plot_data %>% setup_Diary_wears_distribution_plot(categories = "Shirts and blouses", ymax = 275, y_break = 25, xmax = NA, binwidth = 5, x_break = 5, repel_gap = 1)
 ggsave(filename = "Plots/Z/Z-Diary_wears_distribution-Shirts_and_blouses.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Diary_wears_distribution-Shirts_and_blouses.png")
 
-p <- plot_data %>% setup_Diary_wears_distribution_plot(categories = "T-shirts and tops", ymax = 425, y_break = 25, xmax = 100, binwidth = 5, x_break = 5, repel_gap = 3)
+p <- plot_data %>% setup_Diary_wears_distribution_plot(categories = "T-shirts and tops", ymax = 425, y_break = 25, xmax = NA, binwidth = 5, x_break = 5, repel_gap = 3)
 ggsave(filename = "Plots/Z/Z-Diary_wears_distribution-T-shirts_and_tops.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Diary_wears_distribution-T-shirts_and_tops.png")
 
-p <- plot_data %>% setup_Diary_wears_distribution_plot(categories = "Dresses and jumpsuits", ymax = 250, y_break = 25, xmax = 70, binwidth = 5, x_break = 5, repel_gap = 1)
+p <- plot_data %>% setup_Diary_wears_distribution_plot(categories = "Dresses and jumpsuits", ymax = 250, y_break = 25, xmax = NA, binwidth = 5, x_break = 5, repel_gap = 1)
 ggsave(filename = "Plots/Z/Z-Diary_wears_distribution-Dresses_and_jumpsuits.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Diary_wears_distribution-Dresses_and_jumpsuits.png")
 
-p <- plot_data %>% setup_Diary_wears_distribution_plot(categories = "Shorts and skirts", ymax = 160, y_break = 25, xmax = 55, binwidth = 5, x_break = 5, repel_gap = 1)
+p <- plot_data %>% setup_Diary_wears_distribution_plot(categories = "Shorts and skirts", ymax = 160, y_break = 25, xmax = NA, binwidth = 5, x_break = 5, repel_gap = 1)
 ggsave(filename = "Plots/Z/Z-Diary_wears_distribution-Shorts_and_skirts.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Diary_wears_distribution-Shorts_and_skirts.png")
 
-p <- plot_data %>% setup_Diary_wears_distribution_plot(categories = "Trousers and jeans", ymax = 200, y_break = 25, xmax = 160, binwidth = 5, x_break = 5, repel_gap = 3)
+p <- plot_data %>% setup_Diary_wears_distribution_plot(categories = "Trousers and jeans", ymax = 200, y_break = 25, xmax = NA, binwidth = 5, x_break = 5, repel_gap = 3)
 ggsave(filename = "Plots/Z/Z-Diary_wears_distribution-Trousers_and_jeans.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Diary_wears_distribution-Trousers_and_jeans.png")
 
-p <- plot_data %>% setup_Diary_wears_distribution_plot(categories = "Shoes and footwear", ymax = 180, y_break = 25, xmax = 190, binwidth = 5, x_break = 10, repel_gap = 3)
+p <- plot_data %>% setup_Diary_wears_distribution_plot(categories = "Shoes and footwear", ymax = 200, y_break = 25, xmax = NA, binwidth = 5, x_break = 10, repel_gap = 3)
 ggsave(filename = "Plots/Z/Z-Diary_wears_distribution-Shoes_and_footwear.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Diary_wears_distribution-Shoes_and_footwear.png")
 
-p <- plot_data %>% setup_Diary_wears_distribution_plot(categories = "Underwear and socks", ymax = 350, y_break = 25, xmax = 160, binwidth = 5, x_break = 10, repel_gap = 4)
+p <- plot_data %>% setup_Diary_wears_distribution_plot(categories = "Underwear and socks", ymax = 325, y_break = 25, xmax = NA, binwidth = 5, x_break = 25, repel_gap = 10)
 ggsave(filename = "Plots/Z/Z-Diary_wears_distribution-Underwear_and_socks.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Diary_wears_distribution-Underwear_and_socks.png")
 
-p <- plot_data %>% setup_Diary_wears_distribution_plot(categories = "Nightwear and homewear", ymax = 60, y_break = 25, xmax = 170, binwidth = 5, x_break = 10, repel_gap = 4)
+p <- plot_data %>% setup_Diary_wears_distribution_plot(categories = "Nightwear and homewear", ymax = 60, y_break = 25, xmax = NA, binwidth = 5, x_break = 10, repel_gap = 4)
 ggsave(filename = "Plots/Z/Z-Diary_wears_distribution-Nightwear_and_homewear.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Diary_wears_distribution-Nightwear_and_homewear.png")
 
-p <- plot_data %>% setup_Diary_wears_distribution_plot(categories = "Accessories", ymax = 170, y_break = 25, xmax = 220, binwidth = 5, x_break = 10, repel_gap = 2)
+p <- plot_data %>% setup_Diary_wears_distribution_plot(categories = "Accessories", ymax = 170, y_break = 25, xmax = NA, binwidth = 5, x_break = 10, repel_gap = 2)
 ggsave(filename = "Plots/Z/Z-Diary_wears_distribution-Accessories.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Diary_wears_distribution-Accessories.png")
 
-p <- plot_data %>% setup_Diary_wears_distribution_plot(categories = "Sportswear", ymax = 175, y_break = 25, xmax = 130, binwidth = 5, x_break = 5, repel_gap = 3)
+p <- plot_data %>% setup_Diary_wears_distribution_plot(categories = "Sportswear", ymax = 175, y_break = 25, xmax = NA, binwidth = 5, x_break = 5, repel_gap = 3)
 ggsave(filename = "Plots/Z/Z-Diary_wears_distribution-Sportswear.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("Z-Diary_wears_distribution-Sportswear.png")
 
@@ -865,6 +944,31 @@ items_by_category_by_user <- plot_data %>% group_by(user, category) %>%
 write.csv(items_by_category_by_user,"Plots/Z/Z-Items_by_categoty_by_user.csv", row.names = FALSE)
 
 
+########################################
+## Wears per Wash by category by user ##
+########################################
+
+# Calculate WPW at the item level
+WPW <- raw_data %>%
+  filter(!(user %in% excluded_users)) %>%
+  select(user, category, item, wears, washed) %>%
+  mutate(wears_per_wash = round(wears / washed, digits = 1))
+
+# Replace infinite WPW with wears for items with no washes
+WPW[is.infinite(WPW$wears_per_wash),]$wears_per_wash <- WPW[is.infinite(WPW$wears_per_wash),]$wears
+
+# Summarise WPW data
+WPW_cat <- WPW %>%
+  group_by(user, category) %>%
+  summarise(wears_per_wash = round(mean(wears_per_wash, na.rm = TRUE), digits = 1)) %>%
+  as.data.frame() %>%
+  spread(category, wears_per_wash, fill = NA) %>%
+  as.data.frame() %>%
+  arrange(user)
+
+# Write output to CSV file
+write.csv(WPW_cat,"Plots/Z/Z-Wears_per_Wash_by_categoty_by_user.csv", row.names = FALSE)
+
 
 
 ######################################################################
@@ -892,7 +996,8 @@ for (category in category_order) {
 ## DIARY WEARS
 
 # Prepare plot data for plotting Diary wears (and calculating CPW base only on those)
-plot_data <- raw_data
+plot_data <- raw_data %>% filter(!(user %in% excluded_users))
+
 plot_data$wears[plot_data$wears == 0] <- 1 # Replace all 0 wears with 1 to in effect set CPW to price for these items
 plot_data <- plot_data %>%
   mutate(plot_wears = wears, cpw = price/wears) %>% 
@@ -900,7 +1005,7 @@ plot_data <- plot_data %>%
   filter(cpw > 0) # Remove items with purchase price 0 to avoid stretching logarithmic scale
 
 # Plot all categories
-for (category in category_order[1]) {
+for (category in category_order) {
   if (max(plot_data$plot_wears[category == category]) > 150) { xbreak = 10 } else { xbreak = 5 }
   p <- plot_data %>% setup_CPW_and_Wears_plot(categories = category, plot_total_wears = FALSE, xbreak = xbreak, xmax = NA, ymax = NA)
   filename <- paste("Z-CPW_and_Diary_wears-", gsub(" ", "_", category), ".png", sep = "")
@@ -1428,8 +1533,11 @@ str(raw_data)
 
 
 
+#########################################
+############ WEARS PER MONTH ############
+#########################################
 
-### WEARS PER MONTHS
+
 
 ## Months available
 
@@ -1447,71 +1555,67 @@ diary_starting_date <- as.Date("2021-09-01")
 # Set the total active tracking time in months
 months_tracked <- 12
 
-
-# Calculate months available for all items
-raw_data <- raw_data %>% mutate(months_available = mondf(date_purchased, diary_starting_date))
-
-raw_data$months_available[is.na(raw_data$date_purchased)] 
-
-# List wears_per_month as estimated by users
-raw_data %>% select(category, item, months_available, wears_real = wears, wears_est = total_wears) %>%
-  filter(months_available > 0) %>%
-  filter(category == "T-shirts and tops") %>%
-  mutate(WPM_est = round(wears_est / months_available, digits = 1), WPM_real = round(wears_real / months_tracked, digits = 1)) %>%
-  arrange(desc(WPM_est)) %>%
-  head(20)
-
-# List wears_per_month for specific user and category
-raw_data %>% select(user, category, item, months_available, wears_real = wears, wears_est = total_wears) %>%
-  filter(months_available > 0) %>%
-  filter(category == "Shoes and footwear", user == "Sophy") %>%
-  mutate(WPM_est = round(wears_est / months_available, digits = 1), WPM_real = round(wears_real / months_tracked, digits = 1)) %>%
-  arrange(desc(WPM_est)) %>%
-  head(20)
-
-
-
-# List top wears_per_month during diary period
-raw_data %>% select(user, category, item, wears, total_wears, months_available) %>%
-  filter(months_available > 0) %>%
-  mutate(wears_per_month = wears / months_tracked) %>% # 5 weeks diary period = 1.25 months
-  arrange(desc(wears_per_month))
-
-
-## Summarise wears_per_month by user and category
-
 # Set max WPM to every day (avg 30.5 days per month)
 WPM_max = 30.5
 
 # Calculate deltas
 WPM_delta <-
-  raw_data %>% select(user, category, item, months_available, wears_real = wears, wears_est = total_wears) %>%
+  raw_data %>%
   filter(!(user %in% excluded_users)) %>%
+  filter(!is.na(total_wears)) %>%
+  mutate(months_available = mondf(date_purchased, diary_starting_date)) %>%
   filter(months_available > 0) %>%
-  mutate(WPM_est = round(wears_est / months_available, digits = 1), WPM_real = round(wears_real / months_tracked, digits = 1)) %>%
+  select(user, category, item, months_available, wears_real = wears, wears_est = total_wears, date_divested) %>%
+  mutate(WPM_est = round(wears_est / months_available, digits = 1),
+         WPM_real = round(wears_real / months_tracked, digits = 1),
+         WPM_delta = round(WPM_est / WPM_real, digits = 1),
+         divested = !is.na(date_divested)) %>%
+  select(user, category, item, months_available, wears_real, wears_est, WPM_est, WPM_real, WPM_delta, divested) %>%
+  as.data.frame()
+
+# Replace infinite values resulting from zero real uses with WPM for 1 wear (0.1 WPM rounded)
+WPM_delta$WPM_delta[is.infinite(WPM_delta$WPM_delta)] <-
+  round(WPM_delta$WPM_est[is.infinite(WPM_delta$WPM_delta)] / 0.1, digits = 1)
+
+WPM_delta_cat <- 
+  WPM_delta %>%
   group_by(user, category) %>%
-  summarise(est = sum(WPM_est), real = sum(WPM_real)) %>%
-  mutate(delta_to_real = round(est/real, digits = 2), delta_to_max = round(est/WPM_max, digits = 2)) %>%
+  summarise(wears_real = sum(wears_real), est = sum(WPM_est), real = sum(WPM_real)) %>%
+  mutate(delta_to_real = round(est/real, digits = 1), delta_to_max = round(est/WPM_max, digits = 1)) %>%
   arrange(desc(delta_to_max)) %>%
   as.data.frame()
 
-# Clear infinite values resulting from zero real uses
-WPM_delta$delta_to_real[is.infinite(WPM_delta$delta_to_real)] <- NA
+# Replace infinite values resulting from zero real uses with WPM for 1 wear (0.1 WPM rounded)
+WPM_delta_cat$delta_to_real[is.infinite(WPM_delta_cat$delta_to_real)] <-
+  round(WPM_delta_cat$est[is.infinite(WPM_delta_cat$delta_to_real)] / 0.1, digits = 1)
 
+
+
+WPM_delta %>% filter(user == "Nicole", category == "T-shirts and tops") %>% arrange(desc(WPM_delta))
+WPM_delta_cat %>% filter(user == "Nicole", category == "T-shirts and tops") %>% arrange(desc(delta_to_real))
+
+WPM_delta %>% filter(user == "Florian", category == "T-shirts and tops") %>% arrange(desc(WPM_delta))
+WPM_delta_cat %>% filter(user == "Florian", category == "T-shirts and tops") %>% arrange(desc(delta_to_real))
+
+
+WPM_delta %>% filter(category == "T-shirts and tops") %>% arrange(desc(WPM_delta)) %>% head(15)
+WPM_delta_cat %>% filter(category == "T-shirts and tops") %>% arrange(desc(delta_to_real)) %>% head(15)
+
+WPM_delta %>% filter(category == "Shoes and footwear") %>% arrange(desc(WPM_delta)) %>% head(15)
+WPM_delta_cat %>% filter(category == "Shoes and footwear") %>% arrange(desc(delta_to_real)) %>% head(15)
 
 # Show top users or categories
 WPM_delta %>% 
   filter(!(category %in% c("Underwear and socks", "Nightwear and homewear", "Accessories", "Sportswear", "Other"))) %>%
-  filter(category %in% category_order[8:9]) %>%
-  arrange(desc(real)) %>%
+#  filter(category %in% category_order[8:9]) %>%
+  arrange(desc(wears_real)) %>%
   head(15)
 
 
 # Plot WPM
-p <- WPM_delta %>% 
-  filter(!(category %in% c("Underwear and socks", "Nightwear and homewear", "Accessories", "Sportswear", "Other"))) %>%
-  filter(category %in% category_order) %>%
-  setup_WPM_delta_plot_categories(xmax = 7, ymax = 4, wpm_max = 1.0)
+p <- WPM_delta_cat %>% 
+  filter(category %in% "Jackets and coats") %>%
+  setup_WPM_delta_plot_categories(xmax = 5, ymax = 2, wpm_max = 1.0)
 p
 ggsave(filename = "Plots/Z/WPM-Estimate_vs_max_and_real-example.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_Z("WPM-Estimate_vs_max_and_real-example.png")
@@ -1520,61 +1624,18 @@ save_to_cloud_Z("WPM-Estimate_vs_max_and_real-example.png")
 gcs_list_buckets(Firebase_project_id)
 
 
+raw_data %>% select(user, category, item, repaired) %>%
+  filter(repaired > 0, user == "Senna")
 
 
 ### Heatmaps
 
-# Remove unfit categories and users with incomplete data
-WPM_delta_hm <- WPM_delta %>%
-  filter(!(category %in% c("Underwear and socks", "Nightwear and homewear", "Accessories", "Sportswear", "Other")))
-
-## Heatmap of WPM delta to max by user and category
-
-# Setup heatmap breaks and color scales
-breaks = seq(0, max(WPM_delta_hm$delta_to_max, na.rm = TRUE), length.out=100)
-gradient1 = colorpanel( sum( breaks[-1]<=1 ), "green", "white" )
-gradient2 = colorpanel( sum( breaks[-1]>1 & breaks[-1]<=1.2 ), "white", "yellow" )
-gradient3 = colorpanel( sum( breaks[-1]>1.2 & breaks[-1]<=2 ), "yellow", "red" )
-gradient4 = colorpanel( sum( breaks[-1]>2), "red", "darkred" )
-hm.colors = c(gradient1, gradient2, gradient3, gradient4)
-
-# Build heatmap
-WPM_delta_hm %>% 
-  select(user, category, delta_to_max) %>%
-  spread("category", delta_to_max) %>%
-  tibble::column_to_rownames(var = "user") %>%
-  data.matrix(rownames.force = TRUE) %>%
-  heatmap.2(scale = "none", trace = "none", density.info = "none",
-            breaks = breaks, col = hm.colors,
-            srtCol = 30, cexRow = 0.9, cexCol = 0.9, keysize = 1,
-            main = "User-estimated WPM compared to max (1x)",
-            key.title = FALSE, key.xlab = "Multiplier of max")
-
-## Heatmap of WPM delta to real by user and category
-
-# Setup heatmap breaks and color scales
-breaks = seq(0, max(WPM_delta_hm$delta_to_real, na.rm = TRUE), length.out=100)
-gradient1 = colorpanel( sum( breaks[-1]<=1 ), "green", "white" )
-gradient2 = colorpanel( sum( breaks[-1]>1 & breaks[-1]<=2 ), "white", "yellow" )
-gradient3 = colorpanel( sum( breaks[-1]>2 & breaks[-1]<=15 ), "yellow", "red" )
-gradient4 = colorpanel( sum( breaks[-1]>15), "red", "darkred" )
-hm.colors = c(gradient1, gradient2, gradient3, gradient4)
-
-# Build heatmap
-WPM_delta_hm %>%
-  select(user, category, delta_to_real) %>%
-  spread("category", delta_to_real) %>%
-  tibble::column_to_rownames(var = "user") %>%
-  data.matrix(rownames.force = TRUE) %>%
-  heatmap.2(scale = "none", trace = "none", density.info = "none",
-            breaks = breaks, col = hm.colors,
-            srtCol = 30, cexRow = 0.9, cexCol = 0.9, keysize = 1,
-            main = "User-estimated WPM compared to real (1x)",
-            key.title = FALSE, key.xlab = "Multiplier of real")
+# Remove unfit categories
+WPM_delta_hm <- WPM_delta_cat %>%
+  filter(!(category %in% c("Underwear and socks", "Accessories", "Other")))
 
 
-
-## Heatmap of WPM real by user and category
+## Heatmap of real WPM by user and category
 
 # Setup heatmap breaks and color scales
 breaks = seq(0, max(WPM_delta_hm$real, na.rm = TRUE), length.out=100)
@@ -1585,34 +1646,113 @@ gradient4 = colorpanel( sum( breaks[-1]>61), "red", "darkred" )
 hm.colors = c(gradient1, gradient2, gradient3, gradient4)
 
 # Build heatmap
-WPM_delta_hm %>% 
+hm_data <- WPM_delta_hm %>% 
   select(user, category, real) %>%
   spread("category", real) %>%
   tibble::column_to_rownames(var = "user") %>%
-  data.matrix(rownames.force = TRUE) %>%
-  heatmap.2(scale = "none", trace = "none", density.info = "none",
+  data.matrix(rownames.force = TRUE)
+
+hm_data %>% heatmap.2(scale = "none", trace = "none", density.info = "none",
             breaks = breaks, col = hm.colors,
             srtCol = 30, cexRow = 0.9, cexCol = 0.9, keysize = 1,
-            main = "Real WPM during diary period",
-            key.title = FALSE, key.xlab = "Category WPM")
+            main = "Real category WPM (items summed)",
+            key.title = FALSE, key.xlab = "Wears Per Month",
+            cellnote = hm_data, notecol="black")
 
-
-# Real WPM with color scaling
-WPM_delta_hm %>% 
+# Real WPM with color scaling per row
+hm_data <- WPM_delta_hm %>% 
   select(user, category, real) %>%
   spread("category", real) %>%
   tibble::column_to_rownames(var = "user") %>%
-  data.matrix(rownames.force = TRUE) %>%
-  heatmap.2(scale = "row", trace = "none", density.info = "none",
+  data.matrix(rownames.force = TRUE)
+
+hm_data %>% heatmap.2(scale = "row", trace = "none", density.info = "none",
             srtCol = 30, cexRow = 0.9, cexCol = 0.9, keysize = 1,
             main = "Real WPM during diary period",
-            key.title = FALSE, key.xlab = "Category WPM")
+            key.title = FALSE, key.xlab = "Category WPM",
+            cellnote = hm_data, notecol="black")
+
+
+## Heatmap of WPM delta to max by user and category
+
+# Setup heatmap breaks and color scales
+breaks = seq(0, max(WPM_delta_hm$delta_to_max, na.rm = TRUE), length.out=100)
+gradient1 = colorpanel( sum( breaks[-1]<=1 ), "green", "white" )
+gradient2 = colorpanel( sum( breaks[-1]>1 & breaks[-1]<=1.5 ), "white", "yellow" )
+gradient3 = colorpanel( sum( breaks[-1]>1.5 & breaks[-1]<=2 ), "yellow", "red" )
+gradient4 = colorpanel( sum( breaks[-1]>2), "red", "darkred" )
+hm.colors = c(gradient1, gradient2, gradient3, gradient4)
+
+# Build heatmap
+hm_data <- WPM_delta_hm %>% 
+  select(user, category, delta_to_max) %>%
+  spread("category", delta_to_max) %>%
+  tibble::column_to_rownames(var = "user") %>%
+  data.matrix(rownames.force = TRUE)
+
+hm_data %>% heatmap.2(scale = "none", trace = "none", density.info = "none",
+            breaks = breaks, col = hm.colors,
+            srtCol = 30, cexRow = 0.9, cexCol = 0.9, keysize = 1,
+            main = "User-estimated WPM compared to max (1x)",
+            key.title = FALSE, key.xlab = "Multiplier of max",
+            cellnote = hm_data, notecol="black")
+
+
+## Heatmap of WPM delta to real by user and category
+
+# Setup heatmap breaks and color scales
+breaks = seq(0, max(WPM_delta_hm$delta_to_real, na.rm = TRUE), length.out=100)
+gradient1 = colorpanel( sum( breaks[-1]<=1 ), "green", "white" )
+gradient2 = colorpanel( sum( breaks[-1]>1 & breaks[-1]<=3 ), "white", "yellow" )
+gradient3 = colorpanel( sum( breaks[-1]>3 & breaks[-1]<=15 ), "yellow", "red" )
+gradient4 = colorpanel( sum( breaks[-1]>15), "red", "darkred" )
+hm.colors = c(gradient1, gradient2, gradient3, gradient4)
+
+
+# Build heatmap
+hm_data <- WPM_delta_hm %>%
+  select(user, category, delta_to_real) %>%
+  spread("category", delta_to_real) %>%
+  tibble::column_to_rownames(var = "user") %>%
+  data.matrix(rownames.force = TRUE)
+
+hm_data %>% heatmap.2(scale = "none", trace = "none", density.info = "none",
+            breaks = breaks, col = hm.colors,
+            srtCol = 30, cexRow = 0.9, cexCol = 0.9, keysize = 1,
+            main = "User-estimated WPM compared to real (1x)",
+            key.title = FALSE, key.xlab = "Multiplier of real",
+            cellnote = hm_data, notecol="black")
+
+
+
+
+
+
+
+## Have users changed their initial pre-study weear estimates?
+
+# Load raw_data after initial study period in July 2021
+load("Data/Threddit-Z-raw_data-2021-07-09.rda")
+raw_data_July21 <- raw_data
+# Load the latest raw_data
+load("Data/Threddit-Z-raw_data.Rda")
+
+str(raw_data_July21)
+wears_last <- raw_data %>% select(category, user, item, date_purchased, total_wears = total_wears)
+wears_orig <- raw_data_July21 %>% select(category, user, item, date_purchased, total_wears_orig = total_wears)
+
+# List changes made in prior wears estimates 
+merge(wears_last, wears_orig, by = c("user", "category", "item")) %>%
+  mutate(wears_change = total_wears - total_wears_orig) %>%
+  filter(!(wears_change == 0))
+
+wears_last %>% filter(item == "Thrifted black leather oversized jacket")
+wears_orig %>% filter(item == "Thrifted black leather oversized jacket")
+
 
 
 
 ### Regression models for use
-
-
 
 str(raw_data)
 model_data <- raw_data %>% 
@@ -1632,6 +1772,13 @@ summary(wears_model)
 summary(wears_model)$coefficient
 
 
+
+# New items purchase share totals
+total_value <- raw_data %>% summarise(value = sum(price, na.rm = TRUE))
+new_value <- raw_data %>% filter(as.Date(date_purchased) > as.Date("2021-09-01")) %>%
+  summarise(value = sum(price, na.rm = TRUE))
+new_value / total_value
+1 / (new_value / total_value)
 
 
 
@@ -1917,6 +2064,44 @@ setup_category_distribution_plot <- function(plot_data, categories, xmax = NA, x
   return(p)
 }
 
+# Function: Average item value and number of items by category by user
+setup_category_distribution_plot_by_user <- function(plot_data, users, categories, xmax = NA, xbreak = 5, ymax = NA, ybreak = 10, legend = FALSE) {
+  
+  # Filter data by category
+  plot_data <- plot_data %>% filter(category %in% categories, user %in% users)
+  
+  # Set author label coordinates (upper right corner)
+  if(is.na(xmax)) { xmax <- max(plot_data$items) }
+  if(is.na(ymax)) { ymax <- max(plot_data$average_value) }
+  
+  author_label_x <- xmax
+  author_label_y <- ymax
+  
+  # Set plot_size
+  plot_size <- 0.5
+  
+  # Set up plot
+  p <- ggplot(
+    plot_data, 
+    aes(x = items, y = average_value, colour = category)) +
+    annotate("text", x = author_label_x, y = author_label_y, label = author_label, color = "gray", hjust = 1) +
+    geom_point(show.legend = TRUE, aes(alpha = plot_size, size = plot_size)) +
+    geom_label_repel(aes(label=category)) +
+    scale_x_continuous(limits=c(0,xmax), breaks = seq.int(from = 0, to = xmax, by = xbreak)) +
+    scale_y_continuous(limits=c(0,ymax), breaks = seq.int(from = 0, to = ymax, by = ybreak), labels=scales::dollar_format(suffix = "€", prefix = "")) +
+    scale_color_manual(name = "Category", values = category_colors[match(categories, category_order)]) +
+    scale_alpha(range = c(0.5, 1.0)) +
+    scale_size(range = c(2, 3)) +
+    guides(alpha = FALSE, size = FALSE) +
+    labs(x = "Total number of items", y = "Average item value (purchase price)") +
+    ggtitle("Average item value and number of items by category")
+  
+  if (!legend){ p <- p + theme(legend.position = "none") }
+  
+  return(p)
+}
+
+
 # Function: Wardrobe size and value by user (all categories)
 setup_user_distribution_plot <- function(plot_data, xmax = NA, ymax = NA, xbreak = 20, ybreak = 500, legend = TRUE) {
   
@@ -2007,7 +2192,11 @@ setup_WPM_delta_plot_categories <- function(plot_data,  xmax = NA, ymax = NA, le
     labs(x = "Estimated WPM compared to real during diary period (1x)", y = "Estimated WPM compared to days available (1x)") +
     ggtitle("Wears Per Month (WPM) - User estimate vs max and real")
   
-  if (!legend){ p <- p + theme(legend.position = "none") }
+  if (!legend){
+    p <- p + theme(legend.position = "none")
+  } else {
+    p <- p + theme(legend.position = c(0.85, 0.85))
+  }
   
   return(p)
 }

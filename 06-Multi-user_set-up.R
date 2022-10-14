@@ -247,8 +247,6 @@ for (user in users) {
 
 
 
-
-
 ## Wardrobe change: new and divested items count and value by user
 str(raw_data)
 plot_data <- raw_data %>%
@@ -279,7 +277,50 @@ plot_data <- raw_data %>%
 
 write.csv(plot_data,"Plots/Z/Z-Wardrobe_change_by_user.csv", row.names = FALSE)
 
+## Calculate user wardrobe key metrics
+# Items at end of study
+# Total wardrobe value at end of study
+# Average item value at end of study
+# % net items increase over study
+# % net value increase over study
+wardrobes <- raw_data %>%
+  filter(!(user %in% excluded_users)) %>%
+  filter(is.na(date_divested)) %>%
+  group_by(user) %>%
+  summarise(items = n(), value = round(sum(price, na.rm = TRUE), digits = 0)) %>%
+  mutate(items_delta = round((items - mean(items)) / mean(items), digits = 2),
+         value_delta = round((value - mean(value)) / mean(value), digits = 2),
+         avg_item_value = round(value / items, digits = 2)) %>%
+  mutate(avg_item_value_delta = round((avg_item_value - mean(avg_item_value)) / mean(avg_item_value), digits = 2),
+         user = as.character(user)) %>%
+  select(user, items, items_delta, value, value_delta, avg_item_value, avg_item_value_delta) %>%
+  as.data.frame() %>%
+  arrange(user)
 
+# DEPENDENCY: Uses plot_data from previous calculation 
+wardrobes_2 <- plot_data %>% select(user, new_items, divested_items, items_change = change_percent, value_at_start, value_at_end) %>%
+  mutate(user = as.character(user),
+         net_new_items = new_items - divested_items, 
+         value_change = value_at_end - value_at_start,
+         value_change_percent = round((value_at_end - value_at_start) / value_at_start, digits = 2)) %>%
+  select(user, net_new_items, items_change, value_change, value_change_percent) %>%
+  as.data.frame() %>%
+  arrange(user)
+
+merge(wardrobes, wardrobes_2)
+
+
+# Calculate average item price across all users and categories
+raw_data %>%
+  filter(!(user %in% excluded_users)) %>%
+  filter(is.na(date_divested)) %>%
+  group_by(user) %>%
+  summarise(items = n(), value = round(sum(price, na.rm = TRUE), digits = 0)) %>%
+  mutate(avg_item_value = round(value / items, digits = 2)) %>%
+  mutate(avg_item_value_overall = mean(avg_item_value))
+  
+mean(wardrobes_2$items_change)
+mean(wardrobes_2$value_change)
 
 # Show price variance by category 
 item_value_by_category <- raw_data %>%
@@ -493,6 +534,7 @@ write.csv(plot_data,"Plots/Z/Z-Amount_of_unused_items_by_categoty_and_user.csv",
 ## List number of items by wears by category
 
 plot_data <- raw_data %>%
+  filter(!(user %in% excluded_users)) %>%
   filter(is.na(date_divested)) %>%
   mutate(worn = as.logical(wears)) %>%
   #filter(worn == 0) %>%
@@ -936,12 +978,13 @@ write.csv(wears_by_category_by_user,"Plots/Z/Z-Diary_wears_by_categoty_by_user.c
 plot_data %>% group_by(category) %>% summarise(items = n(), avg_wears = mean(wears), med_wears = median(wears))
 
 
+# List Wardrobe items by category by user
 items_by_category_by_user <- plot_data %>% group_by(user, category) %>%
   summarise(total_items = n()) %>%
   arrange(desc(total_items)) %>%
   spread(category, total_items) %>%
   as.data.frame()
-write.csv(items_by_category_by_user,"Plots/Z/Z-Items_by_categoty_by_user.csv", row.names = FALSE)
+write.csv(items_by_category_by_user,"Plots/Z/Z-Items_by_category_by_user.csv", row.names = FALSE)
 
 
 ########################################
@@ -1207,7 +1250,7 @@ setup_Diary_wears_histogram_plot <- function(plot_data, categories = NA, ymax = 
 
 plot_data <- raw_data %>%
   filter(!(user %in% excluded_users)) %>%
-  select(category, item, wears, price, date_purchased) %>%
+  select(user, category, item, wears, price, date_purchased) %>%
   mutate(wardrobe_age = (as.numeric(as.Date("2022-09-01") - as.Date(date_purchased))) / 365)
 
 # Set negative wardrobe ages to zero
@@ -1215,7 +1258,8 @@ plot_data$wardrobe_age[plot_data$wardrobe_age < 0] <- 0
 # Cap wardrobe age at 15 years (180 months)
 plot_data$wardrobe_age[plot_data$wardrobe_age > 15] <- 15
 
-p <- plot_data %>% setup_wears_and_age_plot(categories = "Trousers and jeans", ymax = NA, ybreak = 0.5, xmax = NA, xbreak = 10, trendline = TRUE, log_trans = FALSE)
+p <- plot_data %>% filter(user == "Robin") %>%
+  setup_wears_and_age_plot(categories = "Trousers and jeans", ymax = NA, ybreak = 0.5, xmax = NA, xbreak = 10, trendline = TRUE, log_trans = FALSE)
 p
 
 # Plot diary wears by item age for all categories 
@@ -1346,7 +1390,7 @@ setup_wears_and_price_plot <- function(plot_data, categories, xmax = NA, ymax = 
 histogram_age_tiers_bin_max <- c(365, 730, 1095, 1095)
 histogram_age_tiers_bin_label <- c("< 1 year", "1-2 years", "2-3 years", "3+ years")
 
-plot_data <- raw_data %>% select(category, item, wears, price, date_purchased) %>%
+plot_data <- raw_data %>% select(user, category, item, wears, price, date_purchased) %>%
   mutate(wardrobe_age = as.numeric(as.Date("2022-09-01") - as.Date(date_purchased))) %>%
   mutate(bin = as.factor(case_when(
     wardrobe_age <= histogram_age_tiers_bin_max[1] ~ histogram_age_tiers_bin_label[1],
@@ -1361,7 +1405,8 @@ histogram_age_tiers_bin_color_order <<- c("< 1 year", "1-2 years", "2-3 years", 
 histogram_age_tiers_bin_colors <<- c('#7777FF', '#77FF77', '#FFFF77', '#FF7733')
 names(histogram_age_tiers_bin_colors) <- histogram_age_tiers_bin_color_order
 
-p <- plot_data %>% setup_wears_and_price_by_age_plot(categories = "Trousers and jeans", xmax = NA, xbreak=10, ymax = 200, ybreak = 25, log_trans=FALSE, trendline = TRUE)
+p <- plot_data %>% 
+  setup_wears_and_price_by_age_plot(categories = "Trousers and jeans", xmax = NA, xbreak=10, ymax = 200, ybreak = 25, log_trans=FALSE, trendline = FALSE)
 p
 
 # Function: to setup category point plot y = purchase price, x = times worn
@@ -1792,6 +1837,7 @@ raw_data[!is.na(raw_data$date_divested),]
 
 # List divestment way
 raw_data %>%
+  filter(!(user %in% excluded_users)) %>%
   filter(!is.na(date_divested)) %>%
   group_by(divestment_way) %>%
   summarise(items_divested = n()) %>%
@@ -1808,14 +1854,26 @@ raw_data %>%
   arrange(desc(items_divested)) %>%
   as.data.frame()
 
-# Create matrix of the two above
-raw_data %>%
+# List divestments by divestment way and condition
+divestments <- raw_data %>%
+  filter(!(user %in% excluded_users)) %>%
   filter(!is.na(date_divested)) %>%
   group_by(divestment_way, condition) %>%
   summarise(items_divested = n()) %>%
-  #mutate(share_of_total = round(items_divested / sum(!is.na(raw_data$date_divested)), digits = 2)) %>%
   pivot_wider(names_from = divestment_way, values_from = items_divested)
-  
+write.csv(divestments,"Plots/Z/Z-Divested_items_by_way.csv", row.names = FALSE)
+
+
+# List divestments by user and divestment way
+divestments_2 <- raw_data %>%
+  filter(!(user %in% excluded_users)) %>%
+  filter(!is.na(date_divested)) %>%
+  group_by(user, divestment_way) %>%
+  summarise(items_divested = n()) %>%
+  pivot_wider(names_from = divestment_way, values_from = items_divested)
+write.csv(divestments_2,"Plots/Z/Z-Divested_items_by_user.csv", row.names = FALSE)
+
+
 
 
 

@@ -987,6 +987,75 @@ items_by_category_by_user <- plot_data %>% group_by(user, category) %>%
 write.csv(items_by_category_by_user,"Plots/Z/Z-Items_by_category_by_user.csv", row.names = FALSE)
 
 
+################################################################################
+######### Plot normalised item price distribution by category and user #########
+################################################################################
+
+# Select and filter input data
+plot_data <- raw_data %>%
+  filter(!(user %in% excluded_users)) %>%
+  select(user, category, item, price) %>%
+  arrange(user, category, desc(price))
+
+# Initiate index with zero as default
+plot_data$index <- 0
+
+# Set index per user and category
+for (user in unique(plot_data$user)) {
+  for (category in unique(plot_data$category)) {
+    if (nrow(plot_data[plot_data$user == user & plot_data$category == category,]) > 0) {
+      plot_data[plot_data$user == user & plot_data$category == category,]$index <-
+        seq.int(nrow(plot_data[plot_data$user == user & plot_data$category == category,]))
+    }
+  }
+}
+
+
+# Cap price at 150 € to make graphs comparable
+plot_data$price[plot_data$price > 150] <- 150
+
+## Plot Diary wears distribution by category plots for all users
+for (user in unique(plot_data$user)) {
+  p <- plot_data %>%
+    filter(!(category %in% c("Accessories", "Other"))) %>%
+    setup_price_distribution_user_plot(user = user, ymax = 150, y_break = 50, xmax = 30, x_break = 5, legend = TRUE) +
+    facet_grid(rows = vars(category))
+  
+  filename <- paste("Z-Item_price_distribution_by_user_", user, ".png", sep = "")
+  ggsave(paste("Plots/Z/", filename, sep = ""), p, width = 9, height = 7, dpi = 150, units = "in")
+  save_to_cloud_Z(filename)
+}
+
+## Function: Item Diary wears distribution by category
+setup_price_distribution_user_plot <- function(plot_data, users, xmax = NA, x_break = 10, ymax = NA, y_break = 100, legend = FALSE) {
+  
+  # Filter data by user
+  if(!is.na(users)) { plot_data <- plot_data %>% filter(user %in% users) }
+  
+  # Set author label coordinates (upper right corner)
+  if(is.na(xmax)) { xmax <- max(plot_data$index, na.rm = TRUE) }
+  if(is.na(ymax)) { ymax <- max(plot_data$price, na.rm = TRUE) }
+  author_label_x <- xmax
+  author_label_y <- ymax
+  
+  p <-ggplot(
+    plot_data,
+    aes(x = index, y = price, fill = category)) +
+    geom_bar(stat="identity") +
+    scale_x_continuous(limits=c(0,xmax), breaks = seq(from = 0, to = xmax, by = x_break)) +
+    scale_y_continuous(limits=c(0,ymax), breaks = seq(from = 0, to = ymax, by = y_break)) +
+    scale_fill_manual(name = "Category", values = category_colors) +
+    labs(x = "Items in decreasing order of price", y = "Item price (capped at 150 €)") +
+    ggtitle("Item price distribution by category")
+  
+  if (!legend){ p <- p + theme(legend.position = "none") }
+  
+  return(p)
+}
+
+
+
+
 ########################################
 ## Wears per Wash by category by user ##
 ########################################

@@ -24,6 +24,7 @@ library(openssl) # Used in changing MD5 encoding
 library(digest) # Used in reading MD5 encoding 
 library(httr) # Get GCS file metadata through http request
 library(ggrepel) # Enable geom_label_repel
+library(circlize) # Enable circular plots 
 
 
 # Source required files
@@ -1941,6 +1942,294 @@ divestments_2 <- raw_data %>%
   summarise(items_divested = n()) %>%
   pivot_wider(names_from = divestment_way, values_from = items_divested)
 write.csv(divestments_2,"Plots/Z/Z-Divested_items_by_user.csv", row.names = FALSE)
+
+
+
+
+### Circlize package testing ###
+# https://r-graph-gallery.com/228-add-links-between-regions.html
+
+# Load library
+library(circlize)
+
+# Create sample wardrobe data
+plot_categories <- category_order[1:10]
+items_in_categories <- c(8, 2, 10, 5, 10, 20, 12, 5, 15, 25)
+data = data.frame(
+  category = c(rep(plot_categories[1],items_in_categories[1]),
+             rep(plot_categories[2],items_in_categories[2]),
+             rep(plot_categories[3],items_in_categories[3]),
+             rep(plot_categories[4],items_in_categories[4]),
+             rep(plot_categories[5],items_in_categories[5]),
+             rep(plot_categories[6],items_in_categories[6]),
+             rep(plot_categories[7],items_in_categories[7]),
+             rep(plot_categories[8],items_in_categories[8]),
+             rep(plot_categories[9],items_in_categories[9]),
+             rep(plot_categories[10],items_in_categories[10])),
+  item = c(seq(1,items_in_categories[1]),
+        seq(1,items_in_categories[2]),
+        seq(1,items_in_categories[3]),
+        seq(1,items_in_categories[4]),
+        seq(1,items_in_categories[5]),
+        seq(1,items_in_categories[6]),
+        seq(1,items_in_categories[7]),
+        seq(1,items_in_categories[8]),
+        seq(1,items_in_categories[9]),
+        seq(1,items_in_categories[10])), 
+  y = runif(sum(items_in_categories))
+)
+
+# Order categories
+data$category <- factor(data$category, levels = category_order[1:10])
+
+
+# Set line color and alpha
+line_color <- rgb(0.5,0.5,0.5,0.2)
+
+# Initialize the plot.
+circos.clear()
+par(mar = c(1, 1, 1, 1) ) 
+circos.initialize(factors = data$category,
+                  xlim = cbind(rep(0.5, 10), items_in_categories+0.5))
+
+# Build the regions of track #1
+circos.trackPlotRegion(sectors = data$category, y=data$y , bg.col = category_colors[1:10] , bg.border = NA,
+                       panel.fun = function(x, y) {
+                         #select details of current sector
+                         name = get.cell.meta.data("sector.index")
+                         i = get.cell.meta.data("sector.numeric.index")
+                         xlim = get.cell.meta.data("xlim")
+                         ylim = get.cell.meta.data("ylim")
+
+                         #text direction (dd) and adjusmtents (aa)
+                         theta = circlize(mean(xlim), 1.3)[1, 1] %% 360
+                         dd <- ifelse(theta < 90 || theta > 270, "clockwise", "reverse.clockwise")
+                         aa = c(1, 0.2)
+                         if(theta < 90 || theta > 270)  aa = c(0, 0.5)
+                         
+                         #plot category labels
+                         circos.text(x=mean(xlim), y=1.5, labels=name, facing = dd, cex=0.6,  adj = aa)
+
+                          #plot axis
+                         circos.axis(labels.cex=0.6, direction = "outside", major.at=seq(0,items_in_categories[i],1), 
+                                     minor.ticks=1)
+                         
+                       }
+)
+
+
+# Create sample combinations data
+number_of_combinations <- 200 
+skewed_distribution <- c(1, 1, 1, 2, 3, 3, 3, 4, 7, 8, 10)
+combinations <- data.frame(
+  cat_1 = sample(plot_categories, number_of_combinations, replace = TRUE),
+  item_1 = sample(skewed_distribution, number_of_combinations, replace = TRUE),
+  cat_2 = sample(plot_categories, number_of_combinations, replace = TRUE),
+  item_2 = sample(skewed_distribution, number_of_combinations, replace = TRUE)
+)
+
+
+# Subset combinations
+plot_combinations <- combinations %>% filter(cat_1 == "Jackets and coats")
+
+# Draw combinations
+for(i in 1:nrow(plot_combinations)){
+  circos.link(plot_combinations$cat_1[i],
+              plot_combinations$item_1[i],
+              plot_combinations$cat_2[i],
+              plot_combinations$item_2[i],
+              h = 1, col = line_color, lwd = 2)
+}
+
+
+
+
+# https://r-graph-gallery.com/122-a-circular-plot-with-the-circlize-package.html
+
+### You need several libraries
+library(migest)
+
+### Make data
+m <- data.frame(order = 1:6,
+                country = c("Ausralia", "India", "China", "Japan", "Thailand", "Malaysia"),
+                V3 = c(1, 150000, 90000, 180000, 15000, 10000),
+                V4 = c(35000, 1, 10000, 12000, 25000, 8000),
+                V5 = c(10000, 7000, 1, 40000, 5000, 4000),
+                V6 = c(7000, 8000, 175000, 1, 11000, 18000),
+                V7 = c(70000, 30000, 22000, 120000, 1, 40000),
+                V8 = c(60000, 90000, 110000, 14000, 30000, 1),
+                r = c(255,255,255,153,51,51),
+                g = c(51, 153, 255, 255, 255, 255),
+                b = c(51, 51, 51, 51, 51, 153),
+                stringsAsFactors = FALSE)
+df1 <- m[, c(1,2, 9:11)]
+m <- m[,-(1:2)]/1e04
+m <- as.matrix(m[,c(1:6)])
+dimnames(m) <- list(orig = df1$country, dest = df1$country)
+#Sort order of data.frame and matrix for plotting in circos
+df1 <- arrange(df1, order)
+df1$country <- factor(df1$country, levels = df1$country)
+m <- m[levels(df1$country),levels(df1$country)]
+
+
+### Define ranges of circos sectors and their colors (both of the sectors and the links)
+df1$xmin <- 0
+df1$xmax <- rowSums(m) + colSums(m)
+n <- nrow(df1)
+df1$rcol<-rgb(df1$r, df1$g, df1$b, max = 255)
+df1$lcol<-rgb(df1$r, df1$g, df1$b, alpha=200, max = 255)
+
+### Plot sectors (outer part)
+par(mar=rep(0,4))
+circos.clear()
+
+### Basic circos graphic parameters
+circos.par(cell.padding=c(0,0,0,0), track.margin=c(0,0.15), start.degree = 90, gap.degree =4)
+
+### Sector details
+circos.initialize(factors = df1$country, xlim = cbind(df1$xmin, df1$xmax))
+
+### Plot sectors
+circos.trackPlotRegion(ylim = c(0, 1), factors = df1$country, track.height=0.1,
+                       #panel.fun for each sector
+                       panel.fun = function(x, y) {
+                         #select details of current sector
+                         name = get.cell.meta.data("sector.index")
+                         i = get.cell.meta.data("sector.numeric.index")
+                         xlim = get.cell.meta.data("xlim")
+                         ylim = get.cell.meta.data("ylim")
+                         
+                         #text direction (dd) and adjusmtents (aa)
+                         theta = circlize(mean(xlim), 1.3)[1, 1] %% 360
+                         dd <- ifelse(theta < 90 || theta > 270, "clockwise", "reverse.clockwise")
+                         aa = c(1, 0.5)
+                         if(theta < 90 || theta > 270)  aa = c(0, 0.5)
+                         
+                         #plot country labels
+                         circos.text(x=mean(xlim), y=1.7, labels=name, facing = dd, cex=0.6,  adj = aa)
+                         
+                         #plot main sector
+                         circos.rect(xleft=xlim[1], ybottom=ylim[1], xright=xlim[2], ytop=ylim[2], 
+                                     col = df1$rcol[i], border=df1$rcol[i])
+                         
+                         #blank in part of main sector
+                         circos.rect(xleft=xlim[1], ybottom=ylim[1], xright=xlim[2]-rowSums(m)[i], ytop=ylim[1]+0.3, 
+                                     col = "white", border = "white")
+                         
+                         #white line all the way around
+                         circos.rect(xleft=xlim[1], ybottom=0.3, xright=xlim[2], ytop=0.32, col = "white", border = "white")
+                         
+                         #plot axis
+                         circos.axis(labels.cex=0.6, direction = "outside", major.at=seq(from=0,to=floor(df1$xmax)[i],by=5), 
+                                     minor.ticks=1)
+                       })
+
+### Plot links (inner part)
+### Add sum values to df1, marking the x-position of the first links
+### out (sum1) and in (sum2). Updated for further links in loop below.
+df1$sum1 <- colSums(m)
+df1$sum2 <- numeric(n)
+
+### Create a data.frame of the flow matrix sorted by flow size, to allow largest flow plotted first
+df2 <- cbind(as.data.frame(m),orig=rownames(m),  stringsAsFactors=FALSE)
+df2 <- reshape(df2, idvar="orig", varying=list(1:n), direction="long",
+               timevar="dest", time=rownames(m),  v.names = "m")
+df2 <- arrange(df2,desc(m))
+
+### Keep only the largest flows to avoid clutter
+df2 <- subset(df2, m > quantile(m,0.6))
+
+### Plot links
+for(k in 1:nrow(df2)){
+  #i,j reference of flow matrix
+  i<-match(df2$orig[k],df1$country)
+  j<-match(df2$dest[k],df1$country)
+  
+  #plot link
+  circos.link(sector.index1=df1$country[i], point1=c(df1$sum1[i], df1$sum1[i] + abs(m[i, j])),
+              sector.index2=df1$country[j], point2=c(df1$sum2[j], df1$sum2[j] + abs(m[i, j])),
+              col = df1$lcol[i])
+  
+  #update sum1 and sum2 for use when plotting the next link
+  df1$sum1[i] = df1$sum1[i] + abs(m[i, j])
+  df1$sum2[j] = df1$sum2[j] + abs(m[i, j])
+}
+
+
+
+
+# Example 2
+
+# Libraries
+library(circlize)
+library(viridisLite)
+library(tibble)
+library(patchwork)
+library(hrbrthemes)
+library(chorddiag)  #devtools::install_github("mattflor/chorddiag")
+
+# Load dataset from github
+data <- read.table("https://raw.githubusercontent.com/holtzy/data_to_viz/master/Example_dataset/13_AdjacencyDirectedWeighted.csv", header=TRUE)
+
+# short names
+colnames(data) <- c("Africa", "East Asia", "Europe", "Latin Ame.",   "North Ame.",   "Oceania", "South Asia", "South East Asia", "Soviet Union", "West.Asia")
+rownames(data) <- colnames(data)
+
+# I need a long format
+data_long <- data %>%
+  rownames_to_column %>%
+  gather(key = 'key', value = 'value', -rowname)
+
+# parameters
+circos.clear()
+circos.par(start.degree = 90, gap.degree = 4, track.margin = c(-0.1, 0.1), points.overflow.warning = FALSE)
+par(mar = rep(0, 4))
+
+# color palette
+mycolor <- viridis(10, alpha = 1, begin = 0, end = 1, option = "D")
+mycolor <- mycolor[sample(1:10)]
+
+# Base plot
+chordDiagram(
+  x = data_long, 
+  grid.col = mycolor,
+  transparency = 0.25,
+  directional = 1,
+  direction.type = c("arrows", "diffHeight"), 
+  diffHeight  = -0.04,
+  annotationTrack = "grid", 
+  annotationTrackHeight = c(0.05, 0.1),
+  link.arr.type = "big.arrow", 
+  link.sort = TRUE, 
+  link.largest.ontop = TRUE)
+
+# Add text and axis
+circos.trackPlotRegion(
+  track.index = 1, 
+  bg.border = NA, 
+  panel.fun = function(x, y) {
+    
+    xlim = get.cell.meta.data("xlim")
+    sector.index = get.cell.meta.data("sector.index")
+    
+    # Add names to the sector. 
+    circos.text(
+      x = mean(xlim), 
+      y = 3.2, 
+      labels = sector.index, 
+      facing = "bending", 
+      cex = 0.8
+    )
+    
+    # Add graduation on axis
+    circos.axis(
+      h = "top", 
+      major.at = seq(from = 0, to = xlim[2], by = ifelse(test = xlim[2]>10, yes = 2, no = 1)), 
+      minor.ticks = 1, 
+      major.tick.percentage = 0.5,
+      labels.niceFacing = FALSE)
+  }
+)
 
 
 

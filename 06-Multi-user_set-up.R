@@ -135,11 +135,9 @@ save(user_data,file="Data/Threddit-Z-user_data.Rda")
 load("Data/Threddit-Z-user_data.Rda")
 
 # List non-excluded users
-users <- unique(as.character(raw_data$user))
+users <- sort(unique(as.character(raw_data$user)))
 users <- users[!(users %in% excluded_users)]
 str(users)
-
-
 
 #################################################################################################
 ######################################## SET UP PLOTS ###########################################
@@ -898,6 +896,52 @@ save_to_cloud_Z("Z-Diary_wears_histogram-cumulative-Sportswear.png")
 
 
 
+setup_Diary_wears_histogram_plot <- function(plot_data, categories = NA, ymax = 1, ybreak = 0.1, cumulative = FALSE, legend = TRUE) {
+  
+  # Filter data by category
+  if(!is.na(categories)) { plot_data <- plot_data %>% filter(category %in% categories) }
+  
+  # Draw plot based on data type
+  if(cumulative) {
+    p <-ggplot(plot_data,
+               aes(x = factor(bin, level = histogram_wear_tiers_bin_label), y = cum_share, fill = category)) +
+      geom_col() +
+      annotate("text", x = histogram_wear_tiers_bin_label[1], y = ymax, label = author_label, color = "gray", hjust = 0)
+  }
+  else {
+    p <-ggplot(plot_data,
+               aes(x = factor(bin, level = histogram_wear_tiers_bin_label), y = share, fill = category)) +
+      geom_col() +
+      annotate("text", x = histogram_wear_tiers_bin_label[length(histogram_wear_tiers_bin_label)], y = ymax, label = author_label, color = "gray", hjust = 1)
+  }
+  
+  # Finish standard plot components
+  p <- p +
+    scale_y_continuous(labels = scales::percent_format(accuracy = 1L), limits=c(0,ymax), breaks = seq(from = 0, to = ymax, by = ybreak)) +
+    scale_fill_manual(name = "Category", values = category_colors[match(categories, category_order)])
+  
+  # Add title and share percentages to column bases
+  if(cumulative) {
+    p <- p + labs(x = "Diary wears", y = "Cumulative share of items in Diary wears tier") +
+      ggtitle("Item Diary wears tier cumulative distribution (all users)") +
+      geom_label(aes(factor(bin, level = histogram_wear_tiers_bin_label), y = 0.05, label=scales::percent(cum_share, accuracy = 1L)), color =  "white", label.size = NA)
+  }
+  else {
+    p <- p + labs(x = "Diary wears", y = "Share of items in Diary wears tier") +
+      ggtitle("Item Diary wears tier distribution (all users)") +
+      geom_label(aes(factor(bin, level = histogram_wear_tiers_bin_label), y = 0.01, label=scales::percent(share, accuracy = 1L)), color =  "white", label.size = NA)
+  }
+  
+  if (!legend){
+    p <- p + theme(legend.position = "none")
+  } else {
+    p <- p + theme(legend.position = c(0.5, 0.9))
+  }
+  
+  return(p)
+}
+
+
 
 
 ######################################################################
@@ -1141,7 +1185,9 @@ for (category in category_order) {
 
 ## Item age and Diary wears
 
+user_genders <- user_data %>% select(user, gender)
 plot_data <- raw_data %>%
+#  filter(user %in% user_genders$user[user_genders$gender == "Male"]) %>%
   filter(!(user %in% excluded_users)) %>%
   filter(is.na(date_divested)) %>%
   select(category, item, wears, price, date_purchased) %>%
@@ -1187,13 +1233,12 @@ plot_data <- plot_data %>%
 
 
 
-
 # Plot shares for all categories
 for (category in category_order) {
   p <- plot_data %>% setup_Diary_age_histogram_plot(categories = category, ymax = NA, ybreak = 0.05, cumulative = FALSE)
   filename <- paste("Z-Diary_wears_and_item_age-", gsub(" ", "_", category), ".png", sep = "")
   ggsave(paste("Plots/Z/", filename, sep = ""), p, width = 9, height = 7, dpi = 150, units = "in")
-  save_to_cloud_Z(filename)
+#  save_to_cloud_Z(filename)
 }
 
 # Plot cumulative shares for all categories
@@ -1246,7 +1291,8 @@ setup_Diary_age_histogram_plot <- function(plot_data, categories = NA, ymax = 1,
   else {
     p <- p + labs(x = "Item age (years)", y = "Share if items") +
       ggtitle("Item age tier distribution (all users)") +
-      geom_label(aes(factor(bin, level = histogram_age_tiers_bin_label), y = 0, label=scales::percent(share, accuracy = 1L)), color =  "white", label.size = NA)
+      geom_label(aes(factor(bin, level = histogram_age_tiers_bin_label), y = share, label=scales::percent(share, accuracy = 1L)), color =  "white", label.size = NA) +
+      geom_label(aes(factor(bin, level = histogram_age_tiers_bin_label), y = 0, label=scales::percent(cum_share, accuracy = 1L)), color =  "white", label.size = NA)
   }
     
   if (!legend){
@@ -1260,52 +1306,97 @@ setup_Diary_age_histogram_plot <- function(plot_data, categories = NA, ymax = 1,
 
 
 
+## Item age and Diary wears - Individual user plots
+
+user_genders <- user_data %>% select(user, gender)
+plot_data <- raw_data %>%
+  #  filter(user %in% user_genders$user[user_genders$gender == "Male"]) %>%
+  filter(!(user %in% excluded_users)) %>%
+  filter(is.na(date_divested)) %>%
+  select(user, category, item, wears, price, date_purchased) %>%
+  mutate(wardrobe_age = (as.numeric(as.Date("2022-09-01") - as.Date(date_purchased))) / 365)
+
+# Set negative wardrobe ages to zero
+plot_data$wardrobe_age[plot_data$wardrobe_age < 0] <- 0
 
 
-setup_Diary_wears_histogram_plot <- function(plot_data, categories = NA, ymax = 1, ybreak = 0.1, cumulative = FALSE, legend = TRUE) {
+## Create histogram data manually to include items with 0 years as its own bin
+
+# Set histogram bin limits and labels. There are used for correct plot order also
+histogram_age_tiers_bin_max <- c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+histogram_age_tiers_bin_label <- c("1", "2", "3", "4", "5", "6", "7", "8", "9", "Over 10")
+plot_data <- plot_data %>%
+  select(user, category, wardrobe_age) %>% 
+  group_by(user) %>%
+  mutate(bin = as.factor(case_when(
+    wardrobe_age <= histogram_age_tiers_bin_max[1] ~ histogram_age_tiers_bin_label[1],
+    wardrobe_age <= histogram_age_tiers_bin_max[2] ~ histogram_age_tiers_bin_label[2],
+    wardrobe_age <= histogram_age_tiers_bin_max[3] ~ histogram_age_tiers_bin_label[3],
+    wardrobe_age <= histogram_age_tiers_bin_max[4] ~ histogram_age_tiers_bin_label[4],
+    wardrobe_age <= histogram_age_tiers_bin_max[5] ~ histogram_age_tiers_bin_label[5],
+    wardrobe_age <= histogram_age_tiers_bin_max[6] ~ histogram_age_tiers_bin_label[6],
+    wardrobe_age <= histogram_age_tiers_bin_max[7] ~ histogram_age_tiers_bin_label[7],
+    wardrobe_age <= histogram_age_tiers_bin_max[8] ~ histogram_age_tiers_bin_label[8],
+    wardrobe_age <= histogram_age_tiers_bin_max[9] ~ histogram_age_tiers_bin_label[9],
+    wardrobe_age >  histogram_age_tiers_bin_max[10] ~ histogram_age_tiers_bin_label[10]
+  ))) %>%
+  filter(!is.na(bin))
+
+
+# Prepare histogram data, including cumulative counts and shares
+plot_data <- plot_data %>%
+  group_by(user, category, bin) %>%
+  summarise(items = n()) %>% as.data.frame() %>%
+  arrange(factor(bin, levels = histogram_age_tiers_bin_label)) %>%
+  group_by(user, category) %>%
+  mutate(share = items/sum(items)) %>%
+  mutate(cum_items = cumsum(items), cum_share = cumsum(share)) %>%
+  as.data.frame()
+
+plot_data$bin <- factor(plot_data$bin, levels=histogram_age_tiers_bin_label)
+
+# Plot all users
+for (active_user in users) {
+  user_plot_data <- plot_data %>%
+    filter(!(category %in% c("Accessories", "Other"))) %>%
+    filter(user == active_user)
+  p <- user_plot_data %>% setup_item_age_distribution_user_plot(ymax = max(user_plot_data$items), y_break = max(user_plot_data$items)) +
+    facet_grid(rows = vars(category))
+
+  filename <- paste("Z-Item_age_distribution_by_user_", active_user, ".png", sep = "")
+  ggsave(paste("Plots/Z/", filename, sep = ""), p, width = 9, height = 7, dpi = 150, units = "in")
+#  save_to_cloud_Z(filename)
+}
+
+## Function: Item age distribution by category
+setup_item_age_distribution_user_plot <- function(plot_data, xmax = NA, x_break = 1, ymax = 1.0, y_break = 0.2, legend = FALSE) {
   
-  # Filter data by category
-  if(!is.na(categories)) { plot_data <- plot_data %>% filter(category %in% categories) }
+  # Filter data by user
+#  if(!is.na(users)) { plot_data <- plot_data %>% filter(user %in% users) }
   
-  # Draw plot based on data type
-  if(cumulative) {
-    p <-ggplot(plot_data,
-               aes(x = factor(bin, level = histogram_wear_tiers_bin_label), y = cum_share, fill = category)) +
-      geom_col() +
-      annotate("text", x = histogram_wear_tiers_bin_label[1], y = ymax, label = author_label, color = "gray", hjust = 0)
-  }
-  else {
-    p <-ggplot(plot_data,
-               aes(x = factor(bin, level = histogram_wear_tiers_bin_label), y = share, fill = category)) +
-      geom_col() +
-      annotate("text", x = histogram_wear_tiers_bin_label[length(histogram_wear_tiers_bin_label)], y = ymax, label = author_label, color = "gray", hjust = 1)
-  }
+  # Set author label coordinates (upper right corner)
+  if(is.na(xmax)) { xmax <- max(plot_data$index, na.rm = TRUE) }
+  if(is.na(ymax)) { ymax <- max(plot_data$price, na.rm = TRUE) }
+  author_label_x <- xmax
+  author_label_y <- ymax
   
-  # Finish standard plot components
-  p <- p +
-    scale_y_continuous(labels = scales::percent_format(accuracy = 1L), limits=c(0,ymax), breaks = seq(from = 0, to = ymax, by = ybreak)) +
-    scale_fill_manual(name = "Category", values = category_colors[match(categories, category_order)])
+  p <-ggplot(
+    plot_data,
+    aes(x = bin, y = items, fill = category)) +
+    geom_bar(stat="identity") +
+    scale_x_discrete(limits=histogram_age_tiers_bin_label) +
+    scale_y_continuous(limits=c(0,ymax), breaks = seq(from = 0, to = ymax, by = y_break)) +
+    scale_fill_manual(name = "Category", values = category_colors) +
+#    geom_label(aes(factor(bin, level = histogram_age_tiers_bin_label), y = ymax/2, label=scales::percent(share, accuracy = 1L)), color =  "white", label.size = NA) +
+    geom_label(aes(factor(bin, level = histogram_age_tiers_bin_label), y = ymax/2, label=items), color =  "white", label.size = NA) +
+    labs(x = "Item age (years)", y = "Number of items") +
+    ggtitle("Item age distribution by category")
   
-  # Add title and share percentages to column bases
-  if(cumulative) {
-    p <- p + labs(x = "Diary wears", y = "Cumulative share of items in Diary wears tier") +
-      ggtitle("Item Diary wears tier cumulative distribution (all users)") +
-      geom_label(aes(factor(bin, level = histogram_wear_tiers_bin_label), y = 0.05, label=scales::percent(cum_share, accuracy = 1L)), color =  "white", label.size = NA)
-  }
-  else {
-    p <- p + labs(x = "Diary wears", y = "Share of items in Diary wears tier") +
-      ggtitle("Item Diary wears tier distribution (all users)") +
-      geom_label(aes(factor(bin, level = histogram_wear_tiers_bin_label), y = 0.01, label=scales::percent(share, accuracy = 1L)), color =  "white", label.size = NA)
-  }
-  
-  if (!legend){
-    p <- p + theme(legend.position = "none")
-  } else {
-    p <- p + theme(legend.position = c(0.5, 0.9))
-  }
+  if (!legend){ p <- p + theme(legend.position = "none") }
   
   return(p)
 }
+
 
 
 
@@ -1537,9 +1628,6 @@ setup_wears_and_price_by_age_plot <- function(plot_data, categories, xmax = NA, 
 
 
 
-
-
-
 # Show one user's dot
 p <- total_data %>% mutate(you = ifelse(user == "Kirsten", "You", "Others")) %>%
   setup_user_distribution_plot(xmax = NA, ymax = NA)
@@ -1706,8 +1794,8 @@ WPM_delta_cat$delta_to_real[is.infinite(WPM_delta_cat$delta_to_real)] <-
 
 
 
-WPM_delta %>% filter(user == "Nicole", category == "T-shirts and tops") %>% arrange(desc(WPM_delta))
-WPM_delta_cat %>% filter(user == "Nicole", category == "T-shirts and tops") %>% arrange(desc(delta_to_real))
+WPM_delta %>% filter(user == "Szilvia", category == "T-shirts and tops") %>% arrange(desc(WPM_delta))
+WPM_delta_cat %>% filter(user == "Szilvia", category == "T-shirts and tops") %>% arrange(desc(delta_to_real))
 
 WPM_delta %>% filter(user == "Florian", category == "T-shirts and tops") %>% arrange(desc(WPM_delta))
 WPM_delta_cat %>% filter(user == "Florian", category == "T-shirts and tops") %>% arrange(desc(delta_to_real))
@@ -1729,7 +1817,7 @@ WPM_delta %>%
 
 # Plot WPM
 p <- WPM_delta_cat %>% 
-  filter(category %in% "Jackets and coats") %>%
+  filter(category %in% "Shoes and footwear") %>%
   setup_WPM_delta_plot_categories(xmax = 5, ymax = 2, wpm_max = 1.0)
 p
 ggsave(filename = "Plots/Z/WPM-Estimate_vs_max_and_real-example.png", p, width = 9, height = 7, dpi = 150, units = "in")
@@ -1844,7 +1932,7 @@ hm_data %>% heatmap.2(scale = "none", trace = "none", density.info = "none",
 
 
 
-## Have users changed their initial pre-study weear estimates?
+## Have users changed their initial pre-study wear estimates?
 
 # Load raw_data after initial study period in July 2021
 load("Data/Threddit-Z-raw_data-2021-07-09.rda")
@@ -1945,6 +2033,10 @@ write.csv(divestments_2,"Plots/Z/Z-Divested_items_by_user.csv", row.names = FALS
 
 
 
+
+###################################
+########## COMBINATORICS ##########
+###################################
 
 ### Circlize package testing ###
 # https://r-graph-gallery.com/228-add-links-between-regions.html

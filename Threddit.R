@@ -24,7 +24,6 @@ set_up_environment()
 
 ## Read and clean master raw data
 masterdata <- read_data_GD(get_Google_sheet_ID()) # Read master data from Google Drive
-
 temp <- masterdata
 
 ## Transform data
@@ -88,6 +87,8 @@ animate(height = 1000, width = 1000, nframes = length(unique(daily_cost_anim_plo
 anim_save("Plots/Portfolio-Daily_cost-animation.gif")
 gcs_upload("Plots/Portfolio-Daily_cost-animation.gif", name="Portfolio-Daily_cost-animation.gif")
 
+# Avoid GCS timeout
+gcs_list_buckets(Firebase_project_id)
 
 
 
@@ -216,14 +217,12 @@ plot_data_reduced <- plot_data[plot_data$date %in% unique(plot_data$date)[c(TRUE
 
 # Create and save animations for all categories (HEAVY COMPUTING ~ 12 x 4-8 min = 1h)
 #for (i in category_order){
-for (i in category_order){
+for (i in category_order[4]){
   setup_category_times_used_plot(plot_data_reduced, categories = c(i), animate = TRUE) %>%
     animate(height = 1000, width = 1000, nframes = length(unique(plot_data_reduced$date)) + 72, fps = 24, end_pause = 72) # Frames = states + end pause
   anim_save(paste("Plots/Category-", gsub(" ", "_", i), "-Times_used-animation.gif", sep=""))
-#  file.copy(paste("Plots/Category-", gsub(" ", "_", i), "-Times_used-animation.gif", sep=""),
-#            paste("Website/", paste("Plots/Category-", gsub(" ", "_", i), "-Times_used-animation.gif", sep=""), sep=""),
-#            overwrite = TRUE)
-  #file.remove("Plots/Portfolio-Yearly_cost_and_Category_use-animation.gif")
+  gcs_upload(paste("Plots/Category-", gsub(" ", "_", i), "-Times_used-animation.gif", sep=""),
+             name=paste("Category-", gsub(" ", "_", i), "-Times_used-animation.gif", sep=""))
 }
 
 

@@ -139,6 +139,22 @@ users <- sort(unique(as.character(raw_data$user)))
 users <- users[!(users %in% excluded_users)]
 str(users)
 
+
+## Correct categories according to reshuffle in Nov 2022
+
+temp <- raw_data
+
+data_file = get_Google_sheet_ID_Z3()
+category_changes <- read_sheet(data_file, sheet='Category change log')
+str(category_changes)
+
+# Change categories
+for (i in 1:nrow(category_changes)) {
+  raw_data$category[raw_data$user == category_changes$user[i] & raw_data$item == category_changes$item[i]] <-
+    category_changes$target_category[i]
+}
+
+
 #################################################################################################
 ######################################## SET UP PLOTS ###########################################
 #################################################################################################
@@ -243,6 +259,14 @@ for (user in users) {
   ggsave(paste("Plots/Z/", filename, sep = ""), p, width = 9, height = 7, dpi = 150, units = "in")
   save_to_cloud_Z(filename)
 }
+
+
+## List highest value items across users
+valuable_items <- raw_data %>% select(user, category, item, price) %>%
+  filter(price >= 100) %>%
+  filter(category == "Accessories" | category == "Other") %>%
+  arrange(desc(price))
+write.csv(valuable_items,"Plots/Z/Z-Valuable_items.csv", row.names = FALSE)
 
 
 

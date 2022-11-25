@@ -143,6 +143,8 @@ str(users)
 ## Correct categories according to reshuffle in Nov 2022
 
 temp <- raw_data
+raw_data <- temp
+
 
 data_file = get_Google_sheet_ID_Z3()
 category_changes <- read_sheet(data_file, sheet='Category change log')
@@ -153,6 +155,18 @@ for (i in 1:nrow(category_changes)) {
   raw_data$category[raw_data$user == category_changes$user[i] & raw_data$item == category_changes$item[i]] <-
     category_changes$target_category[i]
 }
+
+# Remove glasses and sunglasses
+raw_data <- raw_data %>% filter(!(category == "Accessories" & grepl("glasses", item)))
+
+raw_data %>% filter(category == "Accessories" & grepl("glasses", item)) %>%
+  select(user, category, item, price, wears) %>% arrange(desc(wears))
+
+# Remove category "Other"
+raw_data <- raw_data %>% filter(category != "Other")
+
+nrow(raw_data)
+
 
 
 #################################################################################################
@@ -299,6 +313,15 @@ plot_data <- raw_data %>%
   as.data.frame()
 
 write.csv(plot_data,"Plots/Z/Z-Wardrobe_change_by_user.csv", row.names = FALSE)
+
+
+## List short-lived items; items purchased and divested within the 12-month study period
+plot_data <- raw_data %>% filter(date_purchased >= "2021-09-01" & !is.na(date_divested)) %>%
+  select(user, category, item, price, wears, secondhand, date_purchased, date_divested, divestment_way) %>%
+  mutate(days_in_use = date_divested - date_purchased) %>%
+  arrange(user, date_purchased)
+write.csv(plot_data,"Plots/Z/Z-Short_lived_items.csv", row.names = FALSE)
+
 
 ## Calculate user wardrobe key metrics
 # Items at end of study

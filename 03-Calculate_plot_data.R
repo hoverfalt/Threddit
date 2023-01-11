@@ -260,7 +260,8 @@ setup_inventory_item_count_plot <- function(inventory){
         annotate("text", x = author_label_x, y = author_label_y, label = author_label, color = "gray", hjust = 1) +
         geom_line() +
         scale_color_manual(name = "Category", values = category_colors) +
-        scale_y_continuous(breaks=seq(0, 100, by = 10)) + # Set y axis break interval
+        scale_y_continuous(breaks=seq(0, 100, by = 10)) + # Set y axis break interval +
+        scale_x_date(date_breaks = "1 year", date_minor_breaks = "3 months", date_labels = "%Y") +
         labs(x = "Date", y = "Active inventory (number of items)")
     
     return(p)
@@ -281,6 +282,7 @@ setup_inventory_value_by_category_plot <- function(inventory){
         geom_line() +
         scale_color_manual(name = "Category", values = category_colors) +
         scale_y_continuous(breaks=seq(0, 5000, by = 500)) + # Set y axis break interval
+        scale_x_date(date_breaks = "1 year", date_minor_breaks = "3 months", date_labels = "%Y") +
         labs(x = "Date", y = "Active inventory value at purchase price (€)")
     
     return(p)
@@ -301,6 +303,7 @@ setup_inventory_value_stacked_plot <- function(inventory, ymax = NA){
         geom_area() +
         scale_fill_manual(name = "Category", values = category_colors) +
         scale_y_continuous(limits=c(0,ymax), breaks=seq(0, 15000, by = 1000)) + # Set y axis break interval
+        scale_x_date(date_breaks = "1 year", date_minor_breaks = "3 months", date_labels = "%Y") +
         labs(x = "Date", y = "Active inventory value at purchase price (€)")
     
     return(p)
@@ -360,6 +363,7 @@ setup_daily_cost_plot <- function(daily_cost, ymax = 40, ybreaks = 2, seasons = 
         geom_line(aes(x = date, y = average_daily_cost), color='steelblue', size=1) +
 #        scale_x_date(date_breaks = "3 months", date_labels = "%Y-%m") +
         scale_y_continuous(limits=c(0,ymax), breaks=seq(0, 100, by = ybreaks)) + # Set y limit to NA in function call for automatic scale
+        scale_x_date(date_breaks = "1 year", date_minor_breaks = "3 months", date_labels = "%Y") +
         labs(x = "Date", y = "Daily cost and 30-day rolling average shifted to midpoint of sample (€)", color = "All divested")
     
     # Hide legend 
@@ -439,6 +443,7 @@ setup_daily_cost_animation <- function(daily_cost_anim_plot, ymax = 40, seasons 
       scale_color_manual(breaks = c(FALSE, TRUE), values=c("indianred1", "mediumseagreen")) +
       geom_line(data = na.omit(daily_cost_anim_plot), aes(x = date, y = average_daily_cost), color='steelblue', size=1.5) +
       scale_y_continuous(limits=c(0,ymax)) + # Set fixed Y (daily cost) limit at 40 to avoid plot scale from jumping around
+      scale_x_date(date_breaks = "1 year", date_minor_breaks = "3 months", date_labels = "%Y") +
       labs(x = "Date", y = "Daily cost and 30-day rolling average (shifted to midpoint of sample)", color = "All divested") +
       transition_states(day, state_length = 1, transition_length = 0) +
       labs(title = "Date: {closest_state}") + ease_aes('linear')
@@ -676,7 +681,7 @@ setup_category_plot_image <- function(plot_data, categories, xmax, ymax, ybreaks
 ### CATEGORY PLOT - COST PER USE vs CUMULATIVE USE ###
 
 # Function to setup (multi) category image plot y = cost per use, x = cumulative use
-setup_category_cumulative_plot_image <- function(plot_data, categories, xmax = NA, ymin = NA, ymax = NA, ybreaks = plot_log_breaks, log_trans=TRUE, trails=FALSE, guides=TRUE) {
+setup_category_cumulative_plot_image <- function(plot_data, categories, xmax = NA, xbreak = 25, ymin = NA, ymax = NA, ybreaks = plot_log_breaks, log_trans=TRUE, trails=FALSE, guides=TRUE) {
     
     # Filter data by category
     plot_data <- plot_data %>% filter(category %in% categories)
@@ -685,22 +690,30 @@ setup_category_cumulative_plot_image <- function(plot_data, categories, xmax = N
     if(guides){
         # Set xmax for guides to data limit if not defined (in the function call (i.e. set automatically by ggplot)
         if (!is.na(xmax)){ guides_length <- xmax }
-        else { guides_length = max(plot_data$cumuse)}
+        else {
+          guides_length = max(plot_data$cumuse)
+          xmax <- max(plot_data$cumuse)
+        }
         
         # Initiate guides data frame
         guides_data <- data.frame()
         
-        # Create guides with 400 observations for each item (purchase price)
+       # Create guides with 400 observations for each item (purchase price)
         for (i in guides_prices){ # guides_prices is a global variable assumed set
-            guides_temp = data.frame(item = rep(paste("Purchase price", i), guides_length))
-            guides_temp$date <- max(plot_data$date)
-            guides_temp$cumuse <- seq(1, guides_length, 1)
-            guides_temp$cost_per_use <- as.numeric(i) / guides_temp$cumuse
-            guides_data <- rbind(guides_data, guides_temp)
+          guides_temp = data.frame(price = rep(i, guides_length))
+          guides_temp$date <- max(plot_data$date)
+          guides_temp$cumuse <- seq(1, guides_length, 1)
+          guides_temp$cost_per_use <- as.numeric(i) / guides_temp$cumuse
+          guides_data <- rbind(guides_data, guides_temp)
         }
         
         # Remove guide data with cost_per_use lower than the plot data, to avoid impact on axis limits
         guides_data <- guides_data[guides_data$cost_per_use >= min(plot_data$cost_per_use),]
+        
+        # Create data set of label coordinates to be plotted
+        guides_labels_data <- guides_data %>%
+          group_by(price) %>%
+          summarise(cost_per_use = min(cost_per_use), cumuse = max(cumuse))
     }
     
     # Set author label coordinates (upper right corner)
@@ -716,7 +729,12 @@ setup_category_cumulative_plot_image <- function(plot_data, categories, xmax = N
       
     if (trails) { p <- p + geom_point(colour = "lightgray") }
     
+    # Add guide trajectories for number of purchase prices (labels are added last)
     if (guides){ p <- p + geom_point(data = guides_data, aes(x = cumuse, y = cost_per_use), colour = "lightblue", size = 0.4) }
+
+    # Add guide trajectory labels so as to end up on top of other graphical elements
+    if (guides){ p <- p + geom_label(data = guides_labels_data, aes(x = cumuse, y = cost_per_use, label=paste(price, "€")), color = "lightblue") }
+    
     p <- p +
       #geom_point(data = plot_data[plot_data$date == max(plot_data$date) & plot_data$active == FALSE,], size = marker_size, color = "mediumseagreen", alpha = 0.6) + # Mark divested items with green circle
         geom_point(data = plot_data %>% filter(date == max(plot_data$date), active == FALSE), size = marker_size, color = "mediumseagreen", alpha = 0.6) + # Mark divested items with green circle
@@ -724,8 +742,9 @@ setup_category_cumulative_plot_image <- function(plot_data, categories, xmax = N
         geom_image(data = plot_data %>% filter(date == max(plot_data$date), active == TRUE), aes(image = photo), size = 0.08) + # Render active items in top
         #geom_image(data = plot_data[plot_data$date == max(plot_data$date),], aes(image = photo), size = 0.08) + # Render divested items first
         #geom_image(data = plot_data[plot_data$date == max(plot_data$date),], aes(image = photo), size = 0.08) + # Render active items in top
-        scale_x_continuous(limits=c(0,xmax)) +
+        scale_x_continuous(limits=c(0,xmax), breaks = seq.int(from = 0, to = xmax, by = xbreak)) +
         labs(x = "Times worn", y = "Cost per wear (€)")
+
     if (log_trans) { p <- p + scale_y_continuous(trans="log10", limits=c(ymin,ymax), breaks=ybreaks) }
     else { p <- p + scale_y_continuous(limits=c(ymin,ymax)) }
     

@@ -165,9 +165,14 @@ raw_data %>% filter(category == "Accessories" & grepl("glasses", item)) %>%
 # Remove category "Other"
 raw_data <- raw_data %>% filter(category != "Other")
 
+
+# Remove excluded users and previously divested items (83) from raw data
+raw_data <- raw_data %>%
+  filter(!(user %in% excluded_users)) %>%
+  filter(is.na(date_divested) | date_divested >= "2021-09-01")
+
 nrow(raw_data)
-
-
+unique(raw_data$category)
 
 #################################################################################################
 ######################################## SET UP PLOTS ###########################################
@@ -258,8 +263,7 @@ plot_data <- raw_data %>%
   mutate(worn = as.logical(wears)) %>%
   rowwise() %>%
   group_by(user, category) %>%
-  summarise(items = n(), value = sum(price, na.rm = TRUE)) %>%
-  mutate(average_value = value / items)
+  summarise(items = n(), value = sum(price, na.rm = TRUE))
 
 p <- plot_data %>% setup_category_distribution_plot_by_user(users = "Vanessa", categories = category_order, xmax = NA, xbreak = 5, ymax = NA, legend  = FALSE)
 ggsave(filename = "Plots/Z/Z-Average_wardrobe_size_and_value_by_category.png", p, width = 9, height = 7, dpi = 150, units = "in")
@@ -275,19 +279,55 @@ for (user in users) {
 }
 
 
-## List highest value items across users
-valuable_items <- raw_data %>% select(user, category, item, price) %>%
-  filter(price >= 100) %>%
-  filter(category == "Accessories" | category == "Other") %>%
-  arrange(desc(price))
-write.csv(valuable_items,"Plots/Z/Z-Valuable_items.csv", row.names = FALSE)
+# Create table of category items and value by user
+
+plot_data <- raw_data %>%
+  select(user, category, item, price, date_purchased, date_divested) %>%
+  #filter(is.na(date_divested)) %>%
+  filter(date_purchased <= "2021-09-01" | is.na(date_purchased)) %>%
+  group_by(user, category) %>%
+  summarise(items = n(), value = sum(price, na.rm = TRUE)) %>%
+  select(user, category, items) %>%
+  spread(category, items) %>%
+  as.data.frame()
+write.csv(plot_data,"Plots/Z/Z-Category_size_by_user-END.csv", row.names = FALSE)
+write.csv(plot_data,"Plots/Z/Z-Category_value_by_user-END.csv", row.names = FALSE)
+
+nrow(plot_data)
+
+plot_data <- raw_data %>%
+  select(user, category, item, price, date_purchased, date_divested) %>%
+  mutate(new_item = as.logical(as.Date(date_purchased) > as.Date("2021-09-01"))) %>%
+  mutate(divested_item = as.logical(as.Date(date_divested) > as.Date("2021-09-01"))) %>%
+  mutate(new_item_value = new_item * price, divested_item_value = divested_item * price) %>%
+  rowwise() %>%
+  group_by(user, category) %>%
+  summarise(items_at_start = n() - sum(new_item, na.rm = TRUE),
+            new_items = sum(new_item, na.rm = TRUE),
+            divested_items = sum(divested_item, na.rm = TRUE),
+            items_at_end = n() - sum(divested_item, na.rm = TRUE),
+            value_at_start = round(sum(price, na.rm = TRUE) - sum(new_item_value, na.rm = TRUE), digits = 0),
+            value_new_items = round(sum(new_item_value, na.rm = TRUE), digits = 0),
+            value_divested_items = round(sum(divested_item_value, na.rm = TRUE), digits = 0),
+            value_at_end = round(sum(price, na.rm = TRUE) - sum(divested_item_value, na.rm = TRUE), digits = 0)) %>%
+  select(user, category, items_at_start, items_at_end, new_items, divested_items, 
+         value_at_start, value_new_items, value_divested_items, value_at_end) %>%
+  as.data.frame()
+table_data <- plot_data %>%
+  select(user, category, value_at_start) %>%
+  spread(category, value_at_start) %>%
+  as.data.frame()
+
+write.csv(table_data,"Plots/Z/Z-Category_size_by_user-START.csv", row.names = FALSE)
+write.csv(table_data,"Plots/Z/Z-Category_value_by_user-START.csv", row.names = FALSE)
+
+
 
 
 
 ## Wardrobe change: new and divested items count and value by user
 str(raw_data)
 plot_data <- raw_data %>%
-  filter(!(user %in% excluded_users)) %>%
   select(user, category, item, price, date_purchased, date_divested) %>%
   mutate(new_item = as.logical(as.Date(date_purchased) > as.Date("2021-09-01"))) %>%
   mutate(divested_item = as.logical(as.Date(date_divested) > as.Date("2021-09-01"))) %>%
@@ -315,12 +355,16 @@ plot_data <- raw_data %>%
 write.csv(plot_data,"Plots/Z/Z-Wardrobe_change_by_user.csv", row.names = FALSE)
 
 
-## List short-lived items; items purchased and divested within the 12-month study period
-plot_data <- raw_data %>% filter(date_purchased >= "2021-09-01" & !is.na(date_divested)) %>%
-  select(user, category, item, price, wears, secondhand, date_purchased, date_divested, divestment_way) %>%
-  mutate(days_in_use = date_divested - date_purchased) %>%
-  arrange(user, date_purchased)
-write.csv(plot_data,"Plots/Z/Z-Short_lived_items.csv", row.names = FALSE)
+
+## List highest value items across users
+valuable_items <- raw_data %>% select(user, category, item, price) %>%
+  filter(price >= 100) %>%
+  filter(category == "Accessories" | category == "Other") %>%
+  arrange(desc(price))
+write.csv(valuable_items,"Plots/Z/Z-Valuable_items.csv", row.names = FALSE)
+
+
+
 
 
 ## Calculate user wardrobe key metrics
@@ -356,6 +400,7 @@ wardrobes_2 <- plot_data %>% select(user, new_items, divested_items, items_chang
 merge(wardrobes, wardrobes_2)
 
 
+
 # Calculate average item price across all users and categories
 raw_data %>%
   filter(!(user %in% excluded_users)) %>%
@@ -380,6 +425,19 @@ item_value_by_category <- raw_data %>%
   arrange(desc(coefficient_of_variation))
 
 write.csv(item_value_by_category,"Plots/Z/Z-Item_value_by_category.csv", row.names = FALSE)
+
+
+## List short-lived items; items purchased and divested within the 12-month study period
+plot_data <- raw_data %>%
+  filter(!(user %in% excluded_users)) %>%
+  filter(date_purchased >= "2021-09-01" & !is.na(date_divested)) %>%
+  select(user, category, item, price, wears, secondhand, date_purchased, date_divested, divestment_way, wears_per_wash, condition) %>%
+  mutate(days_in_use = date_divested - date_purchased) %>%
+  arrange(user, date_purchased)
+write.csv(plot_data,"Plots/Z/Z-Short_lived_items.csv", row.names = FALSE)
+
+
+
 
 
 
@@ -513,21 +571,22 @@ worn_count <- 4
 plot_data <- raw_data %>%
   filter(!(user %in% excluded_users)) %>%
   filter(is.na(date_divested)) %>%
-  mutate(worn = as.logical(wears >= worn_count)) %>%
+#  mutate(worn = as.logical(wears == 0)) %>%
+  mutate(worn = as.logical(wears >= 1 & wears < worn_count)) %>%
   group_by(user, category) %>%
   summarise(items = n(), share_worn = sum(worn)/n())
 
 # Plot all categories
 for (category in category_order) {
   p <- plot_data %>% setup_share_worn_plot(categories = category, worn_count = worn_count)
-  filename <- paste("Z-Wardrobe_items_and_share_worn-n_times-", gsub(" ", "_", category), ".png", sep = "")
+  filename <- paste("Z-Wardrobe_items_and_share_worn-n-times", gsub(" ", "_", category), ".png", sep = "")
   ggsave(paste("Plots/Z/", filename, sep = ""), p, width = 9, height = 7, dpi = 150, units = "in")
   save_to_cloud_Z(filename)
 }
 
 
 # Check for statistical significance
-model_data_sample <- plot_data %>% filter(category == "Jackets and coats")
+model_data_sample <- plot_data %>% filter(category == "Trousers and jeans")
 wears_model <- lm(share_worn ~ items, data = model_data_sample)
 summary(wears_model)
 summary(wears_model)$coefficient
@@ -581,7 +640,7 @@ write.csv(plot_data,"Plots/Z/Z-Amount_of_unused_items_by_categoty_and_user.csv",
 
 plot_data <- raw_data %>%
   filter(!(user %in% excluded_users)) %>%
-  filter(is.na(date_divested)) %>%
+  #filter(is.na(date_divested)) %>%
   mutate(worn = as.logical(wears)) %>%
   #filter(worn == 0) %>%
   group_by(category, wears) %>%
@@ -839,6 +898,10 @@ plot_data <- plot_data %>%
   mutate(share = items/sum(items)) %>%
   mutate(cum_items = cumsum(items), cum_share = cumsum(share)) %>%
   as.data.frame()
+
+plot_data %>% select(category, bin, items) %>% spread(category, items) %>%
+write.csv("Plots/Z/Z-Diary_wears_histogram_ITEMS.csv", row.names = FALSE)
+
 
 write.csv(plot_data,"Plots/Z/Z-Diary_wears_histogram_by_categoty.csv", row.names = FALSE)
 
@@ -1202,10 +1265,12 @@ for (category in category_order) {
 # Prepare plot data for plotting Diary wears (and calculating CPW base only on those)
 plot_data <- raw_data %>% filter(!(user %in% excluded_users))
 
-plot_data$wears[plot_data$wears == 0] <- 1 # Replace all 0 wears with 1 to in effect set CPW to price for these items
+# Create help variable to calculate CPW for items with 0 wears
+plot_data$wears_CPW <- plot_data$wears # Copy 
+plot_data$wears_CPW[plot_data$wears_CPW == 0] <- 1 # Replace all 0 wears with 1 to in effect set CPW to price for these items
 plot_data <- plot_data %>%
-  mutate(plot_wears = wears, cpw = price/wears) %>% 
-  select(category, cpw, plot_wears) %>%
+  mutate(plot_wears = wears, cpw = price/wears_CPW) %>% 
+  select(user, category, cpw, plot_wears, price) %>%
   filter(cpw > 0) # Remove items with purchase price 0 to avoid stretching logarithmic scale
 
 # Plot all categories
@@ -1218,9 +1283,112 @@ for (category in category_order) {
 }
 
 
+# Explore single users
+
+plot_data %>% group_by(user, category) %>%
+  summarise(items = n()) %>% arrange(desc(items)) %>% as.data.frame() %>% head(40)
+
+plot_user <- "Sophy"
+category_selected <- "Trousers and jeans"
+xbreak = 10
+ymax_plot = plot_data %>% filter(category == category_selected) %>% select(cpw) %>% max()
+p <- plot_data %>%
+#  filter(user  == plot_user) %>%
+  filter(plot_wears >= 4) %>%
+  setup_CPW_and_Wears_plot(categories = category, plot_total_wears = FALSE,
+                           xbreak = xbreak, xmax = 160, ymax = ymax_plot)
+p
+
+
+category_selected <- "Trousers and jeans"
+# Calculate category total value and items
+category_items <- plot_data %>% filter(category == category_selected) %>% nrow()
+category_value <- plot_data %>% filter(category == category_selected) %>%
+  summarise(value = sum(price))
+
+# Share of items
+plot_data %>% filter(category == category_selected) %>%
+  filter(plot_wears > 50) %>% nrow() / category_items
+
+# Share of value
+plot_data %>% filter(category == category_selected) %>%
+  filter(plot_wears > 50) %>% summarise(value = sum(price)) / category_value
 
 
 
+
+### Plot category CPW progression
+
+# Calculate wear segments
+
+# Prepare plot data for plotting Diary wears (and calculating CPW base only on those)
+plot_data <- raw_data
+
+# Create help variable to calculate CPW for items with 0 wears
+plot_data$wears_CPW <- plot_data$wears # Copy 
+plot_data$wears_CPW[plot_data$wears_CPW == 0] <- 1 # Replace all 0 wears with 1 to in effect set CPW to price for these items
+plot_data <- plot_data %>%
+  mutate(plot_wears = wears, cpw = price/wears_CPW) %>% 
+  select(user, category, cpw, plot_wears, price) %>%
+  filter(cpw > 0) # Remove items with purchase price 0 to avoid stretching logarithmic scale
+
+nr_users <- 29
+
+
+raw_data %>% filter(date_purchased <= "2021-09-01" | is.na(date_purchased)) %>% nrow()
+  
+
+# Set average total number of items during 12 month period
+total_items <- round(mean(c(raw_data %>% filter(is.na(date_divested)) %>% nrow(),
+                      raw_data %>% filter(date_purchased <= "2021-09-01" | is.na(date_purchased)) %>% nrow())),
+                     digits = 0)
+# Set average total value of items during 12 month period
+total_value <- round(mean(c(raw_data %>% filter(is.na(date_divested)) %>% select(price) %>% sum(na.rm = TRUE),
+                            raw_data %>% filter(date_purchased <= "2021-09-01" | is.na(date_purchased)) %>% select(price) %>% sum(na.rm = TRUE))),
+                     digits = 0)
+
+plot_table <- plot_data %>%
+  #filter(plot_wears == 0) %>%
+  #filter(plot_wears >= 4 & plot_wears <= 50) %>%
+  filter(plot_wears > 50) %>%
+  group_by(category) %>%
+  summarise(items = round(n(), digits = 0), wears_mean = round(mean(plot_wears), digits = 0), wears_median = round(median(plot_wears), digits = 0),
+            cpw_mean = round(mean(cpw), digits = 2), cpw_median = round(median(cpw), digits = 2),
+            value = round(sum(price), digits = 2)) %>%
+  select(category, items, value, wears_mean, cpw_mean) %>%
+  as.data.frame()
+
+write.csv(plot_table,"Plots/Z/Z-CPW_export.csv", row.names = FALSE)
+
+category <- "Trousers and jeans"
+xbreak <-  10
+p <- plot_data %>% setup_CPW_and_Wears_plot(categories = category, plot_total_wears = FALSE, xbreak = xbreak, xmax = NA, ymax = NA)
+
+
+
+
+# Calculate median purchase price per category as starting point
+
+raw_data %>% select(user, category, item, price, wears) %>%
+  group_by(category) %>%
+  summarise(median_price = median(price, na.rm = TRUE), average_wears = mean(wears), max_wears = max(wears)) %>%
+  as.data.frame()
+
+raw_data %>% select(user, category, item, price, wears) %>% 
+#  filter(wears >= 4) %>%
+  group_by(category) %>%
+  summarise(median = median(wears), mean = mean(wears))
+  
+  
+  filter(category == "Shirts and blouses") %>%
+  summarise(wears_quantile = quantile(wears, 0.76))
+
+# List top worn underwear and socks to find hidden item bundles
+raw_data %>% select(user, category, item, price, wears) %>%
+  filter(category == "Sportswear") %>%
+  arrange(desc(wears)) %>%
+  as.data.frame() %>% head(30)
+  
 
 ######################################## DEVELOPMENT WIP ###########################################
 ######################################## DEVELOPMENT WIP ###########################################
@@ -1598,7 +1766,8 @@ setup_wears_and_price_plot <- function(plot_data, categories, xmax = NA, ymax = 
 histogram_age_tiers_bin_max <- c(365, 730, 1095, 1095)
 histogram_age_tiers_bin_label <- c("< 1 year", "1-2 years", "2-3 years", "3+ years")
 
-plot_data <- raw_data %>% select(user, category, item, wears, price, date_purchased) %>%
+plot_data <- raw_data %>% filter(!(user %in% excluded_users)) %>%
+  select(user, category, item, wears, price, date_purchased, date_divested) %>%
   mutate(wardrobe_age = as.numeric(as.Date("2022-09-01") - as.Date(date_purchased))) %>%
   mutate(bin = as.factor(case_when(
     wardrobe_age <= histogram_age_tiers_bin_max[1] ~ histogram_age_tiers_bin_label[1],
@@ -1667,6 +1836,88 @@ setup_wears_and_price_by_age_plot <- function(plot_data, categories, xmax = NA, 
   
   return(p)
 }
+
+
+# Calculate divested items' wardrobe age
+
+plot_data <- raw_data %>% filter(!(user %in% excluded_users)) %>%
+  filter(!is.na(date_divested)) %>%
+  filter(date_divested > "2021-09-01") %>%
+  mutate(wardrobe_age_days = as.numeric(as.Date(date_divested) - as.Date(date_purchased))) %>%
+  mutate(wardrobe_age = round(wardrobe_age_days/365, digits = 1)) %>%
+  select(user, category, item, price, wears, cpw, wardrobe_age, divestment_way, condition) %>%
+  arrange(category)
+
+# Write output to CSV file
+write.csv(plot_data,"Plots/Z/Z-Divested_item_wardrobe_age.csv", row.names = FALSE)
+
+
+plot_data%>% group_by(category) %>%
+  summarise(items = n(), avg_wardrobe_age = mean(wardrobe_age, na.rm = TRUE)) %>%
+  mutate(avg_wardrobe_age_years = round(avg_wardrobe_age/365, digits = 1))
+  
+
+# Plot item age when divested by purchase price for all categories 
+for (category in category_order) {
+  p <- plot_data %>% setup_divested_item_age_and_price_plot(categories = category, ymax = NA, ybreak = 25, xmax = NA, xbreak = 1, trendline = TRUE, log_trans = FALSE)
+  filename <- paste("Z-Divested_item_wardrobe_age_and_price-", gsub(" ", "_", category), ".png", sep = "")
+  ggsave(paste("Plots/Z/", filename, sep = ""), p, width = 9, height = 7, dpi = 150, units = "in")
+  save_to_cloud_Z(filename)
+}
+
+# Avoid GCS timeout
+gcs_list_buckets(Firebase_project_id)
+
+
+
+# Function: to setup category point plot y = item price, x = item wardrobe age then divested
+setup_divested_item_age_and_price_plot <- function(plot_data, categories, xmax = NA, ymax = NA, xbreak = 0.25, ybreak = 25, ybreaks = plot_log_breaks, log_trans=FALSE, avg_lines=TRUE, trendline = TRUE, legend = TRUE) {
+  
+  # Filter data by category
+  plot_data <- plot_data %>% filter(category %in% categories)
+  
+  # Set author label coordinates (upper right corner)
+  if(is.na(xmax)) { xmax <- max(plot_data$wardrobe_age_years, na.rm = TRUE) }
+  if(is.na(ymax)) { ymax <- max(plot_data$price, na.rm = TRUE) }
+  
+  author_label_x <- xmax
+  author_label_y <- ymax
+  
+  # Set plot_size
+  plot_size <- 0.5
+  
+  # Set up plot
+  p <- ggplot(
+    plot_data, 
+    aes(x = wardrobe_age_years, y = price, colour = category)) +
+    annotate("text", x = author_label_x, y = author_label_y, label = author_label, color = "gray", hjust = 1) +
+    geom_point(show.legend = TRUE, aes(alpha = plot_size, size = plot_size)) +
+    scale_x_continuous(breaks = seq.int(from = 0, to = xmax, by = xbreak), limits=c(0,xmax)) +
+    scale_color_manual(name = "Category", values = category_colors[match(categories, category_order)]) +
+    scale_alpha(range = c(0.5, 1.0)) +
+    scale_size(range = c(2, 3)) +
+    guides(alpha = FALSE, size = FALSE) +
+    labs(x = "Item wardrobe age when divested + mean (years)", y = "Item purchase price")
+  
+  if (log_trans) { p <- p + scale_y_continuous(trans="log10", limits=c(NA,ymax), breaks=ybreaks, labels=scales::dollar_format(suffix = "€", prefix = "")) }
+  else { p <- p + scale_y_continuous(breaks = seq.int(from = 0, to = ymax, by = ybreak), limits=c(NA,ymax), labels=scales::dollar_format(suffix = "€", prefix = "")) }
+  
+  if (trendline) { p <- p + geom_smooth(method = "lm") }
+  
+  if (avg_lines) { p <- p +
+    geom_vline(xintercept = mean(plot_data$wardrobe_age_years, na.rm=TRUE), color="darkgrey", linetype="dashed") +
+    geom_label(aes(x = mean(plot_data$wardrobe_age_years, na.rm=TRUE), y = min(plot_data$wardrobe_age_years, na.rm=TRUE)+0.05, label=round(mean(plot_data$wardrobe_age_years, na.rm=TRUE), digits = 1)), color =  "darkgrey") +
+    geom_hline(yintercept = median(plot_data$price, na.rm=TRUE), color="darkgrey", linetype="dashed") +
+    geom_label(aes(x = 0, y = median(plot_data$price, na.rm=TRUE), label=paste(round(median(plot_data$price, na.rm=TRUE), digits = 0), "€")), color =  "darkgrey")
+  }
+  
+  if (!legend){
+    p <- p + theme(legend.position = "none")
+  } else {
+    p <- p + theme(legend.position = c(0.85, 0.85))
+  }
+}
+
 
 
 
@@ -1839,6 +2090,16 @@ WPM_delta_cat <-
 WPM_delta_cat$delta_to_real[is.infinite(WPM_delta_cat$delta_to_real)] <-
   round(WPM_delta_cat$est[is.infinite(WPM_delta_cat$delta_to_real)] / 0.1, digits = 1)
 
+
+# Calculate real category WPM
+WPM_delta %>% group_by(category, user) %>%
+  summarise(WPM_real = sum(wears_real) / months_tracked) %>% as.data.frame() %>%
+  group_by(category) %>%
+  summarise(avg_WPM_real = mean(WPM_real)) %>% as.data.frame()
+
+# Calculate category WPM average delta to real
+WPM_delta_cat %>% group_by(category) %>%
+  summarise(avg_delta_to_real = mean(delta_to_real, na.rm = TRUE)) %>% as.data.frame()
 
 
 WPM_delta %>% filter(user == "Szilvia", category == "T-shirts and tops") %>% arrange(desc(WPM_delta))
@@ -2043,7 +2304,8 @@ raw_data[!is.na(raw_data$date_divested),]
 # List divestment way
 raw_data %>%
   filter(!(user %in% excluded_users)) %>%
-  filter(!is.na(date_divested)) %>%
+  filter(!is.na(date_divested) & date_divested > "2021-09-01") %>%
+  #filter(!is.na(date_divested)) %>%
   group_by(divestment_way) %>%
   summarise(items_divested = n()) %>%
   mutate(share_of_total = round(items_divested / sum(items_divested), digits = 2)) %>%
@@ -2052,7 +2314,9 @@ raw_data %>%
 
 # List item condition when divested
 raw_data %>%
-  filter(!is.na(date_divested)) %>%
+  filter(!(user %in% excluded_users)) %>%
+  filter(!is.na(date_divested) & date_divested > "2021-09-01") %>%
+  #filter(!is.na(date_divested)) %>%
   group_by(condition) %>%
   summarise(items_divested = n()) %>%
   mutate(share_of_total = round(items_divested / sum(items_divested), digits = 2)) %>%
@@ -2062,7 +2326,8 @@ raw_data %>%
 # List divestments by divestment way and condition
 divestments <- raw_data %>%
   filter(!(user %in% excluded_users)) %>%
-  filter(!is.na(date_divested)) %>%
+  filter(!is.na(date_divested) & date_divested > "2021-09-01") %>%
+  #filter(!is.na(date_divested)) %>%
   group_by(divestment_way, condition) %>%
   summarise(items_divested = n()) %>%
   pivot_wider(names_from = divestment_way, values_from = items_divested)
@@ -2072,12 +2337,27 @@ write.csv(divestments,"Plots/Z/Z-Divested_items_by_way.csv", row.names = FALSE)
 # List divestments by user and divestment way
 divestments_2 <- raw_data %>%
   filter(!(user %in% excluded_users)) %>%
-  filter(!is.na(date_divested)) %>%
+  # filter(!is.na(date_divested)) %>%
+  filter(!is.na(date_divested) & date_divested > "2021-09-01") %>%
   group_by(user, divestment_way) %>%
   summarise(items_divested = n()) %>%
   pivot_wider(names_from = divestment_way, values_from = items_divested)
 write.csv(divestments_2,"Plots/Z/Z-Divested_items_by_user.csv", row.names = FALSE)
 
+# List divestments by category and divestment way
+divestments_3 <- raw_data %>%
+  filter(!(user %in% excluded_users)) %>%
+  # filter(!is.na(date_divested)) %>%
+  filter(!is.na(date_divested) & date_divested > "2021-09-01") %>%
+  group_by(category, divestment_way) %>%
+  summarise(items_divested = n()) %>%
+  pivot_wider(names_from = divestment_way, values_from = items_divested)
+write.csv(divestments_3,"Plots/Z/Z-Divested_items_by_category.csv", row.names = FALSE)
+
+
+raw_data %>%
+  filter(!(user %in% excluded_users)) %>% group_by(category) %>%
+  summarise(quantile = quantile(wears, 0.5))
 
 
 
@@ -2466,16 +2746,18 @@ setup_share_worn_plot <- function(plot_data, categories, xmax = NA, ymax = 1, tr
       ggtitle("Number of wardrobe items vs share of items worn (each dot is one user's wardrobe)")
     
   } else {
+#    p <- p + labs(x = "Amount of items in wardrobe", y = paste("Share of wardrobe items unworn during the diary period", sep = "")) +
+#      ggtitle("Number of wardrobe items vs share of items worn (each dot is one user's wardrobe)")
     p <- p + labs(x = "Amount of items in wardrobe", y = paste("Share of wardrobe items worn at least ", worn_count, " times during the diary period", sep = "")) +
       ggtitle("Number of wardrobe items vs share of items worn (each dot is one user's wardrobe)")
-      #geom_label(aes(x = 2, y = 0.1 , label=paste("Worn at least\n", worn_count, " times", sep = "")), color =  "darkred", fill = "white")
+    #geom_label(aes(x = 2, y = 0.1 , label=paste("Worn at least\n", worn_count, " times", sep = "")), color =  "darkred", fill = "white")
       
   }
   
   if (!legend){
     p <- p + theme(legend.position = "none")
   } else {
-    p <- p + theme(legend.position = c(0.15, 0.15))
+    p <- p + theme(legend.position = c(0.15, 0.85))
   }
   
   return(p)

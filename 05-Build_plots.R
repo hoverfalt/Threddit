@@ -121,7 +121,7 @@ build_standard_plots <- function(){
   ggsave(filename = "Plots/Portfolio-Daily_cost_and_Category_use.png", p, width = 12, height = 10, dpi = 300, units = "in")
   save_to_cloud("Portfolio-Daily_cost_and_Category_use.png")
 
-  # Portfolio plot: Average YEARLY cost vs category use (FAILS TO UPLOAD)
+  # Portfolio plot: Average YEARLY cost vs category use
   p <- usetodate_anim %>% setup_yearly_cost_and_category_use_plot(ybreaks = 50, animate = FALSE)
   ggsave(filename = "Plots/Portfolio-Yearly_cost_and_Category_use.png", p, width = 12, height = 10, dpi = 300, units = "in")
   save_to_cloud("Portfolio-Yearly_cost_and_Category_use.png")
@@ -152,67 +152,67 @@ build_standard_plots <- function(){
   ## Category plot - Cost per use vs Cumulative use
   
   # Jackets and hoodies
-  p <- plot_data %>% setup_category_cumulative_plot_image("Jackets and hoodies", xmax = 550, ymax = 10, ybreaks = plot_log_breaks, log_trans=TRUE, trails=TRUE, guides=TRUE)
+  p <- plot_data %>% setup_category_cumulative_plot_image("Jackets and hoodies", xmax = NA, xbreak = 100, ymax = 100, ybreaks = plot_log_breaks, log_trans=TRUE, trails=TRUE, guides=TRUE)
   ggsave(filename = "Plots/Category-Jackets_and_hoodies-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in")
   save_to_cloud("Category-Jackets_and_hoodies-Cost_and_Cumulative_use.png")
 
   # Blazers and vests
-  p <- plot_data %>% setup_category_cumulative_plot_image("Blazers and vests", xmax = 60, ymax = 50, log_trans=TRUE, trails=TRUE, guides=TRUE)
+  p <- plot_data %>% setup_category_cumulative_plot_image("Blazers and vests", xmax = NA, xbreak = 5, ymax = 50, log_trans=TRUE, trails=TRUE, guides=TRUE)
   ggsave(filename = "Plots/Category-Blazers_and_vests-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in")
   save_to_cloud("Category-Blazers_and_vests-Cost_and_Cumulative_use.png")
   
   # Knits
-  p <- plot_data %>% setup_category_cumulative_plot_image("Knits", xmax = 30, ymax = 50, log_trans=TRUE, trails=TRUE, guides=TRUE)
+  p <- plot_data %>% setup_category_cumulative_plot_image("Knits", xmax = NA, xbreak = 5, ymax = 20, log_trans=TRUE, trails=TRUE, guides=TRUE)
   ggsave(filename = "Plots/Category-Knits-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in")
   save_to_cloud("Category-Knits-Cost_and_Cumulative_use.png")
   
   # Shirts
-  p <- plot_data %>% setup_category_cumulative_plot_image("Shirts", xmax = 80, ymax = 45, log_trans=TRUE, trails=TRUE, guides=TRUE)
+  p <- plot_data %>% setup_category_cumulative_plot_image("Shirts", xmax = NA, xbreak = 10, ymax = 50, log_trans=TRUE, trails=TRUE, guides=TRUE)
   ggsave(filename = "Plots/Category-Shirts-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in")
   save_to_cloud("Category-Shirts-Cost_and_Cumulative_use.png")
   
   # T-shirts and tanks
-  p <- plot_data %>% setup_category_cumulative_plot_image("T-shirts and tanks", xmax = 120, ymax = 20, log_trans=TRUE, trails=TRUE, guides=TRUE)
+  p <- plot_data %>% setup_category_cumulative_plot_image("T-shirts and tanks", xmax = NA, xbreak = 25, ymax = 20, log_trans=TRUE, trails=TRUE, guides=TRUE)
   ggsave(filename = "Plots/Category-T-shirts_and_tanks-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in")
   save_to_cloud("Category-T-shirts_and_tanks-Cost_and_Cumulative_use.png")
   
   # Pants
-  p <- plot_data %>% setup_category_cumulative_plot_image("Pants", xmax = 180, ymax = 35, log_trans=TRUE, trails=TRUE, guides=TRUE)
+  p <- plot_data %>% setup_category_cumulative_plot_image("Pants", xmax = NA, xbreak = 25, ymax = 50, log_trans=TRUE, trails=TRUE, guides=TRUE)
   ggsave(filename = "Plots/Category-Pants-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in")
   save_to_cloud("Category-Pants-Cost_and_Cumulative_use.png")
   
   # Shorts
-  p <- plot_data %>% setup_category_cumulative_plot_image("Shorts", xmax = 180, ymax = 100, log_trans=TRUE, trails=TRUE, guides=TRUE)
+  p <- plot_data %>% setup_category_cumulative_plot_image("Shorts", xmax = NA, xbreak = 20, ymax = 100, log_trans=TRUE, trails=TRUE, guides=TRUE)
   ggsave(filename = "Plots/Category-Shorts-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in")
   save_to_cloud("Category-Shorts-Cost_and_Cumulative_use.png")
   
   # Belts
-  p <- plot_data %>% setup_category_cumulative_plot_image("Belts", xmax = 650, ymax = 100, log_trans=TRUE, trails=TRUE, guides=TRUE)
+  p <- plot_data %>% setup_category_cumulative_plot_image("Belts", xmax = NA, xbreak = 100, ymax = 100, log_trans=TRUE, trails=TRUE, guides=TRUE)
   ggsave(filename = "Plots/Category-Belts-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in")
   save_to_cloud("Category-Belts-Cost_and_Cumulative_use.png")
   
   # Socks
-  p <- plot_data %>% setup_category_cumulative_plot_image("Socks", xmax = 50, ymax = 10, log_trans=TRUE, trails=TRUE, guides=TRUE)
+  p <- plot_data %>% setup_category_cumulative_plot_image("Socks", xmax = NA, xbreak = 5, ymax = 10, log_trans=TRUE, trails=TRUE, guides=TRUE)
   ggsave(filename = "Plots/Category-Socks-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in")
   save_to_cloud("Category-Socks-Cost_and_Cumulative_use.png")
   
   # Shoes
-  p <- plot_data %>% setup_category_cumulative_plot_image("Shoes", xmax = 400, ymax = 30, log_trans=TRUE, trails=TRUE, guides=TRUE)
+  p <- plot_data %>% setup_category_cumulative_plot_image("Shoes", xmax = NA, xbreak = 50, ymax = 30, log_trans=TRUE, trails=TRUE, guides=TRUE)
   ggsave(filename = "Plots/Category-Shoes-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in")
   save_to_cloud("Category-Shoes-Cost_and_Cumulative_use.png")
   
   # Underwear shirts
-  p <- plot_data %>% setup_category_cumulative_plot_image("Underwear shirts", xmax = 80, ymax = 42, log_trans=TRUE, trails=TRUE, guides=TRUE)
+  p <- plot_data %>% setup_category_cumulative_plot_image("Underwear shirts", xmax = NA, xbreak = 10, ymax = 30, log_trans=TRUE, trails=TRUE, guides=TRUE)
   ggsave(filename = "Plots/Category-Underwear_shirts-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in")
   save_to_cloud("Category-Underwear_shirts-Cost_and_Cumulative_use.png")
   
   # Underwear boxers
-  p <- plot_data %>% setup_category_cumulative_plot_image("Underwear boxers", xmax = 60, ymax = 16, log_trans=TRUE, trails=TRUE, guides=TRUE)
+  p <- plot_data %>% setup_category_cumulative_plot_image("Underwear boxers", xmax = NA, xbreak = 10, ymax = 5, log_trans=TRUE, trails=TRUE, guides=TRUE)
   ggsave(filename = "Plots/Category-Underwear_boxers-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in")
   save_to_cloud("Category-Underwear_boxers-Cost_and_Cumulative_use.png")
   
   # Sportswear
-  p <- plot_data %>% setup_category_cumulative_plot_image("Sportswear", xmax = 140, ymax = 35, log_trans=TRUE, trails=TRUE, guides=TRUE)
+  p <- plot_data %>% setup_category_cumulative_plot_image("Sportswear", xmax = NA, xbreak = 25, ymax = 200, log_trans=TRUE, trails=TRUE, guides=TRUE)
   ggsave(filename = "Plots/Category-Sportswear-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in")
   save_to_cloud("Category-Sportswear-Cost_and_Cumulative_use.png")
   

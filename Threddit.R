@@ -32,7 +32,7 @@ plotuse <- transform_data(masterdata) %>% # 1) Transform raw data into tidy data
   calculate_total_use_data() %>% # 3) Calculate total use data, including divested items 
   calculate_plot_data() # 4) Calculate plot data for the standard plots
 
-# Save tidy data data.frame to file for easier retrieval (2022-05-03)
+# Save tidy data data.frame to file for easier retrieval (2023-01-08)
 save(masterdata,file="Data/Threddit-masterdata.Rda")
 save(plotuse,file="Data/Threddit-plotuse.Rda")
 save(daterange,file="Data/Threddit-daterange.Rda")
@@ -81,7 +81,7 @@ daily_cost_anim_plot <- daily_cost_anim %>% filter(day >= daterange[rolling_aver
 # Reduce frames by removing every second day (note: not date!)
 daily_cost_anim_plot_reduced <- daily_cost_anim_plot[daily_cost_anim_plot$day %in% unique(daily_cost_anim_plot$day)[c(TRUE, FALSE)],]
 
-# Set up animation, animate, and save (HEAVY COMPUTING) - Latest: 2022-03-21
+# Set up animation, animate, and save (HEAVY COMPUTING) - Latest: 2023-01-08
 setup_daily_cost_animation(daily_cost_anim_plot_reduced, ymax = 40) %>%
 animate(height = 1000, width = 1000, nframes = length(unique(daily_cost_anim_plot_reduced$day)) + 72, fps = 24, end_pause = 72)
 anim_save("Plots/Portfolio-Daily_cost-animation.gif")

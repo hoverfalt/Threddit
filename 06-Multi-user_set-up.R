@@ -1259,7 +1259,6 @@ for (category in category_order) {
   save_to_cloud_Z(filename)
 }
 
-
 ## DIARY WEARS
 
 # Prepare plot data for plotting Diary wears (and calculating CPW base only on those)
@@ -1282,6 +1281,9 @@ for (category in category_order) {
   save_to_cloud_Z(filename)
 }
 
+# Explore single category
+category <- "Trousers and jeans"
+p <- plot_data %>% setup_CPW_and_Wears_plot(categories = category, plot_total_wears = FALSE, xbreak = 25, xmax = NA, ymax = NA)
 
 # Explore single users
 
@@ -2459,6 +2461,109 @@ for(i in 1:nrow(plot_combinations)){
               plot_combinations$item_2[i],
               h = 1, col = line_color, lwd = 2)
 }
+
+
+
+## Read one participant's data
+
+library(combinat)
+
+
+participant <- "Kerstin"
+
+# Read wardrobe data
+str(raw_data)
+raw_data %>% filter(user == participant) %>%
+  select(user, category, item, wears)
+
+# Read date data
+data_file <- get_Google_sheet_ID_Z3()
+date_data <- read_sheet(data_file, sheet='Form Responses 1')
+
+# Clean raw data
+temp <- date_data %>% as.data.frame() %>%
+  select(-Timestamp, date = 'Diary entry date') %>%
+  filter(!is.na(date))
+
+# Gather used items by date
+used_by_date <- temp %>% pivot_longer(!date, names_to = "item", values_to = "used") %>%
+  as.data.frame() %>% filter(grepl("Used", used)) %>%
+  select(date, item)
+
+used_by_date %>% filter(date == as.Date("2021-09-01"))
+
+# Transform into binary
+temp[is.na(temp)] <- 0 # Replace NAs with 0
+temp <- temp %>% replace(., sapply(temp, function(.) grepl('Used',.)), "1") # Mark uses (replace any occasion of "Use" with 1)
+temp <- temp %>% replace(., sapply(temp, function(.) grepl('Washed',.)), "0") # Remove remaining logs of only washes
+temp <- temp %>% mutate_if(is.character, as.numeric) # Convert logs from character to numeric
+
+# List all items
+all_items <- colnames(temp)[2:length(colnames(temp))]
+nr_items = length(all_items)
+
+# Create empty combinations matrix
+combinations <- matrix(0, nrow = nr_items, ncol = nr_items)
+rownames(combinations) <- all_items
+colnames(combinations) <- all_items
+
+# Test add one date's data to the matrix
+items <- used_by_date %>% filter(date == as.Date("2021-09-05"))
+combs <- combn(items$item, 2) %>% as.data.frame()
+for (i in 1:ncol(combs)) {
+  combinations[as.character(combs[1,i]), as.character(combs[2,i])] <- combinations[as.character(combs[1,i]), as.character(combs[2,i])] + 1
+}
+
+# Test print
+combinations[as.character(combs[1,5]), as.character(combs[2,5])]
+combinations[as.character(combs[1,5]),]
+
+
+
+
+
+
+## Examples
+
+# https://stackoverflow.com/questions/21419507/adjacency-matrix-in-r
+dat <- read.table(text="A B 
+1 2
+1 3
+1 4
+2 5
+3 7", header=TRUE)
+get.adjacency(graph.edgelist(as.matrix(dat), directed=FALSE))
+
+
+# https://stackoverflow.com/questions/61554223/make-a-adjacency-matrix-in-r
+temp %>% pivot_longer(cols = -date) %>%
+  group_by(date) %>%
+  count(name, value)
+
+
+
+# Example
+mydf <- data.frame(p1=c('a','a','a','b','g','b','c','c','d'),
+                   p2=c('b','c','d','c','d','e','d','e','e'),
+                   p3=c('a','a','c','c','d','d','d','a','a'),
+                   p4=c('a','a','b','c','c','e','d','a','b'),
+                   p5=c('a','b','c','d','I','b','b','c','z'),
+                   source=c('a','b','c','d','e','e','a','b','d'))
+mydf %>%
+  pivot_longer(cols = -source) %>%
+  count(source, value) %>%
+  pivot_wider(names_from = value, values_from = n) %>%
+  complete(source = names(.)[-1]) %>%
+  mutate_all(~replace_na(., 0))
+
+
+
+
+# https://stackoverflow.com/questions/40245084/turn-matrix-into-a-paired-list-using-apply-in-r
+library(igraph)
+as_data_frame(graph_from_adjacency_matrix(as.matrix(temp), weighted = TRUE))
+?graph_from_adjacency_matrix
+
 
 
 

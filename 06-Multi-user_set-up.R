@@ -2372,31 +2372,232 @@ raw_data %>%
 
 # Load library
 library(circlize)
+library(combinat)
+library(igraph)
+
+#############################################
+## Read and process one participant's data ##
+#############################################
+
+# Set participant
+participant <- "Kerstin"
+
+# Read full wardrobe data
+all_items <- raw_data %>% filter(user == participant) %>% select(category, item)
+
+# Add name combining category and item as item id
+all_items <- all_items %>% mutate(name = paste(category, " [", item, "]", sep = ""))
+
+# Exclude categories 11-15
+all_items <- all_items %>% filter(category %in% category_order[1:10])
+
+# Store number of total items for easy looping
+nr_items = nrow(all_items)
+
+# Read use date data
+data_file <- get_Google_sheet_ID_Z4() # HARD-CODED DEPENDENCY!!
+date_data <- read_sheet(data_file, sheet='Form Responses 1')
+
+# Clean raw data and gather used items by date
+used_by_date <- date_data %>% as.data.frame() %>%
+  select(-Timestamp, date = 'Diary entry date') %>%
+  filter(!is.na(date)) %>%
+  pivot_longer(!date, names_to = "item", values_to = "used") %>%
+  as.data.frame() %>% filter(grepl("Used", used)) %>%
+  select(date, item)
+
+# Exclude categories 11-15
+used_by_date <- used_by_date %>% filter(!grepl(paste(category_order[11:15], collapse="|"), item))
+
+
+# List dates
+dates = unique(used_by_date$date)
+
+# Create empty combinations matrix
+combinations <- matrix(0, nrow = nr_items, ncol = nr_items)
+rownames(combinations) <- all_items$name
+colnames(combinations) <- all_items$name
+
+# Check that all used items exist in the all listing
+unique(used_by_date$item)[!(unique(used_by_date$item) %in% unique(all_items$name))]
+
+# Populate combinations matrix
+for (j in dates) {
+  # Retrieve items used on given date
+  items <- used_by_date %>% filter(date == j)
+
+  # Run update if at least two items were used on given date
+  if (nrow(items) > 1) {
+    # Create all combinations of items used on given date
+    combs <- combn(items$item, 2) %>% as.data.frame()
+    
+    # Increase adjacency matrix entries on "both sides"
+    for (i in 1:ncol(combs)) {
+      combinations[as.character(combs[1,i]), as.character(combs[2,i])] <- combinations[as.character(combs[1,i]), as.character(combs[2,i])] + 1
+      combinations[as.character(combs[2,i]), as.character(combs[1,i])] <- combinations[as.character(combs[2,i]), as.character(combs[1,i])] + 1
+    }
+  }
+}
+
+# https://stackoverflow.com/questions/40245084/turn-matrix-into-a-paired-list-using-apply-in-r
+# Calculate item combination pairs based on combinations matrix
+combination_pairs <- as_data_frame(graph_from_adjacency_matrix(as.matrix(combinations), weighted = TRUE, mode = "undirected"))
+
+combination_pairs %>% arrange(desc(weight)) %>% head(10)
+combination_pairs %>% arrange(desc(weight)) %>% tail(10)
+
+# Extract category and item from combination pairs data frame. Format: "category [item]"
+combination_pairs <- combination_pairs %>%
+  separate(from, into = c("cat_1", "item_1"), " \\[") %>%
+  separate(to, into = c("cat_2", "item_2"), " \\[") %>%
+  separate(item_1, into = c("item_1", "delete_1"), "\\]") %>%
+  separate(item_2, into = c("item_2", "delete_2"), "\\]") %>%
+  select(cat_1, item_1, cat_2, item_2, weight)
+
+
+## Replace item names with index numbers to be compatible with circlize
+
+# Initiate empty data frame
+all_items_indexed <- data.frame(matrix(ncol = 3, nrow = 0))
+colnames(all_items_indexed) <- c("category", "item", "name")
+
+# Create indices for items by category (check dplyr or similar for neater way)
+for (cat in category_order[1:10]) {
+  temp <- all_items %>% filter(category == cat) %>%
+    mutate(item_index = row_number())
+  all_items_indexed <- rbind(all_items_indexed, temp)
+}
+
+# Initialize indexed list with named list
+combination_pairs_indexed <- combination_pairs
+
+# Replace item name with item index (REWRITE TO ENABLE SAME ITEM NAMES ACROSS CATEGORIES)
+for (i in unique(combination_pairs$item_1)) {
+  combination_pairs_indexed$item_1[combination_pairs$item_1 == i] <- all_items_indexed$item_index[all_items_indexed$item == i]
+}
+
+# Replace item name with item index (REWRITE TO ENABLE SAME ITEM NAMES ACROSS CATEGORIES)
+for (i in unique(combination_pairs$item_2)) {
+  combination_pairs_indexed$item_2[combination_pairs$item_2 == i] <- all_items_indexed$item_index[all_items_indexed$item == i]
+}
+
+# Convert characters to index numerics
+combination_pairs_indexed$item_1 <- as.numeric(combination_pairs_indexed$item_1) 
+combination_pairs_indexed$item_2 <- as.numeric(combination_pairs_indexed$item_2) 
+str(combination_pairs_indexed)
+
+
+
+########################
+## Create circle plot ##
+########################
+
+# Input
+all_items
+combination_pairs
+
+# Check that all used items exist in the all listing
+unique(combination_pairs$from)[!(unique(combination_pairs$from) %in% unique(all_items$name))]
+unique(combination_pairs$to)[!(unique(combination_pairs$to) %in% unique(all_items$name))]
+
+
+# Select categories to plot
+plot_data <- all_items %>% filter(category %in% category_order[1:10])
+
+# Add y
+plot_data$y <- runif(nrow(plot_data))
+
+# Order list
+plot_data <- plot_data %>% arrange(category)
+
+# Set categories as factors in order
+plot_data$category <- factor(plot_data$category, levels = category_order[1:10])
+
+# Set line color and alpha
+line_color <- rgb(0.5,0.5,0.5,0.2)
+
+# Count items by category for plot ranges
+category_count <- all_items %>% group_by(category) %>% summarise(count = n())
+items_in_categories <- category_count$count
+
+
+# Initialize the plot.
+circos.clear()
+par(mar = c(1, 1, 1, 1) ) 
+circos.initialize(factors = plot_data$category,
+                  xlim = cbind(rep(0.5, 10), items_in_categories+0.5))
+
+# Build the regions of track #1
+circos.trackPlotRegion(sectors = plot_data$category, y=plot_data$y , bg.col = category_colors[1:10] , bg.border = NA,
+                       panel.fun = function(x, y) {
+                         #select details of current sector
+                         name = get.cell.meta.data("sector.index")
+                         i = get.cell.meta.data("sector.numeric.index")
+                         xlim = get.cell.meta.data("xlim")
+                         ylim = get.cell.meta.data("ylim")
+                         
+                         #text direction (dd) and adjusmtents (aa)
+                         theta = circlize(mean(xlim), 1.3)[1, 1] %% 360
+                         dd <- ifelse(theta < 90 || theta > 270, "clockwise", "reverse.clockwise")
+                         aa = c(1, 0.2)
+                         if(theta < 90 || theta > 270)  aa = c(0, 0.5)
+                         
+                         #plot category labels
+                         circos.text(x=mean(xlim), y=1.5, labels=name, facing = dd, cex=0.6,  adj = aa)
+                         
+                         #plot axis
+                         circos.axis(labels.cex=0.6, direction = "outside", major.at=seq(0,items_in_categories[i],1), minor.ticks=1)
+                       }
+)
+
+
+# Filter combinations to draw
+
+plot_combinations <- combination_pairs_indexed %>% filter(cat_1 == "Jackets and coats")
+
+# Draw combinations
+for(i in 1:nrow(plot_combinations)){
+  circos.link(plot_combinations$cat_1[i],
+              plot_combinations$item_1[i],
+              plot_combinations$cat_2[i],
+              plot_combinations$item_2[i],
+              h = 1, col = line_color, lwd = 2)
+}
+
+
+
+
+
+
+
+
+
+### INITIAL EXAMPLE ###
 
 # Create sample wardrobe data
 plot_categories <- category_order[1:10]
 items_in_categories <- c(8, 2, 10, 5, 10, 20, 12, 5, 15, 25)
 data = data.frame(
   category = c(rep(plot_categories[1],items_in_categories[1]),
-             rep(plot_categories[2],items_in_categories[2]),
-             rep(plot_categories[3],items_in_categories[3]),
-             rep(plot_categories[4],items_in_categories[4]),
-             rep(plot_categories[5],items_in_categories[5]),
-             rep(plot_categories[6],items_in_categories[6]),
-             rep(plot_categories[7],items_in_categories[7]),
-             rep(plot_categories[8],items_in_categories[8]),
-             rep(plot_categories[9],items_in_categories[9]),
-             rep(plot_categories[10],items_in_categories[10])),
+               rep(plot_categories[2],items_in_categories[2]),
+               rep(plot_categories[3],items_in_categories[3]),
+               rep(plot_categories[4],items_in_categories[4]),
+               rep(plot_categories[5],items_in_categories[5]),
+               rep(plot_categories[6],items_in_categories[6]),
+               rep(plot_categories[7],items_in_categories[7]),
+               rep(plot_categories[8],items_in_categories[8]),
+               rep(plot_categories[9],items_in_categories[9]),
+               rep(plot_categories[10],items_in_categories[10])),
   item = c(seq(1,items_in_categories[1]),
-        seq(1,items_in_categories[2]),
-        seq(1,items_in_categories[3]),
-        seq(1,items_in_categories[4]),
-        seq(1,items_in_categories[5]),
-        seq(1,items_in_categories[6]),
-        seq(1,items_in_categories[7]),
-        seq(1,items_in_categories[8]),
-        seq(1,items_in_categories[9]),
-        seq(1,items_in_categories[10])), 
+           seq(1,items_in_categories[2]),
+           seq(1,items_in_categories[3]),
+           seq(1,items_in_categories[4]),
+           seq(1,items_in_categories[5]),
+           seq(1,items_in_categories[6]),
+           seq(1,items_in_categories[7]),
+           seq(1,items_in_categories[8]),
+           seq(1,items_in_categories[9]),
+           seq(1,items_in_categories[10])), 
   y = runif(sum(items_in_categories))
 )
 
@@ -2421,7 +2622,7 @@ circos.trackPlotRegion(sectors = data$category, y=data$y , bg.col = category_col
                          i = get.cell.meta.data("sector.numeric.index")
                          xlim = get.cell.meta.data("xlim")
                          ylim = get.cell.meta.data("ylim")
-
+                         
                          #text direction (dd) and adjusmtents (aa)
                          theta = circlize(mean(xlim), 1.3)[1, 1] %% 360
                          dd <- ifelse(theta < 90 || theta > 270, "clockwise", "reverse.clockwise")
@@ -2430,11 +2631,9 @@ circos.trackPlotRegion(sectors = data$category, y=data$y , bg.col = category_col
                          
                          #plot category labels
                          circos.text(x=mean(xlim), y=1.5, labels=name, facing = dd, cex=0.6,  adj = aa)
-
-                          #plot axis
-                         circos.axis(labels.cex=0.6, direction = "outside", major.at=seq(0,items_in_categories[i],1), 
-                                     minor.ticks=1)
                          
+                         #plot axis
+                         circos.axis(labels.cex=0.6, direction = "outside", major.at=seq(0,items_in_categories[i],1), minor.ticks=1)
                        }
 )
 
@@ -2464,105 +2663,10 @@ for(i in 1:nrow(plot_combinations)){
 
 
 
-## Read one participant's data
-
-library(combinat)
-
-
-participant <- "Kerstin"
-
-# Read wardrobe data
-str(raw_data)
-raw_data %>% filter(user == participant) %>%
-  select(user, category, item, wears)
-
-# Read date data
-data_file <- get_Google_sheet_ID_Z3()
-date_data <- read_sheet(data_file, sheet='Form Responses 1')
-
-# Clean raw data
-temp <- date_data %>% as.data.frame() %>%
-  select(-Timestamp, date = 'Diary entry date') %>%
-  filter(!is.na(date))
-
-# Gather used items by date
-used_by_date <- temp %>% pivot_longer(!date, names_to = "item", values_to = "used") %>%
-  as.data.frame() %>% filter(grepl("Used", used)) %>%
-  select(date, item)
-
-used_by_date %>% filter(date == as.Date("2021-09-01"))
-
-# Transform into binary
-temp[is.na(temp)] <- 0 # Replace NAs with 0
-temp <- temp %>% replace(., sapply(temp, function(.) grepl('Used',.)), "1") # Mark uses (replace any occasion of "Use" with 1)
-temp <- temp %>% replace(., sapply(temp, function(.) grepl('Washed',.)), "0") # Remove remaining logs of only washes
-temp <- temp %>% mutate_if(is.character, as.numeric) # Convert logs from character to numeric
-
-# List all items
-all_items <- colnames(temp)[2:length(colnames(temp))]
-nr_items = length(all_items)
-
-# Create empty combinations matrix
-combinations <- matrix(0, nrow = nr_items, ncol = nr_items)
-rownames(combinations) <- all_items
-colnames(combinations) <- all_items
-
-# Test add one date's data to the matrix
-items <- used_by_date %>% filter(date == as.Date("2021-09-05"))
-combs <- combn(items$item, 2) %>% as.data.frame()
-for (i in 1:ncol(combs)) {
-  combinations[as.character(combs[1,i]), as.character(combs[2,i])] <- combinations[as.character(combs[1,i]), as.character(combs[2,i])] + 1
-}
-
-# Test print
-combinations[as.character(combs[1,5]), as.character(combs[2,5])]
-combinations[as.character(combs[1,5]),]
 
 
 
 
-
-
-## Examples
-
-# https://stackoverflow.com/questions/21419507/adjacency-matrix-in-r
-dat <- read.table(text="A B 
-1 2
-1 3
-1 4
-2 5
-3 7", header=TRUE)
-get.adjacency(graph.edgelist(as.matrix(dat), directed=FALSE))
-
-
-# https://stackoverflow.com/questions/61554223/make-a-adjacency-matrix-in-r
-temp %>% pivot_longer(cols = -date) %>%
-  group_by(date) %>%
-  count(name, value)
-
-
-
-# Example
-mydf <- data.frame(p1=c('a','a','a','b','g','b','c','c','d'),
-                   p2=c('b','c','d','c','d','e','d','e','e'),
-                   p3=c('a','a','c','c','d','d','d','a','a'),
-                   p4=c('a','a','b','c','c','e','d','a','b'),
-                   p5=c('a','b','c','d','I','b','b','c','z'),
-                   source=c('a','b','c','d','e','e','a','b','d'))
-mydf %>%
-  pivot_longer(cols = -source) %>%
-  count(source, value) %>%
-  pivot_wider(names_from = value, values_from = n) %>%
-  complete(source = names(.)[-1]) %>%
-  mutate_all(~replace_na(., 0))
-
-
-
-
-# https://stackoverflow.com/questions/40245084/turn-matrix-into-a-paired-list-using-apply-in-r
-library(igraph)
-as_data_frame(graph_from_adjacency_matrix(as.matrix(temp), weighted = TRUE))
-?graph_from_adjacency_matrix
 
 
 

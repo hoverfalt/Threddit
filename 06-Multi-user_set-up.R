@@ -1283,6 +1283,7 @@ for (category in category_order) {
 
 # Explore single category
 category <- "Trousers and jeans"
+category <- "Jackets and coats"
 p <- plot_data %>% setup_CPW_and_Wears_plot(categories = category, plot_total_wears = FALSE, xbreak = 25, xmax = NA, ymax = NA)
 
 # Explore single users
@@ -1303,18 +1304,20 @@ p
 
 
 category_selected <- "Trousers and jeans"
+category_selected <- "Jackets and coats"
 # Calculate category total value and items
 category_items <- plot_data %>% filter(category == category_selected) %>% nrow()
 category_value <- plot_data %>% filter(category == category_selected) %>%
   summarise(value = sum(price))
 
+
 # Share of items
 plot_data %>% filter(category == category_selected) %>%
-  filter(plot_wears > 50) %>% nrow() / category_items
+  filter(plot_wears > 0 & plot_wears < 5) %>% nrow() / category_items
 
 # Share of value
 plot_data %>% filter(category == category_selected) %>%
-  filter(plot_wears > 50) %>% summarise(value = sum(price)) / category_value
+  filter(plot_wears > 0 & plot_wears < 5) %>% summarise(value = sum(price)) / category_value
 
 
 
@@ -2380,7 +2383,7 @@ library(igraph)
 #############################################
 
 # Set participant
-participant <- "Kerstin"
+participant <- "Stephanie"
 
 # Read full wardrobe data
 all_items <- raw_data %>% filter(user == participant) %>% select(category, item)
@@ -2455,7 +2458,7 @@ combination_pairs <- combination_pairs %>%
   select(cat_1, item_1, cat_2, item_2, weight)
 
 
-## Replace item names with index numbers to be compatible with circlize
+## Replace item names with index numbers to be compatible with Circlize
 
 # Initiate empty data frame
 all_items_indexed <- data.frame(matrix(ncol = 3, nrow = 0))
@@ -2496,7 +2499,7 @@ str(combination_pairs_indexed)
 all_items
 combination_pairs
 
-# Check that all used items exist in the all listing
+# Check that all used items exist in the all listing (result is NULL if this is the case)
 unique(combination_pairs$from)[!(unique(combination_pairs$from) %in% unique(all_items$name))]
 unique(combination_pairs$to)[!(unique(combination_pairs$to) %in% unique(all_items$name))]
 
@@ -2517,52 +2520,73 @@ plot_data$category <- factor(plot_data$category, levels = category_order[1:10])
 line_color <- rgb(0.5,0.5,0.5,0.2)
 
 # Count items by category for plot ranges
-category_count <- all_items %>% group_by(category) %>% summarise(count = n())
+category_count <- plot_data %>% group_by(category, .drop = FALSE) %>% summarise(count = n()) %>% as.data.frame()
 items_in_categories <- category_count$count
+# Set a minimum of one item in each category so as not to create empty categories
+items_in_categories[items_in_categories == 0] <- 1
 
+clear_and_initiate_plot()
+plot_category_connections(category_order[1])
+as.data.frame(category_order)
 
-# Initialize the plot.
-circos.clear()
-par(mar = c(1, 1, 1, 1) ) 
-circos.initialize(factors = plot_data$category,
-                  xlim = cbind(rep(0.5, 10), items_in_categories+0.5))
-
-# Build the regions of track #1
-circos.trackPlotRegion(sectors = plot_data$category, y=plot_data$y , bg.col = category_colors[1:10] , bg.border = NA,
-                       panel.fun = function(x, y) {
-                         #select details of current sector
-                         name = get.cell.meta.data("sector.index")
-                         i = get.cell.meta.data("sector.numeric.index")
-                         xlim = get.cell.meta.data("xlim")
-                         ylim = get.cell.meta.data("ylim")
-                         
-                         #text direction (dd) and adjusmtents (aa)
-                         theta = circlize(mean(xlim), 1.3)[1, 1] %% 360
-                         dd <- ifelse(theta < 90 || theta > 270, "clockwise", "reverse.clockwise")
-                         aa = c(1, 0.2)
-                         if(theta < 90 || theta > 270)  aa = c(0, 0.5)
-                         
-                         #plot category labels
-                         circos.text(x=mean(xlim), y=1.5, labels=name, facing = dd, cex=0.6,  adj = aa)
-                         
-                         #plot axis
-                         circos.axis(labels.cex=0.6, direction = "outside", major.at=seq(0,items_in_categories[i],1), minor.ticks=1)
-                       }
-)
-
-
-# Filter combinations to draw
-
-plot_combinations <- combination_pairs_indexed %>% filter(cat_1 == "Jackets and coats")
-
-# Draw combinations
-for(i in 1:nrow(plot_combinations)){
-  circos.link(plot_combinations$cat_1[i],
-              plot_combinations$item_1[i],
-              plot_combinations$cat_2[i],
-              plot_combinations$item_2[i],
-              h = 1, col = line_color, lwd = 2)
+# Function to clear and initialize Circlize plot
+clear_and_initiate_plot <- function() {
+  # Initialize the plot.
+  circos.clear()
+  par(mar = c(1, 1, 1, 1) ) 
+  circos.initialize(factors = plot_data$category,
+                    xlim = cbind(rep(0.5, 10), items_in_categories+0.5))
+  
+  # Build the regions of track #1
+  circos.trackPlotRegion(sectors = plot_data$category, y=plot_data$y , bg.col = category_colors[1:10] , bg.border = NA,
+                         panel.fun = function(x, y) {
+                           #select details of current sector
+                           name = get.cell.meta.data("sector.index")
+                           i = get.cell.meta.data("sector.numeric.index")
+                           xlim = get.cell.meta.data("xlim")
+                           ylim = get.cell.meta.data("ylim")
+                           
+                           #text direction (dd) and adjusments (aa)
+                           theta = circlize(mean(xlim), 1.3)[1, 1] %% 360
+                           dd <- ifelse(theta < 90 || theta > 270, "clockwise", "reverse.clockwise")
+                           aa = c(1, 0.2)
+                           if(theta < 90 || theta > 270)  aa = c(0, 0.5)
+                           
+                           #plot category labels
+                           circos.text(x=mean(xlim), y=1.5, labels=name, facing = dd, cex=0.6,  adj = aa)
+                           
+                           #plot axis
+                           circos.axis(labels.cex=0.6, direction = "outside", major.at=seq(0,items_in_categories[i],1), minor.ticks=1)
+                         }
+  )
 }
+
+
+# Function to draw category into Circlize plot
+
+plot_category_connections <- function(category) {
+  # Filter combinations to draw
+  plot_category <- category
+  plot_combinations <- combination_pairs_indexed %>% filter(cat_1 == plot_category | cat_2 == plot_category)
+  
+  # Calculate line color alpha to fill weight range
+  plot_combinations$alpha <- as.hexmode(round(plot_combinations$weight * 255/max(plot_combinations$weight), digits = 0))
+  
+  # Draw combinations
+  for(i in 1:nrow(plot_combinations)){
+    
+    # Set line color alpha according to weight
+    line_color <- paste(category_colors[plot_category],format(as.hexmode(plot_combinations$alpha[1]), width = 2),sep="")
+    
+    circos.link(plot_combinations$cat_1[i],
+                plot_combinations$item_1[i],
+                plot_combinations$cat_2[i],
+                plot_combinations$item_2[i],
+                h = 1, col = line_color, lwd = 2)
+  }
+}
+
+
 
 
 

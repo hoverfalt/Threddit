@@ -1355,7 +1355,7 @@ total_value <- round(mean(c(raw_data %>% filter(is.na(date_divested)) %>% select
 plot_table <- plot_data %>%
   #filter(plot_wears == 0) %>%
   #filter(plot_wears >= 4 & plot_wears <= 50) %>%
-  filter(plot_wears > 50) %>%
+  filter(plot_wears == 0) %>%
   group_by(category) %>%
   summarise(items = round(n(), digits = 0), wears_mean = round(mean(plot_wears), digits = 0), wears_median = round(median(plot_wears), digits = 0),
             cpw_mean = round(mean(cpw), digits = 2), cpw_median = round(median(cpw), digits = 2),
@@ -1367,7 +1367,9 @@ write.csv(plot_table,"Plots/Z/Z-CPW_export.csv", row.names = FALSE)
 
 category <- "Trousers and jeans"
 xbreak <-  10
-p <- plot_data %>% setup_CPW_and_Wears_plot(categories = category, plot_total_wears = FALSE, xbreak = xbreak, xmax = NA, ymax = NA)
+p <- plot_data %>%
+#  filter(plot_wears == 0) %>%
+  setup_CPW_and_Wears_plot(categories = category, plot_total_wears = FALSE, xbreak = xbreak, xmax = NA, ymax = NA)
 
 
 
@@ -2241,6 +2243,29 @@ hm_data %>% heatmap.2(scale = "none", trace = "none", density.info = "none",
 
 
 
+# Calculate total category wears by user
+category_wears <- raw_data %>%
+  filter(!(user %in% excluded_users)) %>%
+  filter(!is.na(total_wears)) %>%
+  select(user, category, item, wears) %>%
+  group_by(category, user) %>%
+  mutate(potential_to_max = max(wears) - wears) %>%
+  summarise(total_wears = sum(wears), items = n(), max_wears = max(wears), category_potential = sum(potential_to_max)) %>%
+  mutate(avg_wears = round(total_wears / items, digits = 0), supply_in_years = round(category_potential / total_wears, digits = 1)) %>%
+  as.data.frame()
+
+category_wears %>%
+  filter(category == "Cardigans and knits") %>%
+  arrange(desc(total_wears))
+  
+# Summarize by category (collapse user dimension)
+category_wears %>% group_by(category) %>%
+  summarise(avg_total_wears = round(mean(total_wears), digits = 0),
+            avg_max_wears = round(mean(max_wears), digits = 0),
+            avg_category_potential = round(mean(category_potential), digits = 0),
+            avg_supply_in_years = round(mean(supply_in_years, na.rm = TRUE), digits = 1)) %>%
+  as.data.frame()
+    
 
 
 
@@ -2526,7 +2551,7 @@ items_in_categories <- category_count$count
 items_in_categories[items_in_categories == 0] <- 1
 
 clear_and_initiate_plot()
-plot_category_connections(category_order[1])
+plot_category_connections(category_order[3])
 as.data.frame(category_order)
 
 # Function to clear and initialize Circlize plot

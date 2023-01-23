@@ -2250,13 +2250,13 @@ category_wears <- raw_data %>%
   select(user, category, item, wears) %>%
   group_by(category, user) %>%
   mutate(potential_to_max = max(wears) - wears) %>%
-  summarise(total_wears = sum(wears), items = n(), max_wears = max(wears), category_potential = sum(potential_to_max)) %>%
+  summarise(total_wears = sum(wears), items = n(), max_wears = max(wears), category_potential = sum(potential_to_max), gini = round(Gini(wears, na.rm = TRUE), digits = 2)) %>%
   mutate(avg_wears = round(total_wears / items, digits = 0), supply_in_years = round(category_potential / total_wears, digits = 1)) %>%
   as.data.frame()
 
 category_wears %>%
-  filter(category == "Cardigans and knits") %>%
-  arrange(desc(total_wears))
+  filter(category == "Jackets and coats") %>%
+  arrange(gini)
   
 # Summarize by category (collapse user dimension)
 category_wears %>% group_by(category) %>%
@@ -2265,10 +2265,18 @@ category_wears %>% group_by(category) %>%
             avg_category_potential = round(mean(category_potential), digits = 0),
             avg_supply_in_years = round(mean(supply_in_years, na.rm = TRUE), digits = 1)) %>%
   as.data.frame()
-    
+  
+?Gini
 
 
+library(DescTools)
 
+gini <- raw_data %>%
+  select(user, category, item, wears) %>%
+  group_by(user, category) %>%
+  summarise(gini = Gini(wears, unbiased=FALSE)) %>%
+  as.data.frame()
+gini
 
 ## Have users changed their initial pre-study wear estimates?
 

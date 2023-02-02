@@ -174,6 +174,11 @@ raw_data <- raw_data %>%
 nrow(raw_data)
 unique(raw_data$category)
 
+# Save final raw_data data.frame to file for archiving (2023-01-26)
+save(raw_data, file="Data/Wardrobe_Diary-raw_data.Rda")
+load("Data/Wardrobe_Diary-raw_data.Rda")
+str(raw_data)
+
 #################################################################################################
 ######################################## SET UP PLOTS ###########################################
 #################################################################################################
@@ -558,7 +563,7 @@ plot_data <- raw_data %>%
   as.data.frame()
 
 # Plot all categories
-for (category in category_order) {
+for (category in category_order[1:12]) {
   p <- plot_data %>% setup_share_worn_plot(categories = category)
   filename <- paste("Z-Wardrobe_items_and_share_worn-", gsub(" ", "_", category), ".png", sep = "")
   ggsave(paste("Plots/Z/", filename, sep = ""), p, width = 9, height = 7, dpi = 150, units = "in")
@@ -572,14 +577,14 @@ plot_data <- raw_data %>%
   filter(!(user %in% excluded_users)) %>%
   filter(is.na(date_divested)) %>%
 #  mutate(worn = as.logical(wears == 0)) %>%
-  mutate(worn = as.logical(wears >= 1 & wears < worn_count)) %>%
+  mutate(worn = as.logical(wears < worn_count)) %>%
   group_by(user, category) %>%
   summarise(items = n(), share_worn = sum(worn)/n())
 
 # Plot all categories
-for (category in category_order) {
+for (category in category_order[1:12]) {
   p <- plot_data %>% setup_share_worn_plot(categories = category, worn_count = worn_count)
-  filename <- paste("Z-Wardrobe_items_and_share_worn-n-times", gsub(" ", "_", category), ".png", sep = "")
+  filename <- paste("Z-Wardrobe_items_and_share_unworn-or-rarely_worn-", gsub(" ", "_", category), ".png", sep = "")
   ggsave(paste("Plots/Z/", filename, sep = ""), p, width = 9, height = 7, dpi = 150, units = "in")
   save_to_cloud_Z(filename)
 }
@@ -652,6 +657,18 @@ write.csv(plot_data,"Plots/Z/Z-Amount_of_items_by_wears_by_categoty.csv", row.na
 
 str(plot_data)
 
+## List share of sentimental items by category by user
+worn_count <- 4
+sentimental_items <- raw_data %>%
+  group_by(user) %>%
+  summarise(items = n(), sentimental = sum(sentimental_value, na.rm = TRUE) %>%
+  mutate(share_unworn = round(share_unworn, 2), share_rarely_worn = round(share_rarely_worn, 2)) %>%
+  as.data.frame()
+write.csv(rarely_used_shares,"Plots/Z/Z-Share_of_unused_and_rarely_used_items_by_participant.csv", row.names = FALSE)
+str(raw_data)
+
+sum(raw_data$sentimental_value, na.rm= TRUE)
+nrow(raw_data)
 
 #######################################
 ## Price and Diary wears by category ##
@@ -1339,6 +1356,7 @@ plot_data <- plot_data %>%
 
 nr_users <- 29
 
+unique(raw_data$category)
 
 raw_data %>% filter(date_purchased <= "2021-09-01" | is.na(date_purchased)) %>% nrow()
   
@@ -1355,7 +1373,7 @@ total_value <- round(mean(c(raw_data %>% filter(is.na(date_divested)) %>% select
 plot_table <- plot_data %>%
   #filter(plot_wears == 0) %>%
   #filter(plot_wears >= 4 & plot_wears <= 50) %>%
-  filter(plot_wears == 0) %>%
+  #filter(plot_wears == 0) %>%
   group_by(category) %>%
   summarise(items = round(n(), digits = 0), wears_mean = round(mean(plot_wears), digits = 0), wears_median = round(median(plot_wears), digits = 0),
             cpw_mean = round(mean(cpw), digits = 2), cpw_median = round(median(cpw), digits = 2),
@@ -2255,7 +2273,7 @@ category_wears <- raw_data %>%
   as.data.frame()
 
 category_wears %>%
-  filter(category == "Jackets and coats") %>%
+  filter(category == "Shoes and footwear") %>%
   arrange(gini)
   
 # Summarize by category (collapse user dimension)
@@ -2416,7 +2434,7 @@ library(igraph)
 #############################################
 
 # Set participant
-participant <- "Stephanie"
+participant <- "Kerstin"
 
 # Read full wardrobe data
 all_items <- raw_data %>% filter(user == participant) %>% select(category, item)
@@ -2972,7 +2990,7 @@ setup_price_distribution_plot <- function(plot_data, categories, xmax = NA, ymax
 
 
 ## Function: Number of wardrobe items vs share of items worn worn_count+ times
-setup_share_worn_plot <- function(plot_data, categories, xmax = NA, ymax = 1, trendline = TRUE, worn_count = 1, legend = TRUE) {
+setup_share_worn_plot <- function(plot_data, categories, xmax = NA, ymax = 1, trendline = TRUE, worn_count = 0, legend = TRUE) {
   
   # Filter data by category
   plot_data <- plot_data %>% filter(category %in% categories)
@@ -3007,14 +3025,14 @@ setup_share_worn_plot <- function(plot_data, categories, xmax = NA, ymax = 1, tr
     #scale_size(range = c(2, 3)) +
     guides(alpha = FALSE, size = FALSE)
   
-  if (worn_count == 1) {
-    p <- p + labs(x = "Amount of items in wardrobe", y = "Share of wardrobe items worn at least once during the diary period") +
+  if (worn_count == 0) {
+    p <- p + labs(x = "Amount of items in wardrobe", y = "Share of wardrobe items unworn during the diary period") +
       ggtitle("Number of wardrobe items vs share of items worn (each dot is one user's wardrobe)")
     
   } else {
 #    p <- p + labs(x = "Amount of items in wardrobe", y = paste("Share of wardrobe items unworn during the diary period", sep = "")) +
 #      ggtitle("Number of wardrobe items vs share of items worn (each dot is one user's wardrobe)")
-    p <- p + labs(x = "Amount of items in wardrobe", y = paste("Share of wardrobe items worn at least ", worn_count, " times during the diary period", sep = "")) +
+    p <- p + labs(x = "Amount of items in wardrobe", y = paste("Share of wardrobe items unworn or rarely worn during the diary period", sep = "")) +
       ggtitle("Number of wardrobe items vs share of items worn (each dot is one user's wardrobe)")
     #geom_label(aes(x = 2, y = 0.1 , label=paste("Worn at least\n", worn_count, " times", sep = "")), color =  "darkred", fill = "white")
       
@@ -3023,7 +3041,7 @@ setup_share_worn_plot <- function(plot_data, categories, xmax = NA, ymax = 1, tr
   if (!legend){
     p <- p + theme(legend.position = "none")
   } else {
-    p <- p + theme(legend.position = c(0.15, 0.85))
+    p <- p + theme(legend.position = c(0.85, 0.85))
   }
   
   return(p)

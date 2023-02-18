@@ -1,10 +1,13 @@
-### Threddit.R - Olof Hoverfält - 2018-2022 - hoverfalt.github.io
+### Threddit.R - Olof Hoverfält - 2018-2023 - hoverfalt.github.io
 
 # Functions to prepare and plot multi-user data
 
 #################################################################################################
 ###################################### SET UP ENRIVONENT ########################################
 #################################################################################################
+
+# Clear workspace
+rm(list = ls())
 
 # Load required packages
 library(plyr)
@@ -108,50 +111,76 @@ data_file = get_Google_sheet_ID_O()
 raw_data <- read_sheet(data_file, sheet='Use data filtered - Machine readable')
 
 temp <- raw_data
+raw_data <- temp
 
 # Pre-process and clean data
 raw_data <- raw_data %>% as.data.frame() %>% filter(!is.na(category) & !is.na(item))
 raw_data <- raw_data %>% mutate_at(c("wears"), ~replace(., is.na(.), 0)) %>% select(-listed_date)
+raw_data <- raw_data %>% mutate(price = as.numeric(price, na.rm = TRUE))
 
 # Turn factor variables into factors
 raw_data$user <- factor(raw_data$user, levels = unique(raw_data$user))
 raw_data$category <- factor(raw_data$category, levels = category_order)
-
-# Save raw_data data.frame to file for easier retrieval (2022-02-06)
-save(raw_data, file="Data/Threddit-O-raw_data.Rda")
-# Load data from file
-load("Data/Threddit-O-raw_data.Rda")
+str(raw_data)
 
 # Read Google Sheets user data
 data_file = get_Google_sheet_ID_O2()
 user_data <- read_sheet(data_file, sheet='User profiles')
-user_data <- user_data %>% as.data.frame()
-#names(user_data)[names(user_data) == 'User'] <- 'user'
+user_data <- user_data %>% as.data.frame() %>% filter(!(user == "END OF LIST"))
 save(user_data,file="Data/Threddit-O-user_data.Rda")
 load("Data/Threddit-O-user_data.Rda")
+
+
+# Normalise price and cpw to EUR
+exchange_rates <- user_data %>% select(user, exchange_rate)
+raw_data <- merge(raw_data, exchange_rates, by="user") %>%
+  mutate(price = round(price * exchange_rate, digits = 2), cpw = round(cpw * exchange_rate, digits = 2)) %>%
+  select(-exchange_rate)
+
+# Test result
+raw_data %>% filter(user == "Niklas-0901") %>% select(user, category, item, price, wears)
+
+# Save raw_data data.frame to file for easier retrieval (2022-02-18)
+save(raw_data, file="Data/Threddit-O-raw_data.Rda")
+# Load data from file
+load("Data/Threddit-O-raw_data.Rda")
+
+
+# Create filter of users with full year data
+users_full_year <- user_data[user_data$full_year == TRUE,]$user
+
+# Create filter of users with exhaustive wardrobe data
+users_exhaustive <- user_data[user_data$exhaustive == TRUE,]$user
+
 
 #################################################################################################
 ######################################## SET UP PLOTS ###########################################
 #################################################################################################
 
-exchange_rate_SEK_to_EUR <- 1 / 10.4 # Set SEK to EUR exchange rate
+
+# Count number of users
+length(unique(raw_data$user))
+
+# Count number of items
+nrow(raw_data)
+str(raw_data)
 
 ## Average wardrobe size and value by user
-
+# Create plot data
 plot_data <- raw_data %>%
-  filter(user %in% user_data[user_data$currency == "SEK",]$user) %>% # Include SEK users only
-  mutate(price = price * exchange_rate_SEK_to_EUR) %>% # Convert SEK to EUR
   mutate(worn = as.logical(wears)) %>%
   rowwise() %>%
   group_by(user) %>%
   summarise(items = n(), share_worn = sum(worn)/n(), value = sum(price, na.rm = TRUE)) %>%
   as.data.frame()
 
+# Merge use and user data to distinguish gender
 total_data <- merge(plot_data, user_data, by = c("user"))
 
+# Plot average wardrobe size 
 p <- total_data %>%
-  filter(exhaustive == TRUE) %>%
-  setup_user_distribution_plot(xmax = 500, ymax = 30000)
+  filter(user %in% users_exhaustive) %>%
+  setup_user_distribution_plot(xmax = NA, ymax = NA)
 ggsave(filename = "Plots/O/O-Average_wardrobe_size_and_value_by_user.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_O("O-Average_wardrobe_size_and_value_by_user.png")
 
@@ -171,15 +200,11 @@ max(total_data$value) # Largest wardrobe in terms of item value
 
 # Secondhand 
 raw_data %>% group_by(user) %>% 
-  summarise(items = n(), secondhand = sum(secondhand), share = sum(secondhand) / n()) %>%
+  summarise(items = n(), value = round(sum(price, na.rm = TRUE), digits = 0), secondhand = sum(secondhand), share = round(sum(secondhand) / n(), digits = 2)) %>%
   as.data.frame() %>%
   arrange(desc(share))
 
 # Share of users that have at least one second hand item
-
-
-
-
 
 
 
@@ -201,8 +226,7 @@ raw_data %>% group_by(user) %>%
 ## Average wardrobe size and value by category
 
 plot_data <- raw_data %>%
-  filter(user %in% user_data[user_data$currency == "SEK",]$user) %>% # Include SEK users only
-  mutate(price = price * exchange_rate_SEK_to_EUR) %>% # Convert SEK to EUR
+  filter(user %in% user_data[user_data$exhaustive == TRUE,]$user) %>% # Include exhaustive users only
   mutate(worn = as.logical(wears)) %>%
   rowwise() %>%
   group_by(category) %>%
@@ -210,12 +234,133 @@ plot_data <- raw_data %>%
 #  mutate(value = value * exchange_rate_SEK_to_EUR) %>% # Convert SEK to EUR
   mutate(average_items = items/length(unique(raw_data$user)), average_value = value / items)
 
-p <- plot_data %>% setup_category_distribution_plot(categories = category_order, xmax = 20, ymax = 120)
+p <- plot_data %>% setup_category_distribution_plot(categories = category_order, xmax = 22, ymax = 100)
 ggsave(filename = "Plots/O/O-Average_wardrobe_size_and_value_by_category.png", p, width = 9, height = 7, dpi = 150, units = "in")
 save_to_cloud_O("O-Average_wardrobe_size_and_value_by_category.png")
 
 # Avoid GCS timeout
 gcs_list_buckets(Firebase_project_id)
+
+
+
+### COMPARATIVE ANALYSIS ###
+### COMPARATIVE ANALYSIS ###
+### COMPARATIVE ANALYSIS ###
+### COMPARATIVE ANALYSIS ###
+### COMPARATIVE ANALYSIS ###
+### COMPARATIVE ANALYSIS ###
+
+raw_data_open <- raw_data
+
+str(raw_data_open)
+str(raw_data)
+
+#temp1 <- raw_data %>% select(user, category, item, wears, price, total_wears, secondhand, secondhand_type, date_divested, divestment_way, condition)
+temp1 <- raw_data %>% select(user, category, item, wears, price, total_wears, secondhand, secondhand_type)
+
+# Filter open users 
+full_year_users <- c("Sara-0801", "Oscar-0901", "Kent-0901", "Niklas-0901",
+                     "Anders1601", "Louise-1401", "Karolina1401", "Pernilla-1001",
+                     "Daniel-1001", "Johan-0901", "Henry-1401")
+
+#temp2 <- raw_data_open %>% select(user, category, item, wears, price, total_wears, secondhand, secondhand_type, date_divested, divestment_way, condition) %>%
+#  filter(user %in% full_year_users)
+temp2 <- raw_data_open %>% select(user, category, item, wears, price, total_wears, secondhand, secondhand_type) %>%
+  filter(user %in% full_year_users)
+str(temp2)
+
+
+# Create comparative data set
+raw_data_joint <- rbind(temp1, temp2)
+
+# Compare average purchase price of new and secondhand by user
+temp <- raw_data_joint %>%
+  filter(!(category %in% c("Accessories", "Other"))) %>%
+  filter(!is.na(price)) %>% filter(price > 0) %>%
+  group_by(user, category, secondhand) %>%
+  summarise(avg_price = round(mean(price, na.rm = TRUE), digits = 2)) %>%
+  spread(secondhand, avg_price, drop = TRUE) %>%
+  select(user, category, new = 'FALSE', used = 'TRUE') %>%
+  as.data.frame() %>%
+  filter(!is.na(used)) %>% filter(used > 0) %>%
+  mutate(gap = round(used / new, digits = 2))
+
+temp %>% arrange(desc(gap)) %>% head(20)
+temp %>% arrange(desc(gap)) %>% tail(20)
+
+library(superheat)
+temp %>% select(user, category, gap) %>%
+  spread("user", gap) %>%
+  tibble::column_to_rownames(var = "category") %>%
+  data.matrix(rownames.force = TRUE) %>%
+  superheat()
+
+# Calculate average gap by cateogry (collapse user dimension)
+temp %>% group_by(category) %>%
+  summarise(users = n(), avg_gap = round(mean(gap, na.rm = TRUE), digits = 2)) %>%
+  as.data.frame()
+
+
+
+
+# Prepare plot data for plotting Diary wears (and calculating CPW base only on those)
+plot_data <- raw_data_joint
+plot_data <- raw_data
+
+# Create help variable to calculate CPW for items with 0 wears
+plot_data$wears_CPW <- plot_data$wears # Copy 
+plot_data$wears_CPW[plot_data$wears_CPW == 0] <- 1 # Replace all 0 wears with 1 to in effect set CPW to price for these items
+plot_data <- plot_data %>%
+  mutate(plot_wears = wears, cpw = price/wears_CPW) %>% 
+  select(user, category, cpw, plot_wears, price, secondhand) %>%
+  filter(cpw > 0) # Remove items with purchase price 0 to avoid stretching logarithmic scale
+
+category <- "Shoes and footwear"
+xbreak <-  10
+p <- plot_data %>%
+  #filter(secondhand) %>%
+  #  filter(plot_wears <= 4) %>%
+  #  filter(plot_wears > 4 & plot_wears <= 50) %>%
+  #  filter(plot_wears > 50) %>%
+  setup_CPW_and_Wears_plot(categories = category, plot_total_wears = FALSE, xbreak = xbreak, xmax = 180, ymin = 0.1, ymax = 200)
+ggsave(filename = "Plots/O/O-CPW_and_wears-Shoes_and_footwear_all_wears.png", p, width = 9, height = 7, dpi = 150, units = "in")
+
+
+
+# Calculate share of items and value for given wear segment
+total_items <- plot_data %>%
+  group_by(category) %>%
+  summarise(items = round(n(), digits = 0), value = round(sum(price, na.rm = TRUE), digits = 2)) %>%
+  as.data.frame()
+
+segment_items <- plot_data %>%
+  filter(plot_wears < 5) %>%
+  group_by(category) %>%
+  summarise(items = round(n(), digits = 0), value = round(sum(price, na.rm = TRUE), digits = 2)) %>%
+  as.data.frame() 
+
+summary <- merge(total_items, segment_items, by = "category") %>%
+  mutate(share_items = round(items.y / items.x, digits = 2),
+         share_value = round(value.y / value.x, digits = 2)) %>%
+  select(category, share_items, share_value)
+
+
+
+
+# Plot category wears distribution (histogram)
+wears_distribution <- raw_data %>%
+  select(category, wears)
+
+p <- wears_distribution %>% setup_Diary_wears_distribution_plot(categories = "Trousers and jeans", ymax = 200, y_break = 25, xmax = NA, binwidth = 5, x_break = 5, repel_gap = 2)
+ggsave(filename = "Plots/O/O-Wears_distribution-Trousers_and_jeans.png", p, width = 9, height = 7, dpi = 150, units = "in")
+
+
+# Compare secondhand and virgin
+plot_data %>% group_by(category, secondhand) %>%
+  summarise(items = n(), avg_wears = mean(plot_wears), avg_price = mean(price), avg_cpw = mean(cpw)) %>%
+  as.data.frame()
+
+
 
 
 

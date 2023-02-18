@@ -1,4 +1,4 @@
-### Threddit.R - Olof Hoverfält - 2018-2022 - hoverfalt.github.io
+### Threddit.R - Olof Hoverfält - 2018-2023 - hoverfalt.github.io
 
 # For data and insights: https://hoverfalt.github.io/
 # For context and background: https://www.reaktor.com/blog/why-ive-tracked-every-single-piece-of-clothing-ive-worn-for-three-years/
@@ -32,7 +32,7 @@ plotuse <- transform_data(masterdata) %>% # 1) Transform raw data into tidy data
   calculate_total_use_data() %>% # 3) Calculate total use data, including divested items 
   calculate_plot_data() # 4) Calculate plot data for the standard plots
 
-# Save tidy data data.frame to file for easier retrieval (2023-01-08)
+# Save tidy data data.frame to file for easier retrieval (2023-02-16)
 save(masterdata,file="Data/Threddit-masterdata.Rda")
 save(plotuse,file="Data/Threddit-plotuse.Rda")
 save(daterange,file="Data/Threddit-daterange.Rda")

@@ -247,12 +247,16 @@ calculate_complete_portfolio_plot_data <- function(plotuse){
 }
 
 
-# Funtion to set up inventory item count plot
+# Function to set up inventory item count plot
 setup_inventory_item_count_plot <- function(inventory){
     
     # Set author label coordinates (upper right corner)
     author_label_x <- max(inventory$date)
     author_label_y <- max(inventory$itemcount)
+    
+    # Set date limits to one quarter before and beyond data
+    date_limits <- c(as.Date(as.yearqtr("2017Q4")),
+                     as.Date(as.yearqtr(max(inventory$date)) + 1/4))
     
     # Setup plot
     p <- inventory %>% 
@@ -261,19 +265,24 @@ setup_inventory_item_count_plot <- function(inventory){
         geom_line() +
         scale_color_manual(name = "Category", values = category_colors) +
         scale_y_continuous(breaks=seq(0, 100, by = 10)) + # Set y axis break interval +
-        scale_x_date(date_breaks = "1 year", date_minor_breaks = "3 months", date_labels = "%Y") +
+        scale_x_date(date_breaks = "1 year", date_minor_breaks = "3 months", expand=c(0,0),
+                     limits = date_limits, labels = scales::date_format("%Y")) +
         labs(x = "Date", y = "Active inventory (number of items)")
     
     return(p)
 }
 
 
-# Funtion to set up inventory value by category plot
+# Function to set up inventory value by category plot
 setup_inventory_value_by_category_plot <- function(inventory){
     
     # Set author label coordinates (upper right corner)
     author_label_x <- max(inventory$date)
     author_label_y <- max(inventory$categoryvalue)
+    
+    # Set date limits to one quarter before and beyond data
+    date_limits <- c(as.Date(as.yearqtr("2017Q4")),
+                     as.Date(as.yearqtr(max(inventory$date)) + 1/4))
     
     # Setup plot
     p <- inventory %>% 
@@ -281,9 +290,10 @@ setup_inventory_value_by_category_plot <- function(inventory){
         annotate("text", x = author_label_x, y = author_label_y, label = author_label, color = "gray", hjust = 1) +
         geom_line() +
         scale_color_manual(name = "Category", values = category_colors) +
-        scale_y_continuous(breaks=seq(0, 5000, by = 500)) + # Set y axis break interval
-        scale_x_date(date_breaks = "1 year", date_minor_breaks = "3 months", date_labels = "%Y") +
-        labs(x = "Date", y = "Active inventory value at purchase price (€)")
+        scale_y_continuous(breaks=seq(0, 5000, by = 500), labels = dollar_format(suffix = "€", prefix = "")) + # Set y axis break interval
+        scale_x_date(date_breaks = "1 year", date_minor_breaks = "3 months", expand=c(0,0),
+                   limits = date_limits, labels = scales::date_format("%Y")) +
+      labs(x = "Date", y = "Active inventory value at purchase price (€)")
     
     return(p)
 }
@@ -296,14 +306,19 @@ setup_inventory_value_stacked_plot <- function(inventory, ymax = NA){
     author_label_x <- max(inventory$date)
     author_label_y <- inventory %>% group_by(date) %>% summarise(value = sum(categoryvalue)) %>% select(value) %>% max()
     
+    # Set date limits to one quarter before and beyond data
+    date_limits <- c(as.Date(as.yearqtr("2017Q4")),
+                     as.Date(as.yearqtr(max(inventory$date)) + 1/4))
+    
     # Setup plot
     p <- inventory %>% 
         ggplot( aes(x = date, y = categoryvalue, fill = category)) +
         annotate("text", x = author_label_x, y = author_label_y, label = author_label, color = "gray", hjust = 1) +
         geom_area() +
         scale_fill_manual(name = "Category", values = category_colors) +
-        scale_y_continuous(limits=c(0,ymax), breaks=seq(0, 15000, by = 1000)) + # Set y axis break interval
-        scale_x_date(date_breaks = "1 year", date_minor_breaks = "3 months", date_labels = "%Y") +
+        scale_y_continuous(limits=c(0,ymax), breaks=seq(0, 15000, by = 1000), labels = dollar_format(suffix = "€", prefix = "")) + # Set y axis break interval
+        scale_x_date(date_breaks = "1 year", date_minor_breaks = "3 months", expand=c(0,0),
+                     limits = date_limits, labels = scales::date_format("%Y")) +
         labs(x = "Date", y = "Active inventory value at purchase price (€)")
     
     return(p)
@@ -340,6 +355,10 @@ setup_daily_cost_plot <- function(daily_cost, ymax = 40, ybreaks = 2, seasons = 
     author_label_x <- max(daily_cost$date)
     author_label_y <- ymax
     
+    # Set date limits to one quarter before and beyond data
+    date_limits <- c(as.Date(as.yearqtr("2017Q4")),
+                     as.Date(as.yearqtr(max(daily_cost$date)) + 1/4))
+
     # Set up plot (note the negation: !still_active means "All divested")
     p <- ggplot(daily_cost, aes(x = date, y = daily_cost, color = !still_active))
     
@@ -361,9 +380,9 @@ setup_daily_cost_plot <- function(daily_cost, ymax = 40, ybreaks = 2, seasons = 
         geom_point() +
         scale_color_manual(breaks = c(FALSE, TRUE), values=c("indianred1", "mediumseagreen")) +
         geom_line(aes(x = date, y = average_daily_cost), color='steelblue', size=1) +
-#        scale_x_date(date_breaks = "3 months", date_labels = "%Y-%m") +
-        scale_y_continuous(limits=c(0,ymax), breaks=seq(0, 100, by = ybreaks)) + # Set y limit to NA in function call for automatic scale
-        scale_x_date(date_breaks = "1 year", date_minor_breaks = "3 months", date_labels = "%Y") +
+        scale_y_continuous(limits=c(0,ymax), breaks=seq(0, 100, by = ybreaks), labels = dollar_format(suffix = "€", prefix = "")) + # Set y limit to NA in function call for automatic scale
+        scale_x_date(date_breaks = "1 year", date_minor_breaks = "3 months", expand=c(0,0),
+                     limits = date_limits, labels = scales::date_format("%Y")) +
         labs(x = "Date", y = "Daily cost and 30-day rolling average shifted to midpoint of sample (€)", color = "All divested")
     
     # Hide legend 
@@ -442,7 +461,7 @@ setup_daily_cost_animation <- function(daily_cost_anim_plot, ymax = 40, seasons 
       geom_point(size=1.5) +
       scale_color_manual(breaks = c(FALSE, TRUE), values=c("indianred1", "mediumseagreen")) +
       geom_line(data = na.omit(daily_cost_anim_plot), aes(x = date, y = average_daily_cost), color='steelblue', size=1.5) +
-      scale_y_continuous(limits=c(0,ymax)) + # Set fixed Y (daily cost) limit at 40 to avoid plot scale from jumping around
+      scale_y_continuous(limits=c(0,ymax), labels = dollar_format(suffix = "€", prefix = "")) + # Set fixed Y (daily cost) limit at 40 to avoid plot scale from jumping around
       scale_x_date(date_breaks = "1 year", date_minor_breaks = "3 months", date_labels = "%Y") +
       labs(x = "Date", y = "Daily cost and 30-day rolling average (shifted to midpoint of sample)", color = "All divested") +
       transition_states(day, state_length = 1, transition_length = 0) +
@@ -479,7 +498,7 @@ setup_daily_cost_and_category_use_plot <- function(usetodate_anim, ymax = NA, yb
         geom_point(aes(colour = category), size = marker_size) +
         geom_image(aes(image = photo, group = date), size = 0.08) +
         scale_x_continuous(limits=c(0,1), labels = scales::percent_format(accuracy = 1)) +
-        scale_y_continuous(limits=c(NA,ymax), breaks=seq(0, 500, by = ybreaks)) +
+        scale_y_continuous(limits=c(NA,ymax), breaks=seq(0, 500, by = ybreaks), labels = dollar_format(suffix = "€", prefix = "")) +
         scale_color_manual(name = "Category", values = category_colors) +
         scale_size(range = c(1, 10)) +
         guides(size = FALSE) +
@@ -498,7 +517,7 @@ setup_daily_cost_and_category_use_plot <- function(usetodate_anim, ymax = NA, yb
 
 
 
-# Funtion to set up yearly cost vs category use plot
+# Function to set up yearly cost vs category use plot
 setup_yearly_cost_and_category_use_plot <- function(usetodate_anim, ymax = NA, ybreaks = 200, animate = FALSE){
     
     # Animation marker size
@@ -522,7 +541,7 @@ setup_yearly_cost_and_category_use_plot <- function(usetodate_anim, ymax = NA, y
         geom_point(aes(colour = category), size = marker_size) +
         geom_image(aes(image = photo, group = date), size = 0.08) +
         scale_x_continuous(limits=c(0,1), labels = scales::percent_format(accuracy = 1)) +
-        scale_y_continuous(limits=c(NA,ymax), breaks=seq(0, 2000, by = ybreaks)) +
+        scale_y_continuous(limits=c(NA,ymax), breaks=seq(0, 2000, by = ybreaks), labels = dollar_format(suffix = "€", prefix = "")) +
         scale_color_manual(name = "Category", values = category_colors) +
         scale_size(range = c(1, 10)) +
         guides(size = FALSE) +
@@ -587,7 +606,7 @@ setup_category_plot_point <- function(plot_data, categories, xmax, ymax, ybreaks
         guides(alpha = FALSE, size = FALSE) +
         labs(x = "Average times worn per month", y = "Cost per wear (€)")
 
-    if (log_trans) { p <- p + scale_y_continuous(trans="log10", limits=c(NA,ymax), breaks=ybreaks) }
+    if (log_trans) { p <- p + scale_y_continuous(trans="log10", limits=c(NA,ymax), breaks=ybreaks, labels = dollar_format(suffix = "€", prefix = "")) }
     else { p <- p + scale_y_continuous(limits=c(NA,ymax)) }
     
     # Add vertical and horizonal line for variable averages in corresponding category color
@@ -638,7 +657,7 @@ setup_category_plot_image <- function(plot_data, categories, xmax, ymax, ybreaks
       marker_size <- 28 # Set still marker size
     }
     
-    # Override marker size if defined in the funciton call
+    # Override marker size if defined in the function call
     if (!is.na(fixed_marker_size)) { marker_size = fixed_marker_size }
             
     # Set up plot
@@ -662,8 +681,8 @@ setup_category_plot_image <- function(plot_data, categories, xmax, ymax, ybreaks
       scale_x_continuous(limits=c(NA,xmax)) +
       labs(x = "Average times worn per month", y = "Cost per wear (€)")
         
-    if (log_trans) { p <- p + scale_y_continuous(trans="log10", limits=c(NA,ymax), breaks=ybreaks) }
-    else { p <- p + scale_y_continuous(limits=c(NA,ymax)) }
+    if (log_trans) { p <- p + scale_y_continuous(trans="log10", limits=c(NA,ymax), breaks=ybreaks, labels = dollar_format(suffix = "€", prefix = "")) }
+    else { p <- p + scale_y_continuous(limits=c(NA,ymax), labels = dollar_format(suffix = "€", prefix = "")) }
 
     if (animate) {
         p <- p +
@@ -745,7 +764,7 @@ setup_category_cumulative_plot_image <- function(plot_data, categories, xmax = N
         scale_x_continuous(limits=c(0,xmax), breaks = seq.int(from = 0, to = xmax, by = xbreak)) +
         labs(x = "Times worn", y = "Cost per wear (€)")
 
-    if (log_trans) { p <- p + scale_y_continuous(trans="log10", limits=c(ymin,ymax), breaks=ybreaks) }
+    if (log_trans) { p <- p + scale_y_continuous(trans="log10", limits=c(ymin,ymax), breaks=ybreaks, labels = dollar_format(suffix = "€", prefix = "")) }
     else { p <- p + scale_y_continuous(limits=c(ymin,ymax)) }
     
     return(p)

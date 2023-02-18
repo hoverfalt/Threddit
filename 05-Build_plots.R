@@ -1,4 +1,4 @@
-### Threddit.R - Olof Hoverfält - 2018-2022 - hoverfalt.github.io
+### Threddit.R - Olof Hoverfält - 2018-2023 - hoverfalt.github.io
 
 # Functions to build plots
 
@@ -15,7 +15,7 @@ calculate_image_plot_master_data <- function(){
   # Calculate daily cost and rolling average (Sportswear excluded by default, can be overridden)
   daily_cost <<- calculate_daily_cost(plotuse, rolling_average_window, categories_include = category_order, categories_exclude = "Sportswear")
   
-  # Calculate complete portfolio data for plottin Daily/Yearly cost vs Category use
+  # Calculate complete portfolio data for plotting Daily/Yearly cost vs Category use
   usetodate <<- calculate_complete_portfolio_plot_data(plotuse)
   # Add category photos to data frame
   usetodate_anim <<- merge(usetodate, category_photos, by.x = "category")
@@ -145,7 +145,7 @@ build_standard_plots <- function(){
            p, width = 10, height = 10, dpi = 300, units = "in")
     save_to_cloud(paste("Category-", gsub(" ", "_", i), ".png", sep=""))
   }
-
+  
   # Reset bucket and upload (prevents upload from jamming)
   gcs_list_buckets(Firebase_project_id)
   
@@ -157,17 +157,17 @@ build_standard_plots <- function(){
   save_to_cloud("Category-Jackets_and_hoodies-Cost_and_Cumulative_use.png")
 
   # Blazers and vests
-  p <- plot_data %>% setup_category_cumulative_plot_image("Blazers and vests", xmax = NA, xbreak = 5, ymax = 50, log_trans=TRUE, trails=TRUE, guides=TRUE)
+  p <- plot_data %>% setup_category_cumulative_plot_image("Blazers and vests", xmax = NA, xbreak = 5, ymax = 50, ymin = 1, log_trans=TRUE, trails=TRUE, guides=TRUE)
   ggsave(filename = "Plots/Category-Blazers_and_vests-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in")
   save_to_cloud("Category-Blazers_and_vests-Cost_and_Cumulative_use.png")
   
   # Knits
-  p <- plot_data %>% setup_category_cumulative_plot_image("Knits", xmax = NA, xbreak = 5, ymax = 20, log_trans=TRUE, trails=TRUE, guides=TRUE)
+  p <- plot_data %>% setup_category_cumulative_plot_image("Knits", xmax = 20, xbreak = 2, ymax = 200, ymin = 1, log_trans=TRUE, trails=TRUE, guides=TRUE)
   ggsave(filename = "Plots/Category-Knits-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in")
   save_to_cloud("Category-Knits-Cost_and_Cumulative_use.png")
   
   # Shirts
-  p <- plot_data %>% setup_category_cumulative_plot_image("Shirts", xmax = NA, xbreak = 10, ymax = 50, log_trans=TRUE, trails=TRUE, guides=TRUE)
+  p <- plot_data %>% setup_category_cumulative_plot_image("Shirts", xmax = NA, xbreak = 10, ymax = 25, log_trans=TRUE, trails=TRUE, guides=TRUE)
   ggsave(filename = "Plots/Category-Shirts-Cost_and_Cumulative_use.png", p, width = 10, height = 10, dpi = 300, units = "in")
   save_to_cloud("Category-Shirts-Cost_and_Cumulative_use.png")
   
@@ -266,7 +266,7 @@ build_standard_plots <- function(){
 
   # Pants
   daily_cost_category <- calculate_daily_cost(plotuse, rolling_average_window, categories_include = "Pants")
-  p <- setup_daily_cost_plot(daily_cost_category, ymax = 8, ybreaks = 1, seasons = TRUE, legend = FALSE)
+  p <- setup_daily_cost_plot(daily_cost_category, ymax = 12, ybreaks = 1, seasons = TRUE, legend = FALSE)
   ggsave(filename = "Plots/Category-Pants-Daily_cost.png", p, width = 10, height = 10, dpi = 300, units = "in")
   save_to_cloud("Category-Pants-Daily_cost.png")
 
@@ -296,13 +296,13 @@ build_standard_plots <- function(){
 
   # Underwear shirts
   daily_cost_category <- calculate_daily_cost(plotuse, rolling_average_window, categories_include = "Underwear shirts")
-  p <- setup_daily_cost_plot(daily_cost_category, ymax = 8, ybreaks = 1, seasons = TRUE, legend = FALSE)
+  p <- setup_daily_cost_plot(daily_cost_category, ymax = 5, ybreaks = 1, seasons = TRUE, legend = FALSE)
   ggsave(filename = "Plots/Category-Underwear_shirts-Daily_cost.png", p, width = 10, height = 10, dpi = 300, units = "in")
   save_to_cloud("Category-Underwear_shirts-Daily_cost.png")
 
   # Underwear boxers
   daily_cost_category <- calculate_daily_cost(plotuse, rolling_average_window, categories_include = "Underwear boxers")
-  p <- setup_daily_cost_plot(daily_cost_category, ymax = 4, ybreaks = 0.5, seasons = TRUE, legend = FALSE)
+  p <- setup_daily_cost_plot(daily_cost_category, ymax = 3, ybreaks = 0.5, seasons = TRUE, legend = FALSE)
   ggsave(filename = "Plots/Category-Underwear_boxers-Daily_cost.png", p, width = 10, height = 10, dpi = 300, units = "in")
   save_to_cloud("Category-Underwear_boxers-Daily_cost.png")
 

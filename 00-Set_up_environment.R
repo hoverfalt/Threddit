@@ -25,6 +25,7 @@ set_up_environment <- function(){
   library(stringr)
   library(googleCloudStorageR)
   library(curl)
+  library(zoo)
   library(openssl) # Used in changing MD5 encoding
   library(digest) # Used in reading MD5 encoding 
   library(httr) # Get GCS file metadata through http request

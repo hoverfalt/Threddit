@@ -1,4 +1,4 @@
-### Threddit.R - Olof Hoverfält - 2018-2022 - hoverfalt.github.io
+### Threddit.R - Olof Hoverfält - 2018-2023 - hoverfalt.github.io
 
 # Functions to prepare and plot multi-user data
 
@@ -179,10 +179,10 @@ save(raw_data, file="Data/Wardrobe_Diary-raw_data.Rda")
 load("Data/Wardrobe_Diary-raw_data.Rda")
 str(raw_data)
 
+
 #################################################################################################
 ######################################## SET UP PLOTS ###########################################
 #################################################################################################
-
 
 ## Average wardrobe size and value by user
 
@@ -219,7 +219,7 @@ sum(raw_data$price, na.rm = TRUE)
 
 
 
-# List share of secondhand by user
+# List share of secondhand items by user
 secondhand_by_user <- raw_data %>%
   filter(!(user %in% excluded_users)) %>%
   select(user, category, item, secondhand, divestment_way, date_purchased, date_divested) %>%
@@ -235,10 +235,49 @@ secondhand_by_user <- raw_data %>%
          new_items = items_TRUE, new_SH_items = secondhand_items_TRUE, new_SH_share = secondhand_share_TRUE) %>%
   mutate(SH_share_change = new_SH_share - old_SH_share) %>%
   arrange(desc(old_SH_share))
-
 write.csv(secondhand_by_user,"Plots/Z/Z-Secondhand_share_by_user.csv", row.names = FALSE)
 
+# List share of secondhand items' value by user
+secondhand_by_user <- raw_data %>%
+  filter(!(user %in% excluded_users)) %>%
+  select(user, category, item, price, secondhand, divestment_way, date_purchased, date_divested) %>%
+  mutate(acquired_item = as.logical(as.Date(date_purchased) > as.Date("2021-09-01"))) %>%
+  mutate(divested_item = as.logical(as.Date(date_divested) > as.Date("2021-09-01"))) %>%
+  mutate(secondhand_value = secondhand * price) %>%
+  filter(!is.na(secondhand_value)) %>%
+  select(user, category, item, price, secondhand, secondhand_value, acquired_item, divested_item, divestment_way) %>%
+  filter(!is.na(acquired_item)) %>%
+  group_by(user, acquired_item) %>%
+  summarise(value = sum(price), secondhand_value = sum(secondhand_value), secondhand_share = round(secondhand_value / value, digits = 2)) %>%
+  pivot_wider(names_from = acquired_item, values_from = c(value, secondhand_value, secondhand_share)) %>%
+  as.data.frame() %>%
+  select(user, old_items = value_FALSE, old_SH_items = secondhand_value_FALSE, old_SH_share = secondhand_share_FALSE,
+         new_items = value_TRUE, new_SH_items = secondhand_value_TRUE, new_SH_share = secondhand_share_TRUE) %>%
+  mutate(SH_share_change = new_SH_share - old_SH_share) %>%
+  arrange(desc(old_SH_share))
+write.csv(secondhand_by_user,"Plots/Z/Z-Secondhand_value_share_by_user.csv", row.names = FALSE)
 
+secondhand_by_user <- raw_data %>%
+  filter(!(user %in% excluded_users)) %>%
+  select(user, category, item, price, secondhand, divestment_way, date_purchased, date_divested) %>%
+  mutate(acquired_item = as.logical(as.Date(date_purchased) > as.Date("2021-09-01"))) %>%
+  mutate(divested_item = as.logical(as.Date(date_divested) > as.Date("2021-09-01"))) %>%
+  mutate(secondhand_value = secondhand * price) %>%
+  filter(!is.na(secondhand_value)) %>%
+  filter(is.na(divested_item)) %>% # Include only items left at end of study
+  select(user, category, item, price, secondhand, secondhand_value) %>%
+  group_by(user) %>%
+  summarise(items = n(), SH_items = sum(secondhand), value = sum(price), secondhand_value = sum(secondhand_value), secondhand_share = round(secondhand_value / value, digits = 2)) %>%
+  as.data.frame()
+write.csv(secondhand_by_user,"Plots/Z/Z-Secondhand_at_end-of-study_by_user.csv", row.names = FALSE)
+
+
+
+secondhand_by_user <- raw_data %>% select(user, category, item, price, secondhand_type, secondhand) %>%
+  filter(secondhand == TRUE)
+write.csv(secondhand_by_user,"Plots/Z/Z-Secondhand_items_by_user.csv", row.names = FALSE)
+
+length(unique(secondhand_by_user$user))
   
 ## Average wardrobe size and value by category
 
@@ -661,9 +700,10 @@ str(plot_data)
 worn_count <- 4
 sentimental_items <- raw_data %>%
   group_by(user) %>%
-  summarise(items = n(), sentimental = sum(sentimental_value, na.rm = TRUE) %>%
+  summarise(items = n(), sentimental = sum(sentimental_value, na.rm = TRUE)) %>%
   mutate(share_unworn = round(share_unworn, 2), share_rarely_worn = round(share_rarely_worn, 2)) %>%
   as.data.frame()
+  
 write.csv(rarely_used_shares,"Plots/Z/Z-Share_of_unused_and_rarely_used_items_by_participant.csv", row.names = FALSE)
 str(raw_data)
 
@@ -1378,7 +1418,7 @@ plot_table <- plot_data %>%
   summarise(items = round(n(), digits = 0), wears_mean = round(mean(plot_wears), digits = 0), wears_median = round(median(plot_wears), digits = 0),
             cpw_mean = round(mean(cpw), digits = 2), cpw_median = round(median(cpw), digits = 2),
             value = round(sum(price), digits = 2)) %>%
-  select(category, items, value, wears_mean, cpw_mean) %>%
+  select(category, items, value, wears_mean, cpw_mean, cpw_median) %>%
   as.data.frame()
 
 write.csv(plot_table,"Plots/Z/Z-CPW_export.csv", row.names = FALSE)
@@ -2208,6 +2248,9 @@ hm_data %>% heatmap.2(scale = "row", trace = "none", density.info = "none",
             key.title = FALSE, key.xlab = "Category WPM",
             cellnote = hm_data, notecol="black")
 
+# Write CSV
+write.csv(as.data.frame(hm_data),"Plots/Z/Z-Category_WPM_by_user.csv", row.names = TRUE)
+
 
 ## Heatmap of WPM delta to max by user and category
 
@@ -2262,6 +2305,7 @@ hm_data %>% heatmap.2(scale = "none", trace = "none", density.info = "none",
 
 
 # Calculate total category wears by user
+library(DescTools)
 category_wears <- raw_data %>%
   filter(!(user %in% excluded_users)) %>%
   filter(!is.na(total_wears)) %>%
@@ -2272,6 +2316,21 @@ category_wears <- raw_data %>%
   mutate(avg_wears = round(total_wears / items, digits = 0), supply_in_years = round(category_potential / total_wears, digits = 1)) %>%
   as.data.frame()
 
+
+
+# Calculate category WPM by user
+months_tracked <- 12
+
+category_WPM <- category_wears %>% select(category, user, total_wears) %>%
+  mutate(category_WPM = round(total_wears / months_tracked, digits = 1)) %>%
+  select(user, category, category_WPM) %>%
+  spread("category", category_WPM) %>%
+  as.data.frame()
+
+# Write CSV
+write.csv(category_WPM,"Plots/Z/Z-Category_WPM_by_user.csv", row.names = FALSE)
+
+
 category_wears %>%
   filter(category == "Shoes and footwear") %>%
   arrange(gini)
@@ -2279,6 +2338,7 @@ category_wears %>%
 # Summarize by category (collapse user dimension)
 category_wears %>% group_by(category) %>%
   summarise(avg_total_wears = round(mean(total_wears), digits = 0),
+            avg_wears = round(mean(avg_wears), digits = 0),  
             avg_max_wears = round(mean(max_wears), digits = 0),
             avg_category_potential = round(mean(category_potential), digits = 0),
             avg_supply_in_years = round(mean(supply_in_years, na.rm = TRUE), digits = 1)) %>%
@@ -2287,7 +2347,6 @@ category_wears %>% group_by(category) %>%
 ?Gini
 
 
-library(DescTools)
 
 gini <- raw_data %>%
   select(user, category, item, wears) %>%
@@ -3340,7 +3399,7 @@ multiplier_format_y <- function (x) {
 
 
 # Function: item CPW and wears by category (across all users)
-setup_CPW_and_Wears_plot <- function(plot_data, categories, plot_total_wears = TRUE, xmax = NA, xbreak = 10, ymax = NA, ybreak = 25, log_trans = TRUE, trendline = FALSE, avg_lines = TRUE, guides = TRUE, legend = TRUE) {
+setup_CPW_and_Wears_plot <- function(plot_data, categories, plot_total_wears = TRUE, xmax = NA, xbreak = 10, ymin = NA, ymax = NA, ybreak = 25, log_trans = TRUE, trendline = FALSE, avg_lines = TRUE, guides = TRUE, legend = TRUE) {
   
   # Filter data by category
   plot_data <- plot_data %>% filter(category %in% categories)
@@ -3372,10 +3431,16 @@ setup_CPW_and_Wears_plot <- function(plot_data, categories, plot_total_wears = T
       guides_temp$cpw <- as.numeric(i) / guides_temp$cumuse
       guides_data <- rbind(guides_data, guides_temp)
     }
-    
-    # Remove guide data with cost_per_use lower than the plot data, to avoid impact on axis limits
-    guides_data <- guides_data[guides_data$cpw >= min(plot_data$cpw, na.rm = TRUE),]
-    
+
+    if (!is.na(ymin)) {
+      # Remove guide data with cost_per_use lower than ymin
+      guides_data <- guides_data[guides_data$cpw >= ymin,]
+    }
+    else {
+      # Remove guide data with cost_per_use lower than the plot data, to avoid impact on axis limits
+      guides_data <- guides_data[guides_data$cpw >= min(plot_data$cpw, na.rm = TRUE),]
+    }
+
     # Create data set of label coordinates to be plotted
     guides_labels_data <- guides_data %>%
       group_by(price) %>%
@@ -3407,11 +3472,14 @@ setup_CPW_and_Wears_plot <- function(plot_data, categories, plot_total_wears = T
       ggtitle("Cost Per Wear and Diary wears by category (across all users)")
   }
   
-  if (log_trans) { p <- p + scale_y_continuous(trans="log10", limits=c(NA,ymax), labels=scales::dollar_format(suffix =" €", prefix = "")) }
-  else { p <- p + scale_y_continuous(limits=c(NA,ymax), breaks = seq.int(from = 0, to = ymax, by = ybreak), labels=scales::dollar_format(suffix = "€", prefix = "")) }
+  if (log_trans) { p <- p + scale_y_continuous(trans="log10", limits=c(ymin,ymax), labels=scales::dollar_format(suffix =" €", prefix = "")) }
+  else { p <- p + scale_y_continuous(limits=c(ymin,ymax), breaks = seq.int(from = 0, to = ymax, by = ybreak), labels=scales::dollar_format(suffix = "€", prefix = "")) }
   
   if (trendline) { p <- p + geom_smooth(method = "lm") }
   
+  # Add guide trajectory labels so as to end up on top of other graphical elements
+  if (guides){ p <- p + geom_label(data = guides_labels_data, aes(x = cumuse, y = cpw, label=paste(price, "€")), color = "lightblue") }
+
   # Add average lines and labels
   if (avg_lines) { p <- p +
     geom_vline(xintercept = median(plot_data$plot_wears, na.rm=TRUE), color="darkgrey", linetype="dashed") +
@@ -3419,10 +3487,7 @@ setup_CPW_and_Wears_plot <- function(plot_data, categories, plot_total_wears = T
     geom_hline(yintercept = median(plot_data$cpw, na.rm = TRUE), color="darkgrey", linetype="dashed") +
     geom_label(aes(x = 0, y = median(plot_data$cpw, na.rm = TRUE), label=paste(round(median(plot_data$cpw, na.rm = TRUE), digits = 2), "€")), color =  "darkgrey")
   }
-
-  # Add guide trajectory labels so as to end up on top of other graphical elements
-  if (guides){ p <- p + geom_label(data = guides_labels_data, aes(x = cumuse, y = cpw, label=paste(price, "€")), color = "lightblue") }
-
+  
   if (!legend){
     p <- p + theme(legend.position = "none")
   } else {

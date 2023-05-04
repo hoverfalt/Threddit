@@ -47,18 +47,6 @@ calculate_category_data_tables <- function(plotuse, masterdata){
 
   # Extract and format item listings as a publishing-ready data frame
   
-  # Original Dropbox version
-  #item_listings <- plotuse %>% filter(date == max(plotuse$date)) %>%
-    #select(Category = category, Item = item, 'Times worn' = cumuse, cost_per_use, days_active, use_per_month, active, photo) %>%
-    #mutate('Cost per wear' = round(cost_per_use, 2), 'Months active' = round(days_active / 30.5, 0), 'Wears per month' = round(use_per_month, 1)) %>%
-    #select(-cost_per_use, -days_active, -use_per_month) %>%
-    #merge(masterdata %>% select(Item, Price)) %>%
-    #mutate(Status = ifelse(active == TRUE, "Active", "Divested")) %>%
-    #merge(item_photo_URLs %>% select(photo = item, Img = photo_url) %>% mutate(photo = paste0("Photos/", photo, sep="")), by = "photo", all.x = TRUE) %>% 
-    #mutate(Img = paste0("<img class='item_image' src='", Img ,"'></img>"), collapse="") %>%
-    #select(Img, Category, Item, Price, 'Times worn', 'Cost per wear', 'Wears per month', 'Months active', Status, -active, -photo) %>%
-    #arrange(Category, Status, desc(`Times worn`))
-
   # Google Firebase version
   item_listings <- plotuse %>% filter(date == max(plotuse$date)) %>%
     select(Category = category, Item = item, 'Times worn' = cumuse, cost_per_use, days_active, use_per_month, active, photo) %>%
@@ -72,7 +60,6 @@ calculate_category_data_tables <- function(plotuse, masterdata){
     select(Img, Category, Item, Price, 'Times worn', 'Cost per wear', 'Wears per month', 'Months active', Status, -active, -photo) %>%
     arrange(Category, Status, desc(`Times worn`))
   
-    
     # Save item listings to a file for access by the Website builder
     save(item_listings,file="Website/Threddit-item_listings.Rda")
     item_listings <<- item_listings
@@ -81,8 +68,9 @@ calculate_category_data_tables <- function(plotuse, masterdata){
   
   # Extract and format category listings as a publishing-ready data frame
   
-  # Exclude Sportswear and order
-  category_listing <- usetodate_anim %>% filter(date == max(usetodate_anim$date), category != "Sportswear") %>%
+  # Order list (option to exclude Sportswear)
+#  category_listing <- usetodate_anim %>% filter(date == max(usetodate_anim$date), category != "Sportswear") %>%
+  category_listing <- usetodate_anim %>% filter(date == max(usetodate_anim$date)) %>%
     arrange(match(category, category_order))
 
   # Add categoryvalue (not category_value) describing the active value, not cumulative
@@ -90,11 +78,6 @@ calculate_category_data_tables <- function(plotuse, masterdata){
     arrange(match(category, category_order)) %>%
     select(category, itemcount, categoryvalue) %>%
     merge(category_listing, by = "category")
-  
-  # Add tag and local url for images (Original Dropbox version)
-  #category_listing <- category_listing %>%
-    #merge(item_photo_URLs %>% select(photo = item, Img = photo_url) %>% mutate(photo = paste0("Photos/", photo, sep="")), by = "photo", all.x = TRUE) %>% 
-    #mutate(Img = paste0("<img class='item_image' src='", Img ,"'></img>"), collapse="")
   
   # Add tag and local url for images (Google Firebase version)
   category_listing <- category_listing %>%
@@ -123,6 +106,12 @@ calculate_category_data_tables <- function(plotuse, masterdata){
            'Inventory turnover' = turnover) %>%
     arrange(match(Category, c("Total", category_order)))
   
+  # Add website category URLs to category names in table (excluding Sportswear)
+  for (cat in category_order) {
+    category_listing$Category[category_listing$Category == cat] <-
+      paste("<a href='",category_urls$url[category_urls$category == cat], "'>",cat,"</a>", sep="")
+  }
+
   # Save category listings to a file for access by the Website builder
   save(category_listing,file="Website/Threddit-category_listing.Rda")
   category_listing <<- category_listing

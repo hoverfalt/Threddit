@@ -71,6 +71,23 @@ set_up_environment <- function(){
                 'Photos/Category_image-Underwear_boxers.png',
                 'Photos/Category_image-Sportswear.png'))
   
+  # Set website category URLs
+  category_urls <<- data.frame(
+    "category" = category_order,
+    "url" = c('jackets.html',
+              'blazers.html',
+              'knits.html',
+              'shirts.html',
+              't-shirts.html',
+              'pants.html',
+              'shorts.html',
+              'belts.html',
+              'socks.html',
+              'shoes.html',
+              'uw_shirts.html',
+              'uw_boxers.html',
+              'sportswear.html'))
+  
   # Set rolling average window size to 30 days
   rolling_average_window <<- 30
   
@@ -81,7 +98,7 @@ set_up_environment <- function(){
   plot_log_breaks <<- c(0.05, 0.1, 0.25, 0.5, 1, 2, 5, 10, 20, 50, 100, 200, 400, 800)
     
   # Set author label to add in the upper right corner of plots
-  author_label <<- "hoverfalt.github.io"
+  author_label <<- "wardrobediary.io"
 
   # Set Dropbox Threddit photo links path identifier used to filter our non-Threddit links 
   Threddit_Dropbox_path_identifier <<- "/thredditr/"

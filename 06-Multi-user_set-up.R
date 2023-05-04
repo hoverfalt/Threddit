@@ -137,8 +137,8 @@ load("Data/Threddit-Z-user_data.Rda")
 # List non-excluded users
 users <- sort(unique(as.character(raw_data$user)))
 users <- users[!(users %in% excluded_users)]
-str(users)
-
+save(users,file="Data/Threddit-Z-users.Rda")
+load("Data/Threddit-Z-users.Rda")
 
 ## Correct categories according to reshuffle in Nov 2022
 
@@ -168,7 +168,7 @@ raw_data <- raw_data %>% filter(category != "Other")
 
 # Remove excluded users and previously divested items (83) from raw data
 raw_data <- raw_data %>%
-  filter(!(user %in% excluded_users)) %>%
+#  filter(!(user %in% excluded_users)) %>%
   filter(is.na(date_divested) | date_divested >= "2021-09-01")
 
 nrow(raw_data)
@@ -179,6 +179,12 @@ save(raw_data, file="Data/Wardrobe_Diary-raw_data.Rda")
 load("Data/Wardrobe_Diary-raw_data.Rda")
 str(raw_data)
 
+#Reduced version
+str(raw_data)
+raw_data <- raw_data %>% select(user, category, item, wears, cpw, price, date_purchased, total_wears, secondhand, secondhand_type, date_divested, divestment_way, condition)
+str(raw_data)
+
+
 
 #################################################################################################
 ######################################## SET UP PLOTS ###########################################
@@ -188,7 +194,7 @@ str(raw_data)
 
 # Filter data to include all items currently active (not divested)
 plot_data <- raw_data %>%
-  filter(!(user %in% excluded_users)) %>%
+  #filter(!(user %in% excluded_users)) %>%
   filter(is.na(date_divested)) %>%
   mutate(worn = as.logical(wears)) %>%
   rowwise() %>%
@@ -858,7 +864,7 @@ save_to_cloud_Z("Z-Price_and_Diary_wears-Other.png")
 ###############################################
 
 plot_data <- raw_data %>%
-  filter(!(user %in% excluded_users)) %>%
+  filter(user %in% users_full_year) %>%
   select(category, wears)
 
 p <- plot_data %>% setup_Diary_wears_distribution_plot(categories = "Jackets and coats", ymax = 110, y_break = 25, xmax = NA, binwidth = 5, x_break = 5, repel_gap = 2)
@@ -2127,7 +2133,8 @@ WPM_max = 30.5
 # Calculate deltas
 WPM_delta <-
   raw_data %>%
-  filter(!(user %in% excluded_users)) %>%
+#  filter(!(user %in% excluded_users)) %>%
+  filter(user %in% users_full_year) %>%
   filter(!is.na(total_wears)) %>%
   mutate(months_available = mondf(date_purchased, diary_starting_date)) %>%
   filter(months_available > 0) %>%
@@ -2185,12 +2192,12 @@ WPM_delta %>%
   filter(!(category %in% c("Underwear and socks", "Nightwear and homewear", "Accessories", "Sportswear", "Other"))) %>%
 #  filter(category %in% category_order[8:9]) %>%
   arrange(desc(wears_real)) %>%
-  head(15)
+  head(20)
 
 
 # Plot WPM
 p <- WPM_delta_cat %>% 
-  filter(category %in% "Shoes and footwear") %>%
+  filter(category %in% "Trousers and jeans") %>%
   setup_WPM_delta_plot_categories(xmax = 5, ymax = 2, wpm_max = 1.0)
 p
 ggsave(filename = "Plots/Z/WPM-Estimate_vs_max_and_real-example.png", p, width = 9, height = 7, dpi = 150, units = "in")
@@ -2200,15 +2207,12 @@ save_to_cloud_Z("WPM-Estimate_vs_max_and_real-example.png")
 gcs_list_buckets(Firebase_project_id)
 
 
-raw_data %>% select(user, category, item, repaired) %>%
-  filter(repaired > 0, user == "Senna")
 
-
-### Heatmaps
+### HEATMAPS
 
 # Remove unfit categories
 WPM_delta_hm <- WPM_delta_cat %>%
-  filter(!(category %in% c("Underwear and socks", "Accessories", "Other")))
+  filter(!(category %in% c("Underwear and socks", "Accessories", "Other", NA)))
 
 
 ## Heatmap of real WPM by user and category
@@ -2307,7 +2311,8 @@ hm_data %>% heatmap.2(scale = "none", trace = "none", density.info = "none",
 # Calculate total category wears by user
 library(DescTools)
 category_wears <- raw_data %>%
-  filter(!(user %in% excluded_users)) %>%
+#  filter(!(user %in% excluded_users)) %>%
+  filter(user %in% users_full_year) %>%
   filter(!is.na(total_wears)) %>%
   select(user, category, item, wears) %>%
   group_by(category, user) %>%
@@ -2329,6 +2334,9 @@ category_WPM <- category_wears %>% select(category, user, total_wears) %>%
 
 # Write CSV
 write.csv(category_WPM,"Plots/Z/Z-Category_WPM_by_user.csv", row.names = FALSE)
+
+# Calculate mean category WPMs
+category_WPM %>% select(-user) %>% colMeans(na.rm = TRUE)
 
 
 category_wears %>%
@@ -3006,7 +3014,7 @@ circos.trackPlotRegion(
 ###################################################################################################
 
 ## Function: Item price distribution by category
-setup_price_distribution_plot <- function(plot_data, categories, xmax = NA, ymax = NA, binwidth = 10, legend = TRUE, x_break = 10, repel_gap = 0) {
+setup_price_distribution_plot <- function(plot_data, categories, xmax = NA, x_break = 10, ymax = NA, y_break = 25, binwidth = 10, legend = TRUE, repel_gap = 0) {
   
   # Filter data by category
   if(!is.na(categories)) {
@@ -3026,13 +3034,13 @@ setup_price_distribution_plot <- function(plot_data, categories, xmax = NA, ymax
     plot_data,
     aes(x = price, fill = category)) +
     annotate("text", x = author_label_x, y = author_label_y, label = author_label, color = "gray", hjust = 1) +
-    geom_histogram(binwidth = binwidth) +
+    geom_histogram(binwidth = binwidth, boundary = 0) +
     geom_vline(xintercept = mean(plot_data$price, na.rm=TRUE), color="darkgrey", linetype="dashed") +
     geom_label(aes(x = mean(plot_data$price + repel_gap, na.rm=TRUE), y = 0, label=paste("Mean\n", round(mean(plot_data$price, na.rm=TRUE), digits = 0), "€")), color =  "darkgrey", fill = "white") +
     geom_vline(xintercept = median(plot_data$price, na.rm=TRUE), color="darkgrey", linetype="dashed") +
     geom_label(aes(x = median(plot_data$price - repel_gap, na.rm=TRUE), y = 0, label=paste("Median\n", round(median(plot_data$price, na.rm=TRUE), digits = 0), "€")), color =  "darkgrey", fill = "white") +
     scale_x_continuous(limits=c(0,xmax), breaks = seq(from = 0, to = xmax, by = x_break), labels=scales::dollar_format(suffix = "€", prefix = "")) +
-    scale_y_continuous(limits=c(0,ymax)) +
+    scale_y_continuous(limits=c(0,ymax), breaks = seq(from = 0, to = ymax, by = y_break)) +
     scale_fill_manual(name = "Category", values = category_colors[match(categories, category_order)]) +
     labs(x = "Price", y = "Total number of items by price tier") +
     ggtitle("Item price distribution by gategory (all users)")
@@ -3040,7 +3048,7 @@ setup_price_distribution_plot <- function(plot_data, categories, xmax = NA, ymax
   if (!legend){
     p <- p + theme(legend.position = "none")
   } else {
-    p <- p + theme(legend.position = c(0.8, 0.8))
+    p <- p + theme(legend.position = c(0.85, 0.85))
   }
   
   return(p)
@@ -3435,10 +3443,12 @@ setup_CPW_and_Wears_plot <- function(plot_data, categories, plot_total_wears = T
     if (!is.na(ymin)) {
       # Remove guide data with cost_per_use lower than ymin
       guides_data <- guides_data[guides_data$cpw >= ymin,]
+      label_ymin <- ymin
     }
     else {
       # Remove guide data with cost_per_use lower than the plot data, to avoid impact on axis limits
       guides_data <- guides_data[guides_data$cpw >= min(plot_data$cpw, na.rm = TRUE),]
+      label_ymin <- min(plot_data$cpw, na.rm = TRUE)
     }
 
     # Create data set of label coordinates to be plotted
@@ -3483,7 +3493,7 @@ setup_CPW_and_Wears_plot <- function(plot_data, categories, plot_total_wears = T
   # Add average lines and labels
   if (avg_lines) { p <- p +
     geom_vline(xintercept = median(plot_data$plot_wears, na.rm=TRUE), color="darkgrey", linetype="dashed") +
-    geom_label(aes(x = median(plot_data$plot_wears, na.rm=TRUE), y = min(plot_data$cpw, na.rm=TRUE), label=round(median(plot_data$plot_wears, na.rm=TRUE), digits = 0)), color =  "darkgrey") +
+    geom_label(aes(x = median(plot_data$plot_wears, na.rm=TRUE), y = label_ymin, label=round(median(plot_data$plot_wears, na.rm=TRUE), digits = 0)), color =  "darkgrey") +
     geom_hline(yintercept = median(plot_data$cpw, na.rm = TRUE), color="darkgrey", linetype="dashed") +
     geom_label(aes(x = 0, y = median(plot_data$cpw, na.rm = TRUE), label=paste(round(median(plot_data$cpw, na.rm = TRUE), digits = 2), "€")), color =  "darkgrey")
   }

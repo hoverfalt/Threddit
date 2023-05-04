@@ -32,7 +32,7 @@ plotuse <- transform_data(masterdata) %>% # 1) Transform raw data into tidy data
   calculate_total_use_data() %>% # 3) Calculate total use data, including divested items 
   calculate_plot_data() # 4) Calculate plot data for the standard plots
 
-# Save tidy data data.frame to file for easier retrieval (2023-02-16)
+# Save tidy data data.frame to file for easier retrieval (2023-04-24)
 save(masterdata,file="Data/Threddit-masterdata.Rda")
 save(plotuse,file="Data/Threddit-plotuse.Rda")
 save(daterange,file="Data/Threddit-daterange.Rda")
@@ -66,7 +66,7 @@ build_standard_plots()
 
 ### ANIMATIONS ##################################################################################################
 
-# Calculate and publich anumations
+# Calculate and publish animations
 # Animations are excluded from the standard refresh-and-publish cycle as they take some 60+ minutes to compute
 
 
@@ -227,7 +227,7 @@ for (i in category_order[4]){
 
 
 # Animating only selected categories
-i <- category_order[13]
+i <- category_order[1]
 i <- "Blazers and vests"
 setup_category_times_used_plot(plot_data_reduced, categories = c(i), animate = TRUE) %>%
   animate(height = 1000, width = 1000, nframes = length(unique(plot_data_reduced$date)) + 72, fps = 24, end_pause = 72) # Frames = states + end pause

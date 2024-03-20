@@ -25,4 +25,4 @@ I'm not a professional developer. I built this to be a tool for myself.
 Due to increasing interest, I'm thinking about how to best go about making something like this available for broader good. If you have ideas or would like to contibute, please feel free to reach out :)  
 
 ### License
-This work is licensed under a <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank">Creative Commons Attribution 4.0 International License</a>. CC BY, Olof Hoverfält 2018-2021
+This work is licensed under a <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank">Creative Commons Attribution 4.0 International License</a>. CC BY, Olof Hoverfält 2018-2024

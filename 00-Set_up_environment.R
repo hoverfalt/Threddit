@@ -1,4 +1,4 @@
-### Threddit.R - Olof Hoverfält - 2018-2021 - hoverfalt.github.io
+### Threddit.R - Olof Hoverfält - 2018-2024 - hoverfalt.github.io
 
 # Functions to set computing and plotting up environment
 # Input: None

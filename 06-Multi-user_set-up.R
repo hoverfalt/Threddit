@@ -1,4 +1,4 @@
-### Threddit.R - Olof Hoverfält - 2018-2023 - hoverfalt.github.io
+### Threddit.R - Olof Hoverfält - 2018-2024 - hoverfalt.github.io
 
 # Functions to prepare and plot multi-user data
 

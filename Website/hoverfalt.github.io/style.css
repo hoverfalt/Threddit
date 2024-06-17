@@ -1,0 +1,48 @@
+.img {
+    width: 1000px;
+    display: block;
+    margin: 0 auto;
+}
+
+#fixed-width-CC {
+    float:left;
+    width: 80px;
+    height:15px;
+}  
+
+.item_image {
+    width: 28px;
+    height:28px;
+}  
+
+.item_image:hover {
+  transform: scale(4);
+}
+
+.containerBox {
+    width:100%;
+    margin: 0 auto;
+    vertical-align: middle;
+}
+
+.containerIcon {
+    float:left;
+    width:90px;
+    margin: 0 auto;
+}
+
+.containerText {
+    float:left;
+    margin: 0 auto;
+}
+
+/* -----------HERO IMAGE AT TOP OF PAGE -----------*/
+
+.hero-image {
+    height: auto; 
+    width: 100%;
+    max-width: 1000px;
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+}

@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+
+
+<title>My wardrobe data</title>
+
+<script src="site_libs/header-attrs-2.9/header-attrs.js"></script>
+<script src="site_libs/jquery-3.5.1/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<script src="site_libs/htmlwidgets-1.5.3/htmlwidgets.js"></script>
+<link href="site_libs/datatables-css-0.0.0/datatables-crosstalk.css" rel="stylesheet" />
+<script src="site_libs/datatables-binding-0.18/datatables.js"></script>
+<link href="site_libs/dt-core-bootstrap4-1.10.20/css/dataTables.bootstrap4.min.css" rel="stylesheet" />
+<link href="site_libs/dt-core-bootstrap4-1.10.20/css/dataTables.bootstrap4.extra.css" rel="stylesheet" />
+<script src="site_libs/dt-core-bootstrap4-1.10.20/js/jquery.dataTables.min.js"></script>
+<script src="site_libs/dt-core-bootstrap4-1.10.20/js/dataTables.bootstrap4.min.js"></script>
+<link href="site_libs/crosstalk-1.1.1/css/crosstalk.css" rel="stylesheet" />
+<script src="site_libs/crosstalk-1.1.1/js/crosstalk.min.js"></script>
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-HYJZNEMFV0"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-HYJZNEMFV0');
+</script>
+<meta property="og:title" content="The Wardrobe Diary Project - Find out the real cost of clothes."/>
+<meta property="og:url" content="https://hoverfalt.github.io/"/>
+<meta property="og:description" content="By tracking even a part of your wardrobe, you gain insights into your real use of clothes, item cost performance, your favorites, and the items you should probably consider putting forward. The Wardrobe Diary is free and open to everyone."/>
+<meta property="article:author" content="Olof Hoverfält"/>
+
+<meta property="og:image" content="https://firebasestorage.googleapis.com/v0/b/threddit-297417.appspot.com/o/og_image.jpg?alt=media&token=d8563fc8-e85b-44ee-8a05-6c4593109224"/>
+<meta property="og:image:secure_url" content="https://firebasestorage.googleapis.com/v0/b/threddit-297417.appspot.com/o/og_image.jpg?alt=media&token=d8563fc8-e85b-44ee-8a05-6c4593109224"/>
+<meta property="og:image:width" content="1200"/>
+<meta property="og:image:height" content="630"/>
+
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:site" content="@hoverfalt"/>
+<meta name="twitter:creator" content="@hoverfalt"/>
+<meta name="twitter:title" content="The Wardrobe Diary Project - Find out the real cost of clothes."/>
+<meta name="twitter:description" content="By tracking your wardrobe, you gain insights into your real use of clothes, item cost performance, your favorites, and the items you should probably put forward."/>
+<meta name="twitter:image" content="https://firebasestorage.googleapis.com/v0/b/threddit-297417.appspot.com/o/twitter_image.jpg?alt=media&token=a399dfd4-7560-4e4e-926f-11c58d92c3fa"/>
+
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+<link rel="stylesheet" href="style.css" type="text/css" />
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+<style type="text/css">
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #adb5bd;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script type="text/javascript">
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.tab('show');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "&#xe258;";
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html"></a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">The Wardrobe Diary Project</a>
+</li>
+<li>
+  <a href="portfolio.html">My wardrobe data</a>
+</li>
+<li>
+  <a href="track_your_wardrobe.html">Track your own wardrobe</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div id="header">
+
+
+
+<h1 class="title toc-ignore">My wardrobe data</h1>
+
+</div>
+
+
+<p>The full wardrobe shows performance and comparison of each category. Click the category name to see all items in that category.</p>
+<div id="category-listing" class="section level3">
+<h3>Category listing</h3>
+<div id="htmlwidget-10949eb0551b972fd8bf" style="width:100%;height:auto;" class="datatables html-widget"></div>
+<script type="application/json" data-for="htmlwidget-10949eb0551b972fd8bf">{"x":{"style":"bootstrap4","filter":"none","data":[[null,"<img class='item_image' src='https://firebasestorage.googleapis.com/v0/b/threddit-297417.appspot.com/o/Category_image-Jackets_and_hoodies.png?alt=media'><\/img>","<img class='item_image' src='https://firebasestorage.googleapis.com/v0/b/threddit-297417.appspot.com/o/Category_image-Blazers_and_vests.png?alt=media'><\/img>","<img class='item_image' src='https://firebasestorage.googleapis.com/v0/b/threddit-297417.appspot.com/o/Category_image-Knits.png?alt=media'><\/img>","<img class='item_image' src='https://firebasestorage.googleapis.com/v0/b/threddit-297417.appspot.com/o/Category_image-Shirts.png?alt=media'><\/img>","<img class='item_image' src='https://firebasestorage.googleapis.com/v0/b/threddit-297417.appspot.com/o/Category_image-T-shirts_and_tanks.png?alt=media'><\/img>","<img class='item_image' src='https://firebasestorage.googleapis.com/v0/b/threddit-297417.appspot.com/o/Category_image-Pants.png?alt=media'><\/img>","<img class='item_image' src='https://firebasestorage.googleapis.com/v0/b/threddit-297417.appspot.com/o/Category_image-Shorts.png?alt=media'><\/img>","<img class='item_image' src='https://firebasestorage.googleapis.com/v0/b/threddit-297417.appspot.com/o/Category_image-Belts.png?alt=media'><\/img>","<img class='item_image' src='https://firebasestorage.googleapis.com/v0/b/threddit-297417.appspot.com/o/Category_image-Socks.png?alt=media'><\/img>","<img class='item_image' src='https://firebasestorage.googleapis.com/v0/b/threddit-297417.appspot.com/o/Category_image-Shoes.png?alt=media'><\/img>","<img class='item_image' src='https://firebasestorage.googleapis.com/v0/b/threddit-297417.appspot.com/o/Category_image-Underwear_shirts.png?alt=media'><\/img>","<img class='item_image' src='https://firebasestorage.googleapis.com/v0/b/threddit-297417.appspot.com/o/Category_image-Underwear_boxers.png?alt=media'><\/img>","<img class='item_image' src='https://firebasestorage.googleapis.com/v0/b/threddit-297417.appspot.com/o/Category_image-Sportswear.png?alt=media'><\/img>"],["Total","<a href='jackets.html'>Jackets and hoodies<\/a>","<a href='blazers.html'>Blazers and vests<\/a>","<a href='knits.html'>Knits<\/a>","<a href='shirts.html'>Shirts<\/a>","<a href='t-shirts.html'>T-shirts and tanks<\/a>","<a href='pants.html'>Pants<\/a>","<a href='shorts.html'>Shorts<\/a>","<a href='belts.html'>Belts<\/a>","<a href='socks.html'>Socks<\/a>","<a href='shoes.html'>Shoes<\/a>","<a href='uw_shirts.html'>Underwear shirts<\/a>","<a href='uw_boxers.html'>Underwear boxers<\/a>","<a href='sportswear.html'>Sportswear<\/a>"],[303,10,3,2,16,14,12,11,8,80,14,49,26,58],[14517.32,1768.85,711.6,249,1418.96,1023.3,1471,831.99,489.9,351.77,2113.15,815.89,226.42,3045.49],[null,0.949132684114425,11.7155555555556,9.46551724137931,2.79221606648199,1.74061488673139,1.43801971710244,0.978811764705882,0.502304964539007,0.275333923042901,1.05944402132521,0.545030138637734,0.478331125827815,1.08508383635144],[null,0.718220338983051,0.0288135593220339,0.0101694915254237,0.442372881355932,0.274576271186441,0.659322033898305,0.258474576271186,0.531779661016949,0.757203389830508,0.91228813559322,0.930508474576271,0.854661016949153,0.406779661016949],[2492.67067361411,248.815535315463,123.211902071563,35.1347165400351,450.848243344758,174.445013987165,346.063100903035,92.3442539880359,97.4971807759346,76.0965796501473,352.779147007758,185.11163445919,149.216002750028,161.107362820994],[0.171703225775426,0.140665141371774,0.173147698245592,0.141103279277249,0.317731467655718,0.170472993244566,0.235257036643803,0.110992023928215,0.199014453512828,0.216324813514931,0.166944678327501,0.226883077938436,0.65902306664618,0.0529003092510544]],"container":"<table class=\"table table-condensed table-striped table-hover row-border order-column\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>Category<\/th>\n      <th>Active items<\/th>\n      <th>Inventory value<\/th>\n      <th>Cost per wear<\/th>\n      <th>Days used<\/th>\n      <th>Yearly cost<\/th>\n      <th>Inventory turnover<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"autoWidth":true,"columnDefs":[{"targets":7,"render":"function(data, type, row, meta) {\n    return type !== 'display' ? data : DTWidget.formatRound(data, 2, 3, \",\", \".\");\n  }"},{"targets":5,"render":"function(data, type, row, meta) {\n    return type !== 'display' ? data : DTWidget.formatPercentage(data, 0, 3, \",\", \".\");\n  }"},{"targets":3,"render":"function(data, type, row, meta) {\n    return type !== 'display' ? data : DTWidget.formatCurrency(data, \" €\", 0, 3, \"\", \".\", false);\n  }"},{"targets":6,"render":"function(data, type, row, meta) {\n    return type !== 'display' ? data : DTWidget.formatCurrency(data, \" €\", 0, 3, \"\", \".\", false);\n  }"},{"targets":4,"render":"function(data, type, row, meta) {\n    return type !== 'display' ? data : DTWidget.formatCurrency(data, \" €\", 2, 3, \",\", \".\", false);\n  }"},{"width":"28px","targets":0},{"width":"86px","targets":[2,3,4,5,6,7]},{"className":"dt-body-center","targets":0},{"className":"dt-body-right","targets":[2,3,4,5,6,7]},{"className":"dt-head-center","targets":[2,3,4,5,6,7]},{"orderable":false,"targets":0}],"dom":"t","pageLength":200,"order":[],"orderClasses":false,"lengthMenu":[10,25,50,100,200],"rowCallback":"function(row, data, displayNum, displayIndex, dataIndex) {\nvar value=data[2]; $(this.api().cell(row, 2).node()).css({'background':isNaN(parseFloat(value)) || value <= 0.000000 ? '' : 'linear-gradient(90.000000deg, transparent ' + Math.max(80.000000 - value, 0)/80.000000 * 100 + '%, #E0E0E0 ' + Math.max(80.000000 - value, 0)/80.000000 * 100 + '%)','background-size':'100% 90%','background-repeat':'no-repeat','background-position':'center'});\nvar value=data[3]; $(this.api().cell(row, 3).node()).css({'background':isNaN(parseFloat(value)) || value <= 0.000000 ? '' : 'linear-gradient(90.000000deg, transparent ' + Math.max(3045.490000 - value, 0)/3045.490000 * 100 + '%, #CCE5FF ' + Math.max(3045.490000 - value, 0)/3045.490000 * 100 + '%)','background-size':'100% 90%','background-repeat':'no-repeat','background-position':'center'});\nvar value=data[4]; $(this.api().cell(row, 4).node()).css({'background':isNaN(parseFloat(value)) || value <= 0.000000 ? '' : 'linear-gradient(90.000000deg, transparent ' + Math.max(11.715556 - value, 0)/11.715556 * 100 + '%, #FFCCCC ' + Math.max(11.715556 - value, 0)/11.715556 * 100 + '%)','background-size':'100% 90%','background-repeat':'no-repeat','background-position':'center'});\nvar value=data[5]; $(this.api().cell(row, 5).node()).css({'background':isNaN(parseFloat(value)) || value <= 0.000000 ? '' : 'linear-gradient(90.000000deg, transparent ' + Math.max(1.000000 - value, 0)/1.000000 * 100 + '%, #CCFFCC ' + Math.max(1.000000 - value, 0)/1.000000 * 100 + '%)','background-size':'100% 90%','background-repeat':'no-repeat','background-position':'center'});\nvar value=data[6]; $(this.api().cell(row, 6).node()).css({'background':isNaN(parseFloat(value)) || value <= 0.000000 ? '' : 'linear-gradient(90.000000deg, transparent ' + Math.max(450.848243 - value, 0)/450.848243 * 100 + '%, #FFCCCC ' + Math.max(450.848243 - value, 0)/450.848243 * 100 + '%)','background-size':'100% 90%','background-repeat':'no-repeat','background-position':'center'});\nvar value=data[7]; $(this.api().cell(row, 7).node()).css({'background':isNaN(parseFloat(value)) || value <= 0.000000 ? '' : 'linear-gradient(90.000000deg, transparent ' + Math.max(0.659023 - value, 0)/0.659023 * 100 + '%, #E0E0E0 ' + Math.max(0.659023 - value, 0)/0.659023 * 100 + '%)','background-size':'100% 90%','background-repeat':'no-repeat','background-position':'center'});\nvar value=data[1]; $(row).css({'font-weight':value == \"Total\" ? \"bold\" : null});\n}"}},"evals":["options.columnDefs.0.render","options.columnDefs.1.render","options.columnDefs.2.render","options.columnDefs.3.render","options.columnDefs.4.render","options.rowCallback"],"jsHooks":[]}</script>
+</div>
+<div id="active-items-by-category" class="section level3">
+<h3>Active items by category</h3>
+<p>Number of active items in each category. <a href="https://firebasestorage.googleapis.com/v0/b/threddit-plots/o/Portfolio-Inventory-Item_count.png?alt=media" target="_blank"><img src="https://firebasestorage.googleapis.com/v0/b/threddit-plots/o/Portfolio-Inventory-Item_count_910x910.png?alt=media" /></a></p>
+</div>
+<div id="inventory-value-by-category" class="section level3">
+<h3>Inventory value by category</h3>
+<p>Sum of the value of active items in each category. The value of an item is its purchase price. <a href="https://firebasestorage.googleapis.com/v0/b/threddit-plots/o/Portfolio-Inventory-Value_by_category.png?alt=media" target="_blank"><img src="https://firebasestorage.googleapis.com/v0/b/threddit-plots/o/Portfolio-Inventory-Value_by_category_910x910.png?alt=media" /></a></p>
+</div>
+<div id="total-inventory-value" class="section level3">
+<h3>Total inventory value</h3>
+<p>Total value of active items. The value of an item is its purchase price. <a href="https://firebasestorage.googleapis.com/v0/b/threddit-plots/o/Portfolio-Inventory-Value_stacked.png?alt=media" target="_blank"><img src="https://firebasestorage.googleapis.com/v0/b/threddit-plots/o/Portfolio-Inventory-Value_stacked_910x910.png?alt=media" /></a></p>
+</div>
+<div id="average-cost-per-wear-and-category-frequency-of-use" class="section level3">
+<h3>Average cost per wear and category frequency of use</h3>
+<p>Average cost per wear by category. Category frequency of use is the share of all days in which any item in the category was used. <a href="https://threddit-297417.web.app/Portfolio-Daily_cost_and_Category_use.png?alt=media" target="_blank"><img src="https://firebasestorage.googleapis.com/v0/b/threddit-plots/o/Portfolio-Daily_cost_and_Category_use_910x910.png?alt=media" /></a></p>
+</div>
+<div id="average-yearly-cost-and-category-frequency-of-use" class="section level3">
+<h3>Average yearly cost and category frequency of use</h3>
+<p>Yearly cost of using the items in a particular category. Frequency of use is the share of all days in which any item in the category was used. <a href="https://threddit-297417.web.app/Portfolio-Yearly_cost_and_Category_use.png?alt=media" target="_blank"><img src="https://firebasestorage.googleapis.com/v0/b/threddit-plots/o/Portfolio-Yearly_cost_and_Category_use_910x910.png?alt=media" /></a></p>
+</div>
+<div id="daily-cost" class="section level3">
+<h3>Daily cost</h3>
+<p>Daily cost of all items used on a particular day. “All divested” means the daily cost is final and no longer decreases with future use. <a href="https://firebasestorage.googleapis.com/v0/b/threddit-plots/o/Portfolio-Daily_cost.png?alt=media" target="_blank"><img src="https://firebasestorage.googleapis.com/v0/b/threddit-plots/o/Portfolio-Daily_cost_910x910.png?alt=media" /></a></p>
+</div>
+<div id="daily-cost---animated-by-date" class="section level3">
+<h3>Daily cost - Animated by date</h3>
+<p>Progressions of daily cost of all items used on a particular day. “All divested” means the daily cost is final and no longer decreases. <img src="https://firebasestorage.googleapis.com/v0/b/threddit-plots/o/Portfolio-Daily_cost-animation.gif?alt=media" /></p>
+</div>
+<div id="monthly-cost-and-comparison" class="section level3">
+<h3>Monthly cost and comparison</h3>
+<p>Monthly cost of the “utility of clothes” by category. Other current consumption for comparison. <a href="https://firebasestorage.googleapis.com/v0/b/threddit-plots/o/Portfolio-Monthly_cost_and_Category_use-image.png?alt=media" target="_blank"><img src="https://firebasestorage.googleapis.com/v0/b/threddit-plots/o/Portfolio-Monthly_cost_and_Category_use-image_910x910.png?alt=media" /></a></p>
+</div>
+
+<div class='containerBox'>
+<div class='containerIcon'><a rel="license" target=”_blank”, href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/80x15.png" id="fixed-width-CC" /></a></div><div class="containerText">This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0 International License</a>. CC BY, Olof Hoverfält 2018 - 2024</div>
+</div>
+
+
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
